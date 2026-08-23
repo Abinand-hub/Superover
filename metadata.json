@@ -1,0 +1,6 @@
+{
+  "name": "SuperOver - Cricket 6-Stat Prediction & Cash Prize Game",
+  "description": "A cricket trivia prediction game where fans predict 6 key match stats (Top Batter, Top Bowler, Striker, Economy, 6s, Wickets) for upcoming matches to win up to 100X cash payouts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
