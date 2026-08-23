@@ -50,12 +50,12 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="bg-[#03050D] px-4 py-1.5 border-b border-[#1A223E]/70 text-xs text-slate-400 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 font-bold text-[#4ADE80]">
-            <ShieldCheck className="w-3.5 h-3.5" /> 100% Skill-Based Cricket Game
+            <ShieldCheck className="w-3.5 h-3.5" /> Where stats meet instincts
           </span>
           <span className="hidden sm:inline-block text-slate-700">•</span>
           <span className="hidden sm:inline-flex items-center gap-1.5 text-slate-300 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></span>
-            Predict 6 Stats & Win 100X
+            Crack 6 match stats and gain upto 500X rewards
           </span>
         </div>
 
@@ -98,10 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
                   Super<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00]">Over</span>
                 </span>
                 <span className="px-1.5 py-0.2 rounded bg-[#FF6B00]/20 text-[#FF6B00] text-[10px] font-black tracking-wider uppercase border border-[#FF6B00]/40">
-                  100X
+                  500X
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 -mt-0.5 hidden sm:block">6-Stat Cricket Prediction</p>
+              <p className="text-[11px] text-slate-400 -mt-0.5 hidden sm:block">6-Stat Cricket Selection</p>
             </div>
           </button>
 
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="nav-my-contests-tab"
             >
               <Trophy className="w-3.5 h-3.5" />
-              My Predictions
+              My Selections
               {pendingSlipsCount > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-[#4ADE80] text-slate-950 text-[10px] font-black">
                   {pendingSlipsCount}
@@ -145,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="nav-payouts-tab"
             >
               <Award className="w-3.5 h-3.5" />
-              Payout Multipliers
+              Rewards Multipliers
             </button>
           </nav>
         </div>
@@ -249,7 +249,7 @@ export const Header: React.FC<HeaderProps> = ({
             activeTab === 'my-contests' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400'
           }`}
         >
-          My Slips
+          My Selections
           {pendingSlipsCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full bg-[#4ADE80] text-slate-950 text-[9px] font-black">
               {pendingSlipsCount}
@@ -262,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
             activeTab === 'payouts-rules' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400'
           }`}
         >
-          100X Payouts
+          500X Rewards
         </button>
       </div>
     </header>

@@ -81,7 +81,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
             Match Lobby
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Pick an upcoming match, choose your entry fee, and predict the 6 key match stats.
+            Pick an upcoming match, choose your entry fee, and select the 6 key match stats.
           </p>
         </div>
 
@@ -260,7 +260,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                     disabled
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    <span>Locked (10m before toss)</span>
+                    <span>Auto locks 1 minute before scheduled time</span>
                   </button>
                 ) : (
                   <div className="space-y-2">
@@ -272,7 +272,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                             key={fee}
                             onClick={() => onSelectMatchToPlay(match, fee)}
                             className="px-2.5 py-1 rounded-lg bg-[#0D122B] hover:bg-[#FF6B00]/20 text-slate-200 hover:text-[#FFAA00] text-xs font-black border border-[#1A223E] hover:border-[#FF6B00]/50 transition-colors"
-                            title={`Play with ₹${fee} entry to win up to ₹${fee * 100}`}
+                            title={`Play with ₹${fee} entry to gain up to 500X rewards`}
                           >
                             ₹{fee}
                           </button>
@@ -286,7 +286,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                       id={`btn-play-match-${match.id}`}
                     >
                       <Sparkles className="w-4 h-4" />
-                      <span>Predict 6 Stats (Win up to 100X)</span>
+                      <span>Crack 6 Stats (Gain up to 500X)</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

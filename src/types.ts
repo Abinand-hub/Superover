@@ -105,6 +105,7 @@ export interface UserPredictionSlip {
   entryFee: number; // 25, 50, or 100
   submittedAt: string;
   status: 'PENDING' | 'LIVE' | 'WON' | 'LOST';
+  jackpotMultiplier: number; // The multiplier spun from Wheel of Fortune
   correctCount?: number;
   multiplierWon?: number;
   payoutAmount?: number;

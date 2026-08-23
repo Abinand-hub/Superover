@@ -81,8 +81,8 @@ export const PAYOUT_TIERS = [
   { correct: 0, multiplier: 0, label: 'No Payout', badge: 'text-slate-500', returnRate: '0%' },
 ];
 
-export function getMultiplierForCorrectCount(correctCount: number): number {
-  if (correctCount >= 6) return 100;
+export function getMultiplierForCorrectCount(correctCount: number, jackpotMultiplier: number = 100): number {
+  if (correctCount >= 6) return jackpotMultiplier;
   if (correctCount === 5) return 10;
   if (correctCount === 4) return 3;
   if (correctCount === 3) return 0.5;
@@ -142,7 +142,7 @@ export function settlePredictionSlip(
     });
   });
 
-  const multiplier = getMultiplierForCorrectCount(correctCount);
+  const multiplier = getMultiplierForCorrectCount(correctCount, slip.jackpotMultiplier || 100);
   const payoutAmount = slip.entryFee * multiplier;
   const status: 'WON' | 'LOST' = multiplier > 0 ? 'WON' : 'LOST';
 

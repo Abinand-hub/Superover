@@ -102,8 +102,8 @@ export default function App() {
   // User submissions count awaiting settlement
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
-  // Handler: User submits a 6-stat prediction slip
-  const handleSubmitPredictionSlip = (answers: Record<StatQuestionKey, string>, entryFee: number) => {
+  // Handler: User submits a 6-stat selection slip
+  const handleSubmitSelectionSlip = async (answers: Record<StatQuestionKey, string>, entryFee: number, jackpotMultiplier: number) => {
     if (!selectedMatchForPlay) return;
     const match = selectedMatchForPlay.match;
 
@@ -134,10 +134,10 @@ export default function App() {
       id: `tx_ent_${Date.now()}`,
       userId: currentUser.id,
       type: 'CONTEST_ENTRY',
-      amount: entryFee,
+      amount: -entryFee,
       status: 'SUCCESS',
       timestamp: new Date().toISOString(),
-      description: `Entry Fee for ${match.title} (6 Predictions)`,
+      description: `Entry Fee for ${match.title} (6 Selections)`,
       referenceId: `ENTRY-${match.team1.code}${match.team2.code}-${Date.now().toString().slice(-4)}`,
     };
     setTransactions((prev) => [newTx, ...prev]);
@@ -156,6 +156,7 @@ export default function App() {
       matchStartTime: match.startTime,
       answers,
       entryFee,
+      jackpotMultiplier,
       submittedAt: new Date().toISOString(),
       status: 'PENDING',
     };
@@ -400,10 +401,14 @@ export default function App() {
                   <h3 className="font-bold text-white text-sm">Choose Entry Fee</h3>
                   <p className="text-slate-400">Join upcoming IPL or International fixtures starting at just ₹25, ₹50, or ₹100.</p>
                 </div>
-                <div className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black flex items-center justify-center shadow-md">2</div>
-                  <h3 className="font-bold text-white text-sm">Predict 6 Stats</h3>
-                  <p className="text-slate-400">Answer: Top Batter, Top Bowler, Top Striker, Economy Bowler, Most 6s, and Most Wickets.</p>
+                <div 
+                  className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-[#0D122B] border border-[#1A223E] hover:border-[#FF6B00]/40 transition-colors text-center"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#FF6B00]/20 flex items-center justify-center text-[#FF6B00] mb-3">
+                    <Crosshair className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-sm">Crack 6 Stats</h3>
+                  <p className="text-xs text-slate-400 mt-1">Select player outcomes (e.g., Top Batter, Most 6s) before the match starts.</p>
                 </div>
                 <div className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black flex items-center justify-center shadow-md">3</div>
@@ -453,10 +458,12 @@ export default function App() {
       <footer className="bg-[#03050D] border-t border-[#1A223E] py-8 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-white text-base font-display">Super<span className="text-[#FF6B00]">Over</span></span>
-              <span className="text-slate-700">|</span>
-              <span>Low-stakes 6-stat cricket prediction game</span>
+            <div className="flex items-center gap-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="hidden lg:flex items-center gap-2 text-sm font-medium text-slate-400">
+                <span className="text-[#FF6B00]">SuperOver</span>
+                <span>•</span>
+                <span>Low-stakes 6-stat cricket selection game</span>
+              </div>
             </div>
 
             <div className="flex items-center gap-4 text-xs">
@@ -483,7 +490,7 @@ export default function App() {
           wallet={wallet}
           initialFee={selectedMatchForPlay.fee}
           onClose={() => setSelectedMatchForPlay(null)}
-          onSubmitSlip={handleSubmitPredictionSlip}
+          onSubmitSlip={handleSubmitSelectionSlip}
           onOpenDeposit={() => {
             setSelectedMatchForPlay(null);
             setWalletModalState({ open: true, tab: 'deposit' });

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { CricketMatch, Player, PlayerRole, StatQuestionDefinition, StatQuestionKey, UserAccount, Wallet } from '../types';
 import { calculatePotentialPayout, formatINR, STAT_QUESTIONS } from '../utils/payoutCalculator';
+import { WheelOfFortune } from './WheelOfFortune';
 
 interface PredictionModalProps {
   match: CricketMatch;
@@ -28,7 +29,7 @@ interface PredictionModalProps {
   wallet: Wallet;
   initialFee?: number;
   onClose: () => void;
-  onSubmitSlip: (answers: Record<StatQuestionKey, string>, entryFee: number) => void;
+  onSubmitSlip: (answers: Record<StatQuestionKey, string>, entryFee: number, jackpotMultiplier: number) => void;
   onOpenDeposit: () => void;
 }
 
@@ -42,6 +43,8 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   onOpenDeposit,
 }) => {
   const [selectedFee, setSelectedFee] = useState<number>(initialFee);
+  const [customFee, setCustomFee] = useState<string>('');
+  const [jackpotMultiplier, setJackpotMultiplier] = useState<number | null>(null);
   const [answers, setAnswers] = useState<Record<StatQuestionKey, string>>({
     top_batter: '',
     top_bowler: '',
@@ -113,15 +116,16 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     }
   };
 
-  const canAfford = wallet.totalBalance >= selectedFee;
+  const actualFee = customFee ? parseInt(customFee) || selectedFee : selectedFee;
+  const canAfford = wallet.totalBalance >= actualFee;
 
   const handleSubmit = () => {
-    if (!isComplete) return;
+    if (!isComplete || !jackpotMultiplier) return;
     if (!canAfford) {
       onOpenDeposit();
       return;
     }
-    onSubmitSlip(answers, selectedFee);
+    onSubmitSlip(answers, actualFee, jackpotMultiplier);
   };
 
   return (
@@ -132,7 +136,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-black text-[11px] uppercase border border-amber-500/30">
-                Predict 6 & Win 100X
+                Crack 6 & Gain 500X
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 {match.series}
@@ -258,7 +262,13 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
           {/* Right Column: Player Roster Browser (7 cols) */}
           <div className="lg:col-span-7 p-4 sm:p-5 flex flex-col overflow-y-auto">
-            {/* Header info about the currently active question */}
+            {isComplete && !jackpotMultiplier ? (
+              <div className="flex items-center justify-center h-full min-h-[300px]">
+                <WheelOfFortune onComplete={setJackpotMultiplier} />
+              </div>
+            ) : (
+              <>
+                {/* Header info about the currently active question */}
             <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 mb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -433,57 +443,82 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
                 })
               )}
             </div>
+            </>
+            )}
           </div>
         </div>
 
         {/* Modal Bottom: Entry Fee & Potential Winnings & Submit CTA */}
         <div className="p-4 sm:p-5 bg-slate-950 border-t border-slate-800 flex-shrink-0 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Entry Fee Picker */}
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-slate-400 uppercase">Entry Fee:</span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {[25, 50, 100].map((fee) => (
                   <button
                     key={fee}
-                    onClick={() => setSelectedFee(fee)}
+                    onClick={() => { setSelectedFee(fee); setCustomFee(''); }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
-                      selectedFee === fee
+                      selectedFee === fee && !customFee
                         ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 ring-2 ring-amber-400/40 scale-105'
                         : 'bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800'
                     }`}
-                    id={`btn-modal-fee-${fee}`}
                   >
                     ₹{fee}
                   </button>
                 ))}
+                
+                <div className="relative">
+                  <span className="absolute left-2.5 top-2 text-slate-400 text-xs font-bold">₹</span>
+                  <input 
+                    type="number" 
+                    placeholder="Custom"
+                    value={customFee}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val && parseInt(val) > 1000) {
+                        setCustomFee('1000');
+                      } else {
+                        setCustomFee(val);
+                      }
+                      if (val) setSelectedFee(0);
+                    }}
+                    className={`w-20 pl-6 pr-2 py-1.5 rounded-xl text-xs font-extrabold bg-slate-900 border focus:outline-none transition-all ${
+                      customFee ? 'border-amber-400 text-amber-400' : 'border-slate-800 text-slate-300'
+                    }`}
+                  />
+                </div>
+                {customFee && parseInt(customFee) === 1000 && (
+                  <span className="text-[10px] text-amber-500 font-bold ml-1 animate-pulse hidden sm:inline">MAX limit is 1000</span>
+                )}
               </div>
             </div>
 
             {/* Payout Matrix Preview */}
-            <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto text-xs">
+            <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto text-xs w-full sm:w-auto mt-3 sm:mt-0">
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block">6/6 Jackpot (100X)</span>
+                <span className="text-[10px] text-slate-400 block">6/6 Jackpot ({jackpotMultiplier ? `${jackpotMultiplier}X` : '??'})</span>
                 <span className="font-extrabold text-amber-400 text-sm">
-                  {formatINR(selectedFee * 100)}
+                  {jackpotMultiplier ? formatINR(actualFee * jackpotMultiplier) : 'SPIN TO REVEAL'}
                 </span>
               </div>
               <div className="text-right border-l border-slate-800 pl-3">
-                <span className="text-[10px] text-slate-400 block">5/6 Win (10X)</span>
+                <span className="text-[10px] text-slate-400 block">5/6 Gain (10X)</span>
                 <span className="font-extrabold text-emerald-400 text-sm">
-                  {formatINR(selectedFee * 10)}
+                  {formatINR(actualFee * 10)}
                 </span>
               </div>
               <div className="text-right border-l border-slate-800 pl-3">
-                <span className="text-[10px] text-slate-400 block">4/6 Win (3X)</span>
+                <span className="text-[10px] text-slate-400 block">4/6 Gain (3X)</span>
                 <span className="font-extrabold text-blue-400 text-sm">
-                  {formatINR(selectedFee * 3)}
+                  {formatINR(actualFee * 3)}
                 </span>
               </div>
               <div className="text-right border-l border-slate-800 pl-3">
                 <span className="text-[10px] text-slate-400 block">3/6 Guard (0.5X)</span>
                 <span className="font-extrabold text-slate-300 text-sm">
-                  {formatINR(selectedFee * 0.5)}
+                  {formatINR(actualFee * 0.5)}
                 </span>
               </div>
             </div>
@@ -497,7 +532,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               </div>
               {!canAfford && (
                 <span className="text-[11px] text-rose-400 font-semibold">
-                  (Needs ₹{selectedFee - wallet.totalBalance} more)
+                  (Needs ₹{actualFee - wallet.totalBalance} more)
                 </span>
               )}
             </div>
@@ -506,7 +541,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               {!isComplete ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-amber-400 font-semibold hidden sm:inline">
-                    Please answer all 6 questions ({answeredCount}/6)
+                    Please make all 6 selections ({answeredCount}/6)
                   </span>
                   <button
                     disabled
@@ -515,23 +550,28 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
                     Complete 6 Picks ({answeredCount}/6)
                   </button>
                 </div>
+              ) : !jackpotMultiplier ? (
+                <button
+                  disabled
+                  className="px-6 py-2.5 rounded-xl bg-amber-400/50 text-slate-900 font-extrabold text-xs cursor-not-allowed"
+                >
+                  Spin Wheel First!
+                </button>
               ) : !canAfford ? (
                 <button
                   onClick={onOpenDeposit}
                   className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                  id="btn-add-money-submit"
                 >
                   <PlusCircle className="w-4 h-4" />
-                  <span>Add ₹{selectedFee} via UPI & Submit</span>
+                  <span>Add ₹{actualFee} via UPI & Submit</span>
                 </button>
               ) : (
                 <button
                   onClick={handleSubmit}
                   className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/30"
-                  id="btn-submit-prediction-slip"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>Submit Prediction Slip (₹{selectedFee})</span>
+                  <span>Submit Selection Slip (₹{actualFee})</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               )}

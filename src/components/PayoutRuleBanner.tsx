@@ -21,17 +21,17 @@ export const PayoutRuleBanner: React.FC<PayoutRuleBannerProps> = ({ onOpenRules,
         <div className="max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF6B00]/15 border border-[#FF6B00]/30 text-[#FF6B00] text-xs font-bold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5" />
-            Skill + Luck Cricket Gaming
+            Where stats meet instincts
           </div>
           
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">
-            Predict 6 Match Stats. <br className="hidden sm:inline" />
-            Win Up To <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00]">100X Cash</span>.
+            Crack 6 match stats and <br className="hidden sm:inline" />
+            gain upto <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00]">500X rewards</span>.
           </h2>
           
           <p className="text-sm text-slate-300 mt-2 leading-relaxed">
-            Answer 6 simple stats before match start — Top Batter, Top Bowler, Striker, Economy, 6s, and Wickets. 
-            Get at least 3 correct to win cash.
+            Select 6 simple stats before match start — Top Batter, Top Bowler, Striker, Economy, 6s, and Wickets. 
+            Get at least 3 correct to gain rewards.
           </p>
 
           {/* Quick interactive tier selector */}
@@ -68,11 +68,11 @@ export const PayoutRuleBanner: React.FC<PayoutRuleBannerProps> = ({ onOpenRules,
               JACKPOT
             </div>
             <div className="text-xs font-bold text-[#FF6B00] uppercase tracking-wider">6 / 6 Correct</div>
-            <div className="text-2xl font-black text-white mt-0.5 font-display">100X</div>
-            <div className="text-sm font-extrabold text-[#FFAA00] mt-1 bg-[#FF6B00]/20 rounded-md py-0.5 border border-[#FF6B00]/30">
-              {formatINR(selectedFee * 100)}
+            <div className="text-xl font-black text-white mt-1 font-display leading-tight">Up to<br/>500X</div>
+            <div className="text-xs font-extrabold text-[#FFAA00] mt-1 bg-[#FF6B00]/20 rounded-md py-0.5 border border-[#FF6B00]/30 flex items-center justify-center gap-1">
+              <Zap className="w-3 h-3" /> Wheel Spin
             </div>
-            <div className="text-[10px] text-slate-400 mt-1">10,000% Gross Return</div>
+            <div className="text-[10px] text-slate-400 mt-1">Spin to reveal!</div>
           </div>
 
           {/* 5/6 correct card */}
@@ -114,7 +114,7 @@ export const PayoutRuleBanner: React.FC<PayoutRuleBannerProps> = ({ onOpenRules,
             <CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /> Instant UPI Settlements
           </span>
           <span className="flex items-center gap-1.5 text-slate-300 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /> Auto-locks 10m before toss
+            <CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /> Auto locks 1 minute before scheduled time
           </span>
           <span className="flex items-center gap-1.5 text-slate-300 font-medium">
             <CheckCircle2 className="w-4 h-4 text-[#4ADE80]" /> No complex fantasy point systems
