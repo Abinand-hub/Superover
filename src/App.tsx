@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
-import { PredictionModal } from './components/PredictionModal';
-import { SlipResultModal } from './components/SlipResultModal';
-import { MyContestsView } from './components/MyContestsView';
-import { WalletModal } from './components/WalletModal';
-import { AuthModal } from './components/AuthModal';
-import { KYCModal } from './components/KYCModal';
-import { RulesFAQModal } from './components/RulesFAQModal';
-import { ResponsibleGamingModal } from './components/ResponsibleGamingModal';
-import { AdminPanel } from './components/AdminPanel';
+const PredictionModal = React.lazy(() => import('./components/PredictionModal').then(m => ({ default: m.PredictionModal })));
+const SlipResultModal = React.lazy(() => import('./components/SlipResultModal').then(m => ({ default: m.SlipResultModal })));
+const MyContestsView = React.lazy(() => import('./components/MyContestsView').then(m => ({ default: m.MyContestsView })));
+const WalletModal = React.lazy(() => import('./components/WalletModal').then(m => ({ default: m.WalletModal })));
+const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
+const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
+const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
+const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 
 import { 
   CricketMatch, 
@@ -370,18 +370,20 @@ export default function App() {
 
         {/* VIEW 2: MY PREDICTIONS / SLIPS & USER ACTIVITY */}
         {activeTab === 'my-contests' && (
-          <MyContestsView
-            user={currentUser}
-            wallet={wallet}
-            slips={slips}
-            transactions={transactions}
-            matches={matches}
-            onViewSlipDetails={(match, slip) => {
-              setSelectedMatchForResults({ match, slip });
-            }}
-            onGoToLobby={() => setActiveTab('lobby')}
-            onOpenWallet={(tab) => setWalletModalState({ open: true, tab })}
-          />
+          <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
+            <MyContestsView
+              user={currentUser}
+              wallet={wallet}
+              slips={slips}
+              transactions={transactions}
+              matches={matches}
+              onViewSlipDetails={(match, slip) => {
+                setSelectedMatchForResults({ match, slip });
+              }}
+              onGoToLobby={() => setActiveTab('lobby')}
+              onOpenWallet={(tab) => setWalletModalState({ open: true, tab })}
+            />
+          </React.Suspense>
         )}
 
         {/* VIEW 3: 100X PAYOUTS & RULES */}
@@ -422,35 +424,37 @@ export default function App() {
 
         {/* VIEW 4: ORGANIZER ADMIN PANEL */}
         {activeTab === 'admin' && (
-          <AdminPanel
-            metrics={metrics}
-            matches={matches}
-            allUsers={allUsers}
-            allSlips={slips}
-            allTransactions={transactions}
-            faqs={INITIAL_FAQS}
-            onUpdateMatch={(updated) => setMatches((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))}
-            onCreateMatch={(newMatch) => setMatches((prev) => [newMatch, ...prev])}
-            onSettleMatch={handleSettleMatch}
-            onUpdateUser={(updated) => {
-              setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-              if (updated.id === currentUser.id) {
-                setCurrentUser(updated);
-              }
-            }}
-            onApproveWithdrawal={(txId) => {
-              setTransactions((prev) =>
-                prev.map((t) => (t.id === txId ? { ...t, status: 'SUCCESS' } : t))
-              );
-            }}
-            onRejectWithdrawal={(txId) => {
-              setTransactions((prev) =>
-                prev.map((t) => (t.id === txId ? { ...t, status: 'REJECTED' } : t))
-              );
-            }}
-            onAddBonusCash={handleAdminAddBonus}
-            onCloseAdmin={() => setActiveTab('lobby')}
-          />
+          <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
+            <AdminPanel
+              metrics={metrics}
+              matches={matches}
+              allUsers={allUsers}
+              allSlips={slips}
+              allTransactions={transactions}
+              faqs={INITIAL_FAQS}
+              onUpdateMatch={(updated) => setMatches((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))}
+              onCreateMatch={(newMatch) => setMatches((prev) => [newMatch, ...prev])}
+              onSettleMatch={handleSettleMatch}
+              onUpdateUser={(updated) => {
+                setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+                if (updated.id === currentUser.id) {
+                  setCurrentUser(updated);
+                }
+              }}
+              onApproveWithdrawal={(txId) => {
+                setTransactions((prev) =>
+                  prev.map((t) => (t.id === txId ? { ...t, status: 'SUCCESS' } : t))
+                );
+              }}
+              onRejectWithdrawal={(txId) => {
+                setTransactions((prev) =>
+                  prev.map((t) => (t.id === txId ? { ...t, status: 'REJECTED' } : t))
+                );
+              }}
+              onAddBonusCash={handleAdminAddBonus}
+              onCloseAdmin={() => setActiveTab('lobby')}
+            />
+          </React.Suspense>
         )}
       </main>
 
@@ -482,127 +486,130 @@ export default function App() {
         </div>
       </footer>
 
-      {/* MODAL 1: 6-Stat Prediction Game Flow */}
-      {selectedMatchForPlay && (
-        <PredictionModal
-          match={selectedMatchForPlay.match}
-          user={currentUser}
-          wallet={wallet}
-          initialFee={selectedMatchForPlay.fee}
-          onClose={() => setSelectedMatchForPlay(null)}
-          onSubmitSlip={handleSubmitSelectionSlip}
-          onOpenDeposit={() => {
-            setSelectedMatchForPlay(null);
-            setWalletModalState({ open: true, tab: 'deposit' });
-          }}
-        />
-      )}
+      {/* ALL MODALS (Lazy Loaded) */}
+      <React.Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-[#050816]/50 backdrop-blur-sm z-50"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
+        {/* MODAL 1: 6-Stat Prediction Game Flow */}
+        {selectedMatchForPlay && (
+          <PredictionModal
+            match={selectedMatchForPlay.match}
+            user={currentUser}
+            wallet={wallet}
+            initialFee={selectedMatchForPlay.fee}
+            onClose={() => setSelectedMatchForPlay(null)}
+            onSubmitSlip={handleSubmitSelectionSlip}
+            onOpenDeposit={() => {
+              setSelectedMatchForPlay(null);
+              setWalletModalState({ open: true, tab: 'deposit' });
+            }}
+          />
+        )}
 
-      {/* MODAL 2: Slip Result & Official Match Breakdown */}
-      {selectedMatchForResults && (
-        <SlipResultModal
-          match={selectedMatchForResults.match}
-          slip={selectedMatchForResults.slip}
-          onClose={() => setSelectedMatchForResults(null)}
-          onPlayAnother={() => {
-            setSelectedMatchForResults(null);
-            setActiveTab('lobby');
-          }}
-        />
-      )}
+        {/* MODAL 2: Slip Result & Official Match Breakdown */}
+        {selectedMatchForResults && (
+          <SlipResultModal
+            match={selectedMatchForResults.match}
+            slip={selectedMatchForResults.slip}
+            onClose={() => setSelectedMatchForResults(null)}
+            onPlayAnother={() => {
+              setSelectedMatchForResults(null);
+              setActiveTab('lobby');
+            }}
+          />
+        )}
 
-      {/* MODAL 3: UPI Wallet (Deposit / Withdraw / Passbook) */}
-      {walletModalState.open && (
-        <WalletModal
-          wallet={wallet}
-          user={currentUser}
-          transactions={transactions}
-          initialTab={walletModalState.tab}
-          onClose={() => setWalletModalState({ open: false, tab: 'deposit' })}
-          onDeposit={handleDepositCash}
-          onWithdraw={handleWithdrawWinnings}
-          onOpenKyc={() => {
-            setWalletModalState({ open: false, tab: 'deposit' });
-            setIsKycModalOpen(true);
-          }}
-        />
-      )}
+        {/* MODAL 3: UPI Wallet (Deposit / Withdraw / Passbook) */}
+        {walletModalState.open && (
+          <WalletModal
+            wallet={wallet}
+            user={currentUser}
+            transactions={transactions}
+            initialTab={walletModalState.tab}
+            onClose={() => setWalletModalState({ open: false, tab: 'deposit' })}
+            onDeposit={handleDepositCash}
+            onWithdraw={handleWithdrawWinnings}
+            onOpenKyc={() => {
+              setWalletModalState({ open: false, tab: 'deposit' });
+              setIsKycModalOpen(true);
+            }}
+          />
+        )}
 
-      {/* MODAL 4: User Authentication & Switcher */}
-      {isAuthModalOpen && (
-        <AuthModal
-          currentUser={currentUser}
-          allUsers={allUsers}
-          onClose={() => setIsAuthModalOpen(false)}
-          onUpdateProfile={(updated) => {
-            setCurrentUser(updated);
-            setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-          }}
-          onSwitchUser={(newUser) => {
-            setCurrentUser(newUser);
-          }}
-          onRegisterUser={(newUser, welcomeBonus) => {
-            setAllUsers((prev) => [newUser, ...prev]);
-            setCurrentUser(newUser);
-            
-            // Credit welcome bonus to user wallet and add bonus transaction
-            setWallet((prev) => ({
-              ...prev,
-              bonusBalance: prev.bonusBalance + welcomeBonus,
-              totalBalance: prev.totalBalance + welcomeBonus,
-            }));
+        {/* MODAL 4: User Authentication & Switcher */}
+        {isAuthModalOpen && (
+          <AuthModal
+            currentUser={currentUser}
+            allUsers={allUsers}
+            onClose={() => setIsAuthModalOpen(false)}
+            onUpdateProfile={(updated) => {
+              setCurrentUser(updated);
+              setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+            }}
+            onSwitchUser={(newUser) => {
+              setCurrentUser(newUser);
+            }}
+            onRegisterUser={(newUser, welcomeBonus) => {
+              setAllUsers((prev) => [newUser, ...prev]);
+              setCurrentUser(newUser);
+              
+              // Credit welcome bonus to user wallet and add bonus transaction
+              setWallet((prev) => ({
+                ...prev,
+                bonusBalance: prev.bonusBalance + welcomeBonus,
+                totalBalance: prev.totalBalance + welcomeBonus,
+              }));
 
-            const welcomeTx: WalletTransaction = {
-              id: `tx_bon_reg_${Date.now()}`,
-              userId: newUser.id,
-              type: 'BONUS_REWARD',
-              amount: welcomeBonus,
-              status: 'SUCCESS',
-              timestamp: new Date().toISOString(),
-              description: '₹50 Signup Welcome Bonus Cash Credited!',
-              referenceId: `REG-BONUS-${Date.now().toString().slice(-4)}`,
-            };
-            setTransactions((prev) => [welcomeTx, ...prev]);
-          }}
-        />
-      )}
+              const welcomeTx: WalletTransaction = {
+                id: `tx_bon_reg_${Date.now()}`,
+                userId: newUser.id,
+                type: 'BONUS_REWARD',
+                amount: welcomeBonus,
+                status: 'SUCCESS',
+                timestamp: new Date().toISOString(),
+                description: '₹50 Signup Welcome Bonus Cash Credited!',
+                referenceId: `REG-BONUS-${Date.now().toString().slice(-4)}`,
+              };
+              setTransactions((prev) => [welcomeTx, ...prev]);
+            }}
+          />
+        )}
 
-      {/* MODAL 5: KYC Verification */}
-      {isKycModalOpen && (
-        <KYCModal
-          user={currentUser}
-          onClose={() => setIsKycModalOpen(false)}
-          onCompleteKyc={(pan) => {
-            const updated: UserAccount = {
-              ...currentUser,
-              kycStatus: 'VERIFIED',
-              panNumber: pan,
-            };
-            setCurrentUser(updated);
-            setWallet((prev) => ({ ...prev, kycVerified: true }));
-            setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-          }}
-        />
-      )}
+        {/* MODAL 5: KYC Verification */}
+        {isKycModalOpen && (
+          <KYCModal
+            user={currentUser}
+            onClose={() => setIsKycModalOpen(false)}
+            onCompleteKyc={(pan) => {
+              const updated: UserAccount = {
+                ...currentUser,
+                kycStatus: 'VERIFIED',
+                panNumber: pan,
+              };
+              setCurrentUser(updated);
+              setWallet((prev) => ({ ...prev, kycVerified: true }));
+              setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+            }}
+          />
+        )}
 
-      {/* MODAL 6: Rules & FAQs */}
-      {isRulesModalOpen && (
-        <RulesFAQModal
-          faqs={INITIAL_FAQS}
-          onClose={() => setIsRulesModalOpen(false)}
-        />
-      )}
+        {/* MODAL 6: Rules & FAQs */}
+        {isRulesModalOpen && (
+          <RulesFAQModal
+            faqs={INITIAL_FAQS}
+            onClose={() => setIsRulesModalOpen(false)}
+          />
+        )}
 
-      {/* MODAL 7: Responsible Gaming */}
-      {isResponsibleModalOpen && (
-        <ResponsibleGamingModal
-          user={currentUser}
-          onClose={() => setIsResponsibleModalOpen(false)}
-          onUpdateLimit={(limit) => {
-            setCurrentUser((prev) => ({ ...prev, dailyDepositLimit: limit }));
-          }}
-        />
-      )}
+        {/* MODAL 7: Responsible Gaming */}
+        {isResponsibleModalOpen && (
+          <ResponsibleGamingModal
+            user={currentUser}
+            onClose={() => setIsResponsibleModalOpen(false)}
+            onUpdateLimit={(limit) => {
+              setCurrentUser((prev) => ({ ...prev, dailyDepositLimit: limit }));
+            }}
+          />
+        )}
+      </React.Suspense>
     </div>
   );
 }

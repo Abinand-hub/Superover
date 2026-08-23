@@ -85,7 +85,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
         Your 6 selections are locked in! Spin the wheel to determine your potential multiplier if you get 6/6 correct.
       </p>
 
-      <div className="relative w-72 h-72 mb-6">
+      <div className="relative w-[250px] h-[250px] sm:w-72 sm:h-72 mb-6">
         {/* Pointer */}
         <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 w-8 h-8 text-[#FF6B00] drop-shadow-lg">
           <svg viewBox="0 0 24 24" fill="currentColor">
