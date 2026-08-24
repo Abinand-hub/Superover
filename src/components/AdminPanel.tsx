@@ -39,12 +39,12 @@ import {
   PlatformMetrics, 
   Player, 
   PlayerRole,
-  StatQuestionKey, 
   UserAccount, 
   UserPredictionSlip, 
   WalletTransaction 
 } from '../types';
-import { formatINR, STAT_QUESTIONS } from '../utils/payoutCalculator';
+import { formatINR } from '../utils/payoutCalculator';
+import { DEFAULT_QUESTIONS } from '../data/initialData';
 
 interface AdminPanelProps {
   metrics: PlatformMetrics;
@@ -237,14 +237,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     ? [...selectedMatchForSettlement.squadTeam1, ...selectedMatchForSettlement.squadTeam2] 
     : [];
 
-  const [settlementPicks, setSettlementPicks] = useState<Record<StatQuestionKey, { playerId: string; statValue: string }>>({
-    top_batter: { playerId: selectedMatchForSettlement?.squadTeam1[0]?.id || '', statValue: '86* (48 balls)' },
-    top_bowler: { playerId: selectedMatchForSettlement?.squadTeam2[0]?.id || '', statValue: '3/18 (4.0 ov)' },
-    top_striker: { playerId: selectedMatchForSettlement?.squadTeam1[1]?.id || '', statValue: '215.0 SR (43 off 20)' },
-    best_economy: { playerId: selectedMatchForSettlement?.squadTeam2[1]?.id || '', statValue: '5.25 Econ (1/21)' },
-    most_sixes: { playerId: selectedMatchForSettlement?.squadTeam1[0]?.id || '', statValue: '6 Sixes' },
-    most_wickets: { playerId: selectedMatchForSettlement?.squadTeam2[0]?.id || '', statValue: '3 Wickets' },
-  });
+  const [settlementPicks, setSettlementPicks] = useState<Record<string, { answerId: string; answerText: string; statValue: string }>>({});
 
   const [settlementSummaryNote, setSettlementSummaryNote] = useState<string>('Match concluded. Official stats verified.');
   const [settlementSuccessMessage, setSettlementSuccessMessage] = useState<string>('');
@@ -367,37 +360,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleSettleSubmit = () => {
     if (!selectedMatchForSettlement) return;
 
+    const answers: Record<string, { answerId: string; answerText: string; statValue: string }> = {};
+    selectedMatchForSettlement.questions?.forEach((q) => {
+      const pick = settlementPicks[q.id];
+      if (pick) {
+        answers[q.id] = {
+          answerId: pick.answerId,
+          answerText: pick.answerText,
+          statValue: pick.statValue,
+        };
+      }
+    });
+
     const results: MatchResults = {
-      top_batter: {
-        playerId: settlementPicks.top_batter.playerId,
-        statValue: settlementPicks.top_batter.statValue,
-        playerName: squadForSettlement.find((p) => p.id === settlementPicks.top_batter.playerId)?.name,
-      },
-      top_bowler: {
-        playerId: settlementPicks.top_bowler.playerId,
-        statValue: settlementPicks.top_bowler.statValue,
-        playerName: squadForSettlement.find((p) => p.id === settlementPicks.top_bowler.playerId)?.name,
-      },
-      top_striker: {
-        playerId: settlementPicks.top_striker.playerId,
-        statValue: settlementPicks.top_striker.statValue,
-        playerName: squadForSettlement.find((p) => p.id === settlementPicks.top_striker.playerId)?.name,
-      },
-      best_economy: {
-        playerId: settlementPicks.best_economy.playerId,
-        statValue: settlementPicks.best_economy.statValue,
-        playerName: squadForSettlement.find((p) => p.id === settlementPicks.best_economy.playerId)?.name,
-      },
-      most_sixes: {
-        playerId: settlementPicks.most_sixes.playerId,
-        statValue: settlementPicks.most_sixes.statValue,
-        playerName: squadForSettlement.find((p) => p.id === settlementPicks.most_sixes.playerId)?.name,
-      },
-      most_wickets: {
-        playerId: settlementPicks.most_wickets.playerId,
-        statValue: settlementPicks.most_wickets.statValue,
-        playerName: squadForSettlement.find((p) => p.id === settlementPicks.most_wickets.playerId)?.name,
-      },
+      answers,
       settledAt: new Date().toISOString(),
       summaryNote: settlementSummaryNote,
     };
@@ -853,16 +829,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </select>
           </div>
 
-          {/* 6 Stat Winners Form */}
+          {/* Questions Winners Form */}
           <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4">
-            <h3 className="text-sm font-extrabold text-white">Enter Official 6 Stat Winners</h3>
+            <h3 className="text-sm font-extrabold text-white">Enter Official Question Answers</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {STAT_QUESTIONS.map((q) => {
-                const currentPick = settlementPicks[q.key];
+              {selectedMatchForSettlement?.questions?.map((q) => {
+                const currentPick = settlementPicks[q.id] || { answerId: '', answerText: '', statValue: '' };
 
                 return (
-                  <div key={q.key} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <div key={q.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-[#FFAA00]">
                         {q.number}. {q.title} ({q.shortTitle})
@@ -870,36 +846,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-[10px] text-slate-400 block mb-1">Official Winner Player:</label>
-                      <select
-                        value={currentPick?.playerId || ''}
+                      <label className="text-[10px] text-slate-400 block mb-1">Official Winner Answer/Player ID:</label>
+                      <input
+                        type="text"
+                        value={currentPick.answerId}
                         onChange={(e) => {
                           const val = e.target.value;
                           setSettlementPicks((prev) => ({
                             ...prev,
-                            [q.key]: { ...prev[q.key], playerId: val },
+                            [q.id]: { ...currentPick, answerId: val, answerText: val },
                           }));
                         }}
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs font-semibold focus:outline-none"
-                      >
-                        {squadForSettlement.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} ({p.team} - {p.role})
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="e.g. p_vkohli or Yes"
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                      />
                     </div>
 
                     <div>
                       <label className="text-[10px] text-slate-400 block mb-1">Official Stat Value / Figure:</label>
                       <input
                         type="text"
-                        value={currentPick?.statValue || ''}
+                        value={currentPick.statValue}
                         onChange={(e) => {
                           const val = e.target.value;
                           setSettlementPicks((prev) => ({
                             ...prev,
-                            [q.key]: { ...prev[q.key], statValue: val },
+                            [q.id]: { ...currentPick, statValue: val },
                           }));
                         }}
                         placeholder="e.g. 86* off 46 balls or 3/18 (4 ov)"
@@ -1539,6 +1511,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         careerStatHighlight: 'Hat-trick hero',
                       },
                     ],
+                    questions: DEFAULT_QUESTIONS,
                   };
 
                   onCreateMatch(newMatch);

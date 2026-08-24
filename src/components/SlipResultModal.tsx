@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CricketMatch, SettlementDetail, UserPredictionSlip } from '../types';
-import { formatINR, STAT_QUESTIONS } from '../utils/payoutCalculator';
+import { formatINR } from '../utils/payoutCalculator';
 
 interface SlipResultModalProps {
   match: CricketMatch;
@@ -155,16 +155,22 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
               <span>Official Result vs Your Pick</span>
             </div>
 
-            {STAT_QUESTIONS.map((q) => {
-              const actualResult = results ? results[q.key] : null;
-              const userPickPlayerId = slip ? slip.answers[q.key] : null;
-              const userPickPlayer = userPickPlayerId ? playerMap.get(userPickPlayerId) : null;
+            {match.questions?.map((q) => {
+              const actualResult = results?.answers ? results.answers[q.id] : null;
+              const userAnswerId = slip ? slip.answers[q.id] : null;
               
-              const isCorrect = userPickPlayerId && actualResult && userPickPlayerId === actualResult.playerId;
+              const isCorrect = userAnswerId && actualResult && String(userAnswerId).toLowerCase() === String(actualResult.answerId).toLowerCase();
+
+              // For player questions, we can look up the player
+              let userPickDisplayName = userAnswerId || 'Unselected';
+              if (q.type === 'PLAYER' && userAnswerId) {
+                const p = playerMap.get(userAnswerId);
+                if (p) userPickDisplayName = p.shortName;
+              }
 
               return (
                 <div
-                  key={q.key}
+                  key={q.id}
                   className={`p-3.5 rounded-xl border transition-colors ${
                     slip
                       ? isCorrect
@@ -190,25 +196,34 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                       {/* Actual Winner */}
                       <div className="text-right">
                         <div className="text-xs font-bold text-amber-300">
-                          {actualResult?.playerName || 'Official Result'}
+                          {actualResult?.answerText || 'TBD'}
                         </div>
                         <div className="text-[11px] font-mono text-slate-400">
-                          {actualResult?.statValue || 'N/A'}
+                          {actualResult?.statValue || 'Awaiting Result'}
                         </div>
                       </div>
 
                       {/* User Pick Badge (if entered) */}
                       {slip && (
                         <div className="pl-2 border-l border-slate-800">
-                          {isCorrect ? (
-                            <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30">
+                          {!actualResult ? (
+                            <div className="flex flex-col items-end">
+                              <span className="text-[10px] text-slate-400 font-bold">
+                                Pick: {userPickDisplayName}
+                              </span>
+                              <span className="text-[10px] text-amber-500 font-bold mt-0.5">
+                                Pending ⏳
+                              </span>
+                            </div>
+                          ) : isCorrect ? (
+                             <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>Match ✅</span>
                             </div>
                           ) : (
                             <div className="flex flex-col items-end">
                               <span className="text-[10px] text-slate-500 line-through">
-                                Pick: {userPickPlayer?.shortName || 'Unselected'}
+                                Pick: {userPickDisplayName}
                               </span>
                               <span className="text-[10px] text-rose-400 font-bold">
                                 Missed ❌

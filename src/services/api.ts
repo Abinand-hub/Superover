@@ -2,7 +2,6 @@ import {
   CricketMatch,
   MatchResults,
   PlatformMetrics,
-  StatQuestionKey,
   UserAccount,
   UserPredictionSlip,
   Wallet,

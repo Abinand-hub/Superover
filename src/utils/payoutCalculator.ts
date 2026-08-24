@@ -1,67 +1,6 @@
-import { CricketMatch, MatchResults, SettlementDetail, StatQuestionDefinition, StatQuestionKey, UserPredictionSlip } from '../types';
+import { CricketMatch, MatchResults, SettlementDetail, QuestionDefinition, UserPredictionSlip } from '../types';
 
-export const STAT_QUESTIONS: StatQuestionDefinition[] = [
-  {
-    key: 'top_batter',
-    number: 1,
-    title: 'Top Batter',
-    shortTitle: 'Highest Runs',
-    subtitle: 'Which batsman will score the most runs in the match?',
-    criteria: 'Player with highest individual aggregate score in both innings. Tie-breaker: Fewer balls faced.',
-    iconName: 'Award',
-    badgeColor: 'from-amber-500 to-orange-500',
-  },
-  {
-    key: 'top_bowler',
-    number: 2,
-    title: 'Top Bowler',
-    shortTitle: 'Best Figures / Wickets',
-    subtitle: 'Which bowler will have the best bowling performance?',
-    criteria: 'Highest wickets taken. Tie-breaker: Fewest runs conceded.',
-    iconName: 'Crosshair',
-    badgeColor: 'from-blue-500 to-indigo-500',
-  },
-  {
-    key: 'top_striker',
-    number: 3,
-    title: 'Top Striker',
-    shortTitle: 'Highest Strike Rate',
-    subtitle: 'Which batter will register the highest batting strike rate?',
-    criteria: 'Highest batting strike rate with a minimum of 15 balls faced in the match.',
-    iconName: 'Zap',
-    badgeColor: 'from-yellow-400 to-amber-500',
-  },
-  {
-    key: 'best_economy',
-    number: 4,
-    title: 'Most Economical Bowler',
-    shortTitle: 'Lowest Economy Rate',
-    subtitle: 'Which bowler will concede the least runs per over?',
-    criteria: 'Lowest runs conceded per over (Economy) with minimum 2 overs bowled.',
-    iconName: 'ShieldCheck',
-    badgeColor: 'from-emerald-500 to-teal-500',
-  },
-  {
-    key: 'most_sixes',
-    number: 5,
-    title: 'Most 6s',
-    shortTitle: 'Maximum Sixes Hit',
-    subtitle: 'Which batter will smash the highest number of 6s?',
-    criteria: 'Highest individual sixes hit in the match. Tie-breaker: Highest strike rate.',
-    iconName: 'Flame',
-    badgeColor: 'from-rose-500 to-red-600',
-  },
-  {
-    key: 'most_wickets',
-    number: 6,
-    title: 'Most Wickets',
-    shortTitle: 'Highest Wicket-Taker',
-    subtitle: 'Which bowler will grab the highest total wicket count?',
-    criteria: 'Most total dismissals (excluding runouts). Tie-breaker: Lowest economy.',
-    iconName: 'Target',
-    badgeColor: 'from-purple-500 to-indigo-600',
-  },
-];
+
 
 /**
  * Payout Multipliers:
@@ -110,33 +49,39 @@ export function settlePredictionSlip(
   let correctCount = 0;
   const settlementDetails: SettlementDetail[] = [];
 
-  STAT_QUESTIONS.forEach((q) => {
-    const userPickPlayerId = slip.answers[q.key];
-    const actualResult = results[q.key];
-    const actualWinnerPlayerId = actualResult ? actualResult.playerId : '';
+  match.questions.forEach((q) => {
+    const userAnswerId = slip.answers[q.id];
+    const actualResult = results.answers?.[q.id];
+    const actualAnswerId = actualResult ? actualResult.answerId : '';
 
     const isCorrect = Boolean(
-      userPickPlayerId &&
-      actualWinnerPlayerId &&
-      userPickPlayerId === actualWinnerPlayerId
+      userAnswerId &&
+      actualAnswerId &&
+      userAnswerId.toLowerCase() === actualAnswerId.toLowerCase()
     );
 
     if (isCorrect) {
       correctCount += 1;
     }
 
-    const userPlayer = userPickPlayerId ? playerMap.get(userPickPlayerId) : undefined;
-    const winnerPlayer = actualWinnerPlayerId ? playerMap.get(actualWinnerPlayerId) : undefined;
+    // Try to resolve names if it's a player
+    const userPlayer = userAnswerId ? playerMap.get(userAnswerId) : undefined;
+    const winnerPlayer = actualAnswerId ? playerMap.get(actualAnswerId) : undefined;
+
+    let userAnswerText = userAnswerId;
+    if (q.type === 'PLAYER' && userPlayer) userAnswerText = userPlayer.name;
+
+    let actualAnswerText = actualAnswerId || 'Pending';
+    if (q.type === 'PLAYER' && winnerPlayer) actualAnswerText = winnerPlayer.name;
+    else if (actualResult?.answerText) actualAnswerText = actualResult.answerText;
 
     settlementDetails.push({
-      questionKey: q.key,
+      questionId: q.id,
       questionTitle: q.title,
-      userPickPlayerId: userPickPlayerId || '',
-      userPickPlayerName: userPlayer?.name || 'Unselected',
-      userPickTeam: userPlayer?.team || '',
-      actualWinnerPlayerId: actualWinnerPlayerId,
-      actualWinnerPlayerName: winnerPlayer?.name || actualResult?.playerName || 'Pending',
-      actualWinnerTeam: winnerPlayer?.team || '',
+      userAnswerId: userAnswerId || '',
+      userAnswerText: userAnswerText || 'Unselected',
+      actualAnswerId: actualAnswerId,
+      actualAnswerText: actualAnswerText,
       actualStatValue: actualResult?.statValue || 'N/A',
       isCorrect,
     });

@@ -69,11 +69,21 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
     return `M 150 150 L ${x1} ${y1} A 150 150 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
   };
 
-  const getSegmentColor = (index: number, value: number) => {
-    if (value === 500) return '#4ADE80'; // Emerald for jackpot
-    if (value >= 200) return '#FF6B00'; // Orange for high
-    if (value >= 100) return '#FF8800'; // Light orange for med
-    return index % 2 === 0 ? '#1A223E' : '#253058'; // Alternate for low
+  const getSegmentColor = (index: number) => {
+    const colors = [
+      '#901C3A', // Maroon
+      '#3482C5', // Blue
+      '#F2B807', // Yellow
+      '#E54546', // Red
+      '#C8C9BD', // Silver/Off-White
+      '#1F9B7A', // Teal
+      '#EB6E48', // Orange
+      '#901C3A', // Maroon
+      '#3482C5', // Blue
+      '#F2B807', // Yellow
+      '#E54546', // Red
+    ];
+    return colors[index % colors.length];
   };
 
   return (
@@ -85,59 +95,100 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
         Your 6 selections are locked in! Spin the wheel to determine your potential multiplier if you get 6/6 correct.
       </p>
 
-      <div className="relative w-[250px] h-[250px] sm:w-72 sm:h-72 mb-6">
+      <div className="relative w-[250px] h-[250px] sm:w-72 sm:h-72 mb-6 drop-shadow-2xl">
         {/* Pointer */}
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 w-8 h-8 text-[#FF6B00] drop-shadow-lg">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 22L2 2h20L12 22z" />
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+          <svg width="24" height="40" viewBox="0 0 24 40">
+            <path d="M4 0 H20 V24 L12 36 L4 24 Z" fill="#F2B807" stroke="#b38703" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))" />
           </svg>
         </div>
 
-        {/* Wheel SVG */}
+        {/* Wheel Container */}
         <div 
-          className="w-full h-full rounded-full shadow-[0_0_40px_rgba(255,107,0,0.2)] border-4 border-slate-800 relative overflow-hidden transition-transform"
+          className="w-full h-full rounded-full relative"
           style={{ 
             transform: `rotate(${rotation}deg)`,
             transitionDuration: isSpinning ? '5s' : '0s',
-            transitionTimingFunction: 'cubic-bezier(0.2, 0.8, 0.2, 1)' // smooth deceleration
+            transitionTimingFunction: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
           }}
         >
-          <svg viewBox="0 0 300 300" className="w-full h-full">
-            {segments.map((mult, i) => {
-              const textAngle = i * segmentAngle + (segmentAngle / 2);
-              const textRad = (textAngle - 90) * Math.PI / 180;
-              const textX = 150 + 100 * Math.cos(textRad);
-              const textY = 150 + 100 * Math.sin(textRad);
-              
+          <svg viewBox="0 0 300 300" className="w-full h-full rounded-full overflow-hidden filter drop-shadow-xl">
+            {/* Base Red Outer Rim Background */}
+            <circle cx="150" cy="150" r="150" fill="#CC0000" />
+            
+            {/* The sliced inner wheel */}
+            <g transform="translate(0,0)">
+              {segments.map((mult, i) => {
+                const textAngle = i * segmentAngle + (segmentAngle / 2);
+                const textRad = (textAngle - 90) * Math.PI / 180;
+                // Place text closer to edge
+                const textX = 150 + 95 * Math.cos(textRad);
+                const textY = 150 + 95 * Math.sin(textRad);
+                
+                return (
+                  <g key={i}>
+                    <path 
+                      d={createSegmentPath(i)} 
+                      fill={getSegmentColor(i)}
+                      stroke="#444"
+                      strokeWidth="1"
+                    />
+                    <text 
+                      x={textX} 
+                      y={textY} 
+                      fill="white" 
+                      fontSize={mult >= 200 ? "18" : "14"} 
+                      fontWeight="900"
+                      fontFamily="Outfit, sans-serif"
+                      stroke="black"
+                      strokeWidth="2.5"
+                      paintOrder="stroke"
+                      textAnchor="middle" 
+                      alignmentBaseline="middle"
+                      transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
+                      className="drop-shadow-md"
+                    >
+                      {mult}X
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+
+            {/* Thick Red Rim overlay */}
+            <circle cx="150" cy="150" r="140" fill="none" stroke="#CC0000" strokeWidth="20" />
+            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="3" />
+            
+            {/* Metallic Studs around the rim */}
+            {Array.from({ length: 12 }).map((_, i) => {
+              const angle = i * 30;
+              const rad = (angle - 90) * Math.PI / 180;
+              const cx = 150 + 140 * Math.cos(rad);
+              const cy = 150 + 140 * Math.sin(rad);
               return (
-                <g key={i}>
-                  <path 
-                    d={createSegmentPath(i)} 
-                    fill={getSegmentColor(i, mult)}
-                    stroke="#050816"
-                    strokeWidth="2"
-                  />
-                  <text 
-                    x={textX} 
-                    y={textY} 
-                    fill="white" 
-                    fontSize={mult >= 200 ? "18" : "14"} 
-                    fontWeight="bold" 
-                    textAnchor="middle" 
-                    alignmentBaseline="middle"
-                    transform={`rotate(${textAngle}, ${textX}, ${textY})`}
-                  >
-                    {mult}X
-                  </text>
-                </g>
+                <circle 
+                  key={`stud-${i}`} 
+                  cx={cx} cy={cy} r="3.5" 
+                  fill="url(#metalGrad)" 
+                  stroke="#555" strokeWidth="0.5" 
+                  filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.5))"
+                />
               );
             })}
+
+            {/* Center Metallic Hub */}
+            <circle cx="150" cy="150" r="18" fill="url(#metalGrad)" stroke="#666" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))" />
+
+            {/* Defs for Gradients */}
+            <defs>
+              <radialGradient id="metalGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="40%" stopColor="#d4d4d4" />
+                <stop offset="80%" stopColor="#999999" />
+                <stop offset="100%" stopColor="#666666" />
+              </radialGradient>
+            </defs>
           </svg>
-          
-          {/* Inner circle */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-slate-900 rounded-full border-4 border-slate-800 flex items-center justify-center shadow-inner">
-            <Zap className="w-6 h-6 text-[#FF6B00]" />
-          </div>
         </div>
       </div>
 

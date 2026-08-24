@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { X, Award, HelpCircle, ShieldCheck, CheckCircle2, Trophy, Clock, BookOpen, AlertCircle } from 'lucide-react';
 import { FAQItem } from '../types';
-import { formatINR, PAYOUT_TIERS, STAT_QUESTIONS } from '../utils/payoutCalculator';
+import { formatINR, PAYOUT_TIERS } from '../utils/payoutCalculator';
+import { DEFAULT_QUESTIONS } from '../data/initialData';
 
 interface RulesFAQModalProps {
   faqs: FAQItem[];
@@ -69,8 +70,8 @@ export const RulesFAQModal: React.FC<RulesFAQModalProps> = ({ faqs, onClose }) =
               </div>
 
               <div className="space-y-2.5">
-                {STAT_QUESTIONS.map((q) => (
-                  <div key={q.key} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                {DEFAULT_QUESTIONS.map((q) => (
+                  <div key={q.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-white text-xs">
                         {q.number}. {q.title} ({q.shortTitle})

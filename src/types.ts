@@ -16,16 +16,10 @@ export interface Player {
 
 export type MatchStatus = 'UPCOMING' | 'LOCKED' | 'LIVE' | 'COMPLETED';
 
-export type StatQuestionKey = 
-  | 'top_batter'
-  | 'top_bowler'
-  | 'top_striker'
-  | 'best_economy'
-  | 'most_sixes'
-  | 'most_wickets';
+export type QuestionType = 'PLAYER' | 'TEAM' | 'NUMBER' | 'YES_NO' | 'MULTIPLE_CHOICE';
 
-export interface StatQuestionDefinition {
-  key: StatQuestionKey;
+export interface QuestionDefinition {
+  id: string;
   number: number;
   title: string;
   shortTitle: string;
@@ -33,15 +27,12 @@ export interface StatQuestionDefinition {
   criteria: string;
   iconName: string;
   badgeColor: string;
+  type: QuestionType;
+  options?: string[]; // For YES_NO, TEAM, or MULTIPLE_CHOICE (e.g. ['Team A', 'Team B'], ['Yes', 'No'])
 }
 
 export interface MatchResults {
-  top_batter: { playerId: string; statValue: string; playerName?: string };
-  top_bowler: { playerId: string; statValue: string; playerName?: string };
-  top_striker: { playerId: string; statValue: string; playerName?: string };
-  best_economy: { playerId: string; statValue: string; playerName?: string };
-  most_sixes: { playerId: string; statValue: string; playerName?: string };
-  most_wickets: { playerId: string; statValue: string; playerName?: string };
+  answers: Record<string, { answerId: string; answerText?: string; statValue?: string }>;
   settledAt?: string;
   summaryNote?: string;
 }
@@ -73,19 +64,18 @@ export interface CricketMatch {
   entryFees: number[]; // [25, 50, 100]
   squadTeam1: Player[];
   squadTeam2: Player[];
+  questions: QuestionDefinition[];
   actualResults?: MatchResults;
   isFeatured?: boolean;
 }
 
 export interface SettlementDetail {
-  questionKey: StatQuestionKey;
+  questionId: string;
   questionTitle: string;
-  userPickPlayerId: string;
-  userPickPlayerName: string;
-  userPickTeam: string;
-  actualWinnerPlayerId: string;
-  actualWinnerPlayerName: string;
-  actualWinnerTeam: string;
+  userAnswerId: string;
+  userAnswerText: string;
+  actualAnswerId: string;
+  actualAnswerText: string;
   actualStatValue: string;
   isCorrect: boolean;
 }
@@ -101,7 +91,7 @@ export interface UserPredictionSlip {
   team1Code: string;
   team2Code: string;
   matchStartTime: string;
-  answers: Record<StatQuestionKey, string>; // questionKey -> playerId
+  answers: Record<string, string>; // questionId -> answerId (playerId, teamName, 'yes'/'no', etc)
   entryFee: number; // 25, 50, or 100
   submittedAt: string;
   status: 'PENDING' | 'LIVE' | 'WON' | 'LOST';

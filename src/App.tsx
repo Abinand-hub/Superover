@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
+import { Target, Award, Crosshair, ShieldCheck, Zap, Flame } from 'lucide-react';
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
 const PredictionModal = React.lazy(() => import('./components/PredictionModal').then(m => ({ default: m.PredictionModal })));
@@ -16,7 +17,6 @@ import {
   CricketMatch, 
   MatchResults, 
   PlatformMetrics, 
-  StatQuestionKey, 
   UserAccount, 
   UserPredictionSlip, 
   Wallet, 
@@ -102,15 +102,17 @@ export default function App() {
   // User submissions count awaiting settlement
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
-  // Handler: User submits a 6-stat selection slip
-  const handleSubmitSelectionSlip = async (answers: Record<StatQuestionKey, string>, entryFee: number, jackpotMultiplier: number) => {
+  const handleSubmitSelectionSlip = async (answers: Record<string, string>, entryFee: number, jackpotMultiplier: number) => {
     if (!selectedMatchForPlay) return;
     const match = selectedMatchForPlay.match;
 
-    // Deduct entry fee from wallet (deposit first, then winnings)
+    // Deduct exactly the stake amount (Free Hit is included)
+    const totalPaid = entryFee;
+
+    // Deduct total paid from wallet (deposit first, then winnings)
     let newDeposit = wallet.depositBalance;
     let newWinnings = wallet.winningsBalance;
-    let remainingFee = entryFee;
+    let remainingFee = totalPaid;
 
     if (newDeposit >= remainingFee) {
       newDeposit -= remainingFee;
@@ -134,10 +136,10 @@ export default function App() {
       id: `tx_ent_${Date.now()}`,
       userId: currentUser.id,
       type: 'CONTEST_ENTRY',
-      amount: -entryFee,
+      amount: -totalPaid,
       status: 'SUCCESS',
       timestamp: new Date().toISOString(),
-      description: `Entry Fee for ${match.title} (6 Selections)`,
+      description: `Stake for ${match.title}`,
       referenceId: `ENTRY-${match.team1.code}${match.team2.code}-${Date.now().toString().slice(-4)}`,
     };
     setTransactions((prev) => [newTx, ...prev]);
@@ -407,7 +409,7 @@ export default function App() {
                   className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-[#0D122B] border border-[#1A223E] hover:border-[#FF6B00]/40 transition-colors text-center"
                 >
                   <div className="w-10 h-10 rounded-full bg-[#FF6B00]/20 flex items-center justify-center text-[#FF6B00] mb-3">
-                    <Crosshair className="w-5 h-5" />
+                    <Target className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-white text-sm">Crack 6 Stats</h3>
                   <p className="text-xs text-slate-400 mt-1">Select player outcomes (e.g., Top Batter, Most 6s) before the match starts.</p>

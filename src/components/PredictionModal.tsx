@@ -1,26 +1,10 @@
 import React, { useState } from 'react';
 import { 
-  X, 
-  Award, 
-  Crosshair, 
-  Zap, 
-  ShieldCheck, 
-  Flame, 
-  Target, 
-  Check, 
-  Search, 
-  HelpCircle, 
-  ArrowRight, 
-  Sparkles, 
-  CheckCircle2, 
-  AlertCircle,
-  Clock,
-  PlusCircle,
-  Trophy,
-  RefreshCw
+  X, Award, Crosshair, Zap, ShieldCheck, Flame, Target, Check, 
+  Search, ArrowRight, CheckCircle2, ChevronRight, AlertCircle
 } from 'lucide-react';
-import { CricketMatch, Player, PlayerRole, StatQuestionDefinition, StatQuestionKey, UserAccount, Wallet } from '../types';
-import { calculatePotentialPayout, formatINR, STAT_QUESTIONS } from '../utils/payoutCalculator';
+import { CricketMatch, Player, PlayerRole, QuestionDefinition, UserAccount, Wallet } from '../types';
+import { formatINR } from '../utils/payoutCalculator';
 import { WheelOfFortune } from './WheelOfFortune';
 
 interface PredictionModalProps {
@@ -29,7 +13,7 @@ interface PredictionModalProps {
   wallet: Wallet;
   initialFee?: number;
   onClose: () => void;
-  onSubmitSlip: (answers: Record<StatQuestionKey, string>, entryFee: number, jackpotMultiplier: number) => void;
+  onSubmitSlip: (answers: Record<string, string>, entryFee: number, jackpotMultiplier: number) => void;
   onOpenDeposit: () => void;
 }
 
@@ -42,41 +26,31 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   onSubmitSlip,
   onOpenDeposit,
 }) => {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  
+  // View states
+  const [activePlayerQuestionId, setActivePlayerQuestionId] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'QUESTIONS' | 'STAKE' | 'WHEEL'>('QUESTIONS');
+  
+  // Stake states
   const [selectedFee, setSelectedFee] = useState<number>(initialFee);
   const [customFee, setCustomFee] = useState<string>('');
-  const [jackpotMultiplier, setJackpotMultiplier] = useState<number | null>(null);
-  const [answers, setAnswers] = useState<Record<StatQuestionKey, string>>({
-    top_batter: '',
-    top_bowler: '',
-    top_striker: '',
-    best_economy: '',
-    most_sixes: '',
-    most_wickets: '',
-  });
-
-  // Current active question index (0 to 5) for focused player selection
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState<number>(0);
   
-  // Squad filtering
+  // Wheel states
+  const [jackpotMultiplier, setJackpotMultiplier] = useState<number | null>(null);
+
+  // Player search/filter
   const [playerSearch, setPlayerSearch] = useState<string>('');
   const [teamFilter, setTeamFilter] = useState<'ALL' | 'TEAM1' | 'TEAM2'>('ALL');
   const [roleFilter, setRoleFilter] = useState<'ALL' | PlayerRole>('ALL');
 
-  const currentQuestion = STAT_QUESTIONS[activeQuestionIndex];
   const allSquadPlayers = [...match.squadTeam1, ...match.squadTeam2];
-
-  // Helper map for fast player lookup
   const playerMap = new Map(allSquadPlayers.map((p) => [p.id, p]));
 
   const filteredPlayers = allSquadPlayers.filter((p) => {
-    // Team filter
     if (teamFilter === 'TEAM1' && p.team !== match.team1.code) return false;
     if (teamFilter === 'TEAM2' && p.team !== match.team2.code) return false;
-
-    // Role filter
     if (roleFilter !== 'ALL' && p.role !== roleFilter) return false;
-
-    // Search query
     if (playerSearch.trim()) {
       const q = playerSearch.toLowerCase();
       return p.name.toLowerCase().includes(q) || p.shortName.toLowerCase().includes(q) || p.team.toLowerCase().includes(q);
@@ -84,23 +58,13 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     return true;
   });
 
-  // Count answered questions
-  const answeredCount = Object.values(answers).filter(Boolean).length;
-  const isComplete = answeredCount === 6;
+  const answeredCount = Object.keys(answers).length;
+  const isComplete = answeredCount === match.questions.length;
 
-  const handleSelectPlayer = (playerId: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [currentQuestion.key]: playerId,
-    }));
-
-    // Auto advance to next unfilled question if any
-    const nextUnfilledIndex = STAT_QUESTIONS.findIndex(
-      (q, idx) => idx > activeQuestionIndex && !answers[q.key]
-    );
-
-    if (nextUnfilledIndex !== -1) {
-      setActiveQuestionIndex(nextUnfilledIndex);
+  const handleAnswer = (questionId: string, answerId: string) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: answerId }));
+    if (activePlayerQuestionId === questionId) {
+      setActivePlayerQuestionId(null); // Close player popup
     }
   };
 
@@ -116,23 +80,306 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     }
   };
 
-  const actualFee = customFee ? parseInt(customFee) || selectedFee : selectedFee;
-  const canAfford = wallet.totalBalance >= actualFee;
+  // --- STAKE CALCULATION ---
+  const presetFees = [25, 50, 100, 200, 250, 500, 1000];
+  const baseStake = customFee ? parseInt(customFee) || selectedFee : selectedFee;
+  const freeHitFee = Math.round(baseStake * 0.4); // 40%
+  const finalPayable = baseStake + freeHitFee;
+  const canAfford = wallet.totalBalance >= finalPayable;
 
-  const handleSubmit = () => {
-    if (!isComplete || !jackpotMultiplier) return;
+  const handleBuyFreeHit = () => {
     if (!canAfford) {
       onOpenDeposit();
       return;
     }
-    onSubmitSlip(answers, actualFee, jackpotMultiplier);
+    setCurrentView('WHEEL');
+  };
+
+  const handleWheelComplete = (multiplier: number) => {
+    setJackpotMultiplier(multiplier);
+    // Auto submit after a short delay
+    setTimeout(() => {
+      onSubmitSlip(answers, baseStake, multiplier);
+    }, 1500);
+  };
+
+  // --- RENDERERS ---
+
+  const renderPlayerPickerPopup = () => {
+    if (!activePlayerQuestionId) return null;
+    const q = match.questions.find(q => q.id === activePlayerQuestionId);
+
+    return (
+      <div className="absolute inset-0 z-20 bg-slate-900 flex flex-col animate-in slide-in-from-bottom-8">
+        <div className="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-1">Pick a player for</div>
+            <h3 className="text-white font-bold">{q?.title}</h3>
+          </div>
+          <button 
+            onClick={() => setActivePlayerQuestionId(null)}
+            className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search players..."
+              value={playerSearch}
+              onChange={(e) => setPlayerSearch(e.target.value)}
+              className="w-full bg-slate-800 border-none rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50"
+            />
+          </div>
+          {/* Filters */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            <button onClick={() => setTeamFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>All</button>
+            <button onClick={() => setTeamFilter('TEAM1')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM1' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team1.shortName}</button>
+            <button onClick={() => setTeamFilter('TEAM2')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM2' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team2.shortName}</button>
+            <div className="w-px h-4 bg-slate-700 mx-1"></div>
+            <button onClick={() => setRoleFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
+            <button onClick={() => setRoleFilter('BAT')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'BAT' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Bat</button>
+            <button onClick={() => setRoleFilter('BOWL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'BOWL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Bowl</button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {filteredPlayers.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => handleAnswer(q!.id, p.id)}
+              className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800 hover:border-emerald-500/50 cursor-pointer transition-all"
+            >
+              <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover bg-slate-700" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-white text-sm truncate">{p.name}</h4>
+                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">{p.team}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] text-slate-400">{p.role}</span>
+                  <span className="text-[10px] text-emerald-400 truncate border-l border-slate-600 pl-2">{p.careerStatHighlight}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          {filteredPlayers.length === 0 && (
+            <div className="text-center py-10 text-slate-500 text-sm">No players found matching your filters.</div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderQuestions = () => (
+    <div className="flex-1 overflow-y-auto relative p-4 sm:p-6 space-y-4">
+      {renderPlayerPickerPopup()}
+      
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-white font-black text-lg font-display">Make Your Predictions</h3>
+          <p className="text-xs text-slate-400">Answer all {match.questions.length} questions correctly to win the jackpot.</p>
+        </div>
+        <div className="w-12 h-12 rounded-full border-4 border-slate-800 flex items-center justify-center relative">
+          <svg className="absolute inset-0 w-full h-full -rotate-90">
+            <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" className="text-slate-800" strokeWidth="4" />
+            <circle 
+              cx="20" cy="20" r="18" fill="none" stroke="currentColor" 
+              className="text-amber-500 transition-all duration-500" strokeWidth="4" 
+              strokeDasharray="113" strokeDashoffset={113 - (answeredCount / match.questions.length) * 113}
+            />
+          </svg>
+          <span className="text-xs font-black text-white">{answeredCount}/{match.questions.length}</span>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {match.questions.map((q) => {
+          const answerId = answers[q.id];
+          const isAnswered = !!answerId;
+
+          return (
+            <div key={q.id} className={`bg-slate-800/40 border rounded-2xl p-4 transition-all ${isAnswered ? 'border-emerald-500/30' : 'border-slate-700 hover:border-slate-600'}`}>
+              <div className="flex gap-3 mb-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isAnswered ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                  {getQuestionIcon(q.iconName)}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-white">{q.title}</h4>
+                    {isAnswered && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{q.subtitle}</p>
+                </div>
+              </div>
+
+              {/* Dynamic Input based on Question Type */}
+              <div className="mt-3">
+                {q.type === 'PLAYER' && (
+                  <button 
+                    onClick={() => setActivePlayerQuestionId(q.id)}
+                    className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between transition-all ${
+                      isAnswered 
+                        ? 'bg-slate-800/80 border-slate-600' 
+                        : 'bg-amber-500 text-slate-950 border-transparent hover:bg-amber-400 font-bold'
+                    }`}
+                  >
+                    {isAnswered ? (
+                      <div className="flex items-center gap-2">
+                        <img src={playerMap.get(answerId)?.avatar} alt="" className="w-6 h-6 rounded-full" />
+                        <span className="text-white font-semibold text-sm">{playerMap.get(answerId)?.name}</span>
+                        <span className="text-xs text-slate-400 ml-auto bg-slate-900 px-2 py-1 rounded">Change</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm">Pick a Player</span>
+                        <Search className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {(q.type === 'TEAM' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE') && (q.options || q.type === 'TEAM') && (
+                  <div className="flex flex-wrap gap-2">
+                    {(q.options || [match.team1.code, match.team2.code]).map(opt => {
+                      const displayLabel = q.type === 'TEAM' 
+                        ? (opt === match.team1.code ? match.team1.shortName : opt === match.team2.code ? match.team2.shortName : opt)
+                        : opt;
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => handleAnswer(q.id, opt)}
+                          className={`flex-1 py-2 px-3 rounded-xl border text-sm font-semibold transition-all ${
+                            answerId === opt 
+                              ? 'bg-emerald-500 text-slate-950 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                              : 'bg-slate-900/50 text-slate-300 border-slate-700 hover:bg-slate-800'
+                          }`}
+                        >
+                          {displayLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {q.type === 'NUMBER' && (
+                  <div className="relative">
+                    <input 
+                      type="number"
+                      placeholder="Enter a number..."
+                      value={answerId || ''}
+                      onChange={(e) => handleAnswer(q.id, e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-4 text-white text-sm focus:border-amber-500 outline-none transition-colors"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {isComplete && (
+        <div className="mt-6">
+          <button 
+            onClick={() => setCurrentView('STAKE')}
+            className="w-full py-4 rounded-xl font-black text-slate-950 text-lg bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+          >
+            PROCEED TO STAKE
+            <ArrowRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderStakePalette = () => {
+    const isCustomError = parseInt(customFee) > 1000;
+    
+    return (
+      <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950">
+        <button 
+          onClick={() => setCurrentView('QUESTIONS')}
+          className="self-start mb-6 text-sm text-slate-400 hover:text-white flex items-center gap-1"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" /> Back to Predictions
+        </button>
+
+        <div className="flex-1 max-w-sm mx-auto w-full">
+          <h3 className="text-2xl font-black text-white font-display text-center mb-2">Select Your Stake</h3>
+          <p className="text-sm text-slate-400 text-center mb-8">Choose your base stake to enter the contest.</p>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {presetFees.map((fee) => (
+              <button
+                key={fee}
+                onClick={() => { setSelectedFee(fee); setCustomFee(''); }}
+                className={`py-3 rounded-xl border-2 font-bold transition-all ${
+                  selectedFee === fee && !customFee
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800'
+                }`}
+              >
+                ₹{fee}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-8">
+            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Enter Custom Amount</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+              <input
+                type="number"
+                value={customFee}
+                onChange={(e) => {
+                  setCustomFee(e.target.value);
+                }}
+                placeholder="Custom Amount"
+                className={`w-full bg-slate-900 border-2 rounded-xl py-3 pl-8 pr-4 text-white font-bold outline-none transition-colors ${
+                  isCustomError ? 'border-rose-500 text-rose-500' : customFee ? 'border-amber-500 text-amber-400' : 'border-slate-800'
+                }`}
+              />
+            </div>
+            {isCustomError && (
+              <div className="text-rose-500 text-xs font-bold mt-2">
+                MAX limit is 1000
+              </div>
+            )}
+          </div>
+
+          {/* Wallet Balance Warning */}
+          <div className={`mb-6 text-xs flex items-center gap-1.5 p-3 rounded-xl ${canAfford ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+            {canAfford ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            <span className="font-bold">Wallet Balance: {formatINR(wallet.totalBalance)}</span>
+          </div>
+
+          <button 
+            onClick={handleBuyFreeHit}
+            disabled={isCustomError}
+            className={`w-full py-4 rounded-xl font-black text-slate-950 text-lg transition-all flex flex-col items-center justify-center ${
+              isCustomError 
+                ? 'bg-slate-700 text-slate-500 cursor-not-allowed' 
+                : 'bg-amber-500 hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_30px_rgba(245,158,11,0.3)]'
+            }`}
+          >
+            <span>BUY A FREE HIT</span>
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden my-auto flex flex-col max-h-[92vh]">
+      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden my-auto flex flex-col max-h-[92vh] min-h-[600px]">
         {/* Modal Top Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+        <div className="p-4 sm:p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-black text-[11px] uppercase border border-amber-500/30">
@@ -143,441 +390,34 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-black text-white mt-1 font-display flex items-center gap-2">
-              <span>{match.team1.name}</span>
+              <span>{match.team1.shortName}</span>
               <span className="text-slate-500 text-sm font-semibold">vs</span>
-              <span>{match.team2.name}</span>
+              <span>{match.team2.shortName}</span>
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-[10px] uppercase font-bold text-slate-400">Progress</span>
-              <span className="text-xs font-black text-amber-400">{answeredCount} of 6 Answered</span>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-              id="btn-close-prediction-modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Modal Body: Split view on Desktop (6 questions tabs on left / Player squad browser on right) */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 lg:grid-cols-12 min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-slate-800">
-          {/* Left Column: 6 Stat Question Slots (5 cols) */}
-          <div className="lg:col-span-5 p-4 sm:p-5 space-y-2.5 overflow-y-auto max-h-[45vh] lg:max-h-full">
-            <div className="flex items-center justify-between pb-1">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Select 6 Stat Winners
-              </span>
-              <span className="text-[11px] text-slate-400">
-                Click a stat to pick player
-              </span>
-            </div>
-
-            {STAT_QUESTIONS.map((q, idx) => {
-              const selectedPlayerId = answers[q.key];
-              const selectedPlayer = selectedPlayerId ? playerMap.get(selectedPlayerId) : null;
-              const isActive = activeQuestionIndex === idx;
-
-              return (
-                <div
-                  key={q.key}
-                  onClick={() => setActiveQuestionIndex(idx)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer relative ${
-                    isActive
-                      ? 'bg-slate-800/90 border-amber-400 shadow-md shadow-amber-500/10 ring-1 ring-amber-400/40'
-                      : selectedPlayer
-                      ? 'bg-slate-800/40 border-emerald-500/40 hover:border-emerald-500/70'
-                      : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
-                  }`}
-                  id={`stat-slot-${q.key}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                          selectedPlayer
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : isActive
-                            ? 'bg-amber-400 text-slate-950 font-black'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        {idx + 1}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-white">{q.title}</span>
-                          <span className="text-[10px] text-slate-400">({q.shortTitle})</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 line-clamp-1">{q.criteria}</p>
-                      </div>
-                    </div>
-
-                    {/* Status Pill */}
-                    {selectedPlayer ? (
-                      <div className="flex items-center gap-1.5 pl-2">
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold text-[11px] border border-emerald-500/30 flex items-center gap-1 max-w-[110px] truncate">
-                          <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                          <span className="truncate">{selectedPlayer.shortName}</span>
-                        </span>
-                      </div>
-                    ) : (
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
-                        isActive 
-                          ? 'bg-amber-400/20 text-amber-300 border-amber-400/30 animate-pulse'
-                          : 'bg-slate-800 text-slate-400 border-slate-700'
-                      }`}>
-                        Pick Player
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Selected Player preview details in slot */}
-                  {selectedPlayer && (
-                    <div className="mt-2 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px] text-slate-300">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={selectedPlayer.avatar}
-                          alt={selectedPlayer.name}
-                          className="w-5 h-5 rounded-full object-cover ring-1 ring-emerald-400"
-                        />
-                        <span className="font-bold text-white">{selectedPlayer.name}</span>
-                        <span className="px-1 py-0.2 rounded bg-slate-700 text-slate-300 font-mono text-[9px]">
-                          {selectedPlayer.team} • {selectedPlayer.role}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-amber-400/90 font-medium">
-                        Form: {selectedPlayer.recentForm[0]}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Right Column: Player Roster Browser (7 cols) */}
-          <div className="lg:col-span-7 p-4 sm:p-5 flex flex-col overflow-y-auto">
-            {isComplete && !jackpotMultiplier ? (
-              <div className="flex items-center justify-center h-full min-h-[300px]">
-                <WheelOfFortune onComplete={setJackpotMultiplier} />
+        {/* Modal Body */}
+        {currentView === 'QUESTIONS' && renderQuestions()}
+        {currentView === 'STAKE' && renderStakePalette()}
+        {currentView === 'WHEEL' && (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950">
+            <WheelOfFortune onComplete={handleWheelComplete} />
+            {jackpotMultiplier && (
+              <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-4">
+                <div className="text-xl font-black text-white">Submitting Prediction...</div>
+                <div className="text-sm text-slate-400 mt-2">Locking in your {jackpotMultiplier}X Multiplier</div>
               </div>
-            ) : (
-              <>
-                {/* Header info about the currently active question */}
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 mb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs">
-                    {currentQuestion.number}
-                  </div>
-                  <span className="text-xs font-black text-white uppercase tracking-wider">
-                    Selecting for: {currentQuestion.title}
-                  </span>
-                </div>
-                <span className="text-[11px] text-amber-400 font-bold">
-                  {currentQuestion.shortTitle}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1">
-                {currentQuestion.subtitle}
-              </p>
-            </div>
-
-            {/* Filter & Search Toolbar */}
-            <div className="space-y-2 mb-3">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Search player name (e.g. Rohit, Bumrah, Kohli)..."
-                  value={playerSearch}
-                  onChange={(e) => setPlayerSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
-                  id="input-player-search"
-                />
-                {playerSearch && (
-                  <button
-                    onClick={() => setPlayerSearch('')}
-                    className="absolute right-3 top-2 text-slate-400 hover:text-white text-xs"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Team & Role Filters */}
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                {/* Team Filter */}
-                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
-                  <button
-                    onClick={() => setTeamFilter('ALL')}
-                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
-                      teamFilter === 'ALL' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Both Teams
-                  </button>
-                  <button
-                    onClick={() => setTeamFilter('TEAM1')}
-                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
-                      teamFilter === 'TEAM1' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {match.team1.code}
-                  </button>
-                  <button
-                    onClick={() => setTeamFilter('TEAM2')}
-                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition-colors ${
-                      teamFilter === 'TEAM2' ? 'bg-amber-400 text-slate-950' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {match.team2.code}
-                  </button>
-                </div>
-
-                {/* Role Filter */}
-                <div className="flex items-center gap-1 overflow-x-auto text-[11px]">
-                  {(['ALL', 'BAT', 'BOWL', 'AR', 'WK'] as const).map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => setRoleFilter(role)}
-                      className={`px-2 py-1 rounded-md font-bold transition-colors ${
-                        roleFilter === role
-                          ? 'bg-slate-700 text-amber-300 border border-amber-500/40'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Players Squad List */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px]">
-              {filteredPlayers.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-xs">
-                  No players found matching your search.
-                </div>
-              ) : (
-                filteredPlayers.map((player) => {
-                  const isSelectedForCurrent = answers[currentQuestion.key] === player.id;
-                  const isSelectedForOther = Object.entries(answers).some(
-                    ([k, val]) => k !== currentQuestion.key && val === player.id
-                  );
-
-                  return (
-                    <div
-                      key={player.id}
-                      onClick={() => handleSelectPlayer(player.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                        isSelectedForCurrent
-                          ? 'bg-gradient-to-r from-amber-500/20 via-slate-800 to-slate-800 border-amber-400 shadow-md ring-1 ring-amber-400/40'
-                          : 'bg-slate-950/60 border-slate-800 hover:bg-slate-800/80 hover:border-slate-700'
-                      }`}
-                      id={`player-row-${player.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <img
-                            src={player.avatar}
-                            alt={player.name}
-                            className={`w-11 h-11 rounded-xl object-cover ring-1 ${
-                              isSelectedForCurrent ? 'ring-amber-400' : 'ring-slate-700'
-                            }`}
-                          />
-                          <span className="absolute -bottom-1 -right-1 px-1 py-0.2 rounded bg-slate-900 border border-slate-700 text-[9px] font-black text-amber-400">
-                            {player.team}
-                          </span>
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-black text-white">{player.name}</span>
-                            <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-700">
-                              {player.role}
-                            </span>
-                            {isSelectedForOther && (
-                              <span className="text-[9px] text-slate-400 bg-slate-800 px-1 rounded">
-                                picked in another
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5">{player.careerStatHighlight}</p>
-                          
-                          {/* Recent scores form pills */}
-                          <div className="flex items-center gap-1 mt-1 text-[10px]">
-                            <span className="text-slate-500 font-semibold">Recent:</span>
-                            {player.recentForm.slice(0, 3).map((f, i) => (
-                              <span key={i} className="px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[9px]">
-                                {f}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Select Action Button */}
-                      <div>
-                        {isSelectedForCurrent ? (
-                          <div className="w-8 h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-md">
-                            <Check className="w-4 h-4 stroke-[3]" />
-                          </div>
-                        ) : (
-                          <button
-                            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-400 hover:text-slate-950 text-slate-200 text-xs font-bold border border-slate-700 hover:border-amber-400 transition-colors"
-                          >
-                            Pick
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-            </>
             )}
           </div>
-        </div>
-
-        {/* Modal Bottom: Entry Fee & Potential Winnings & Submit CTA */}
-        <div className="p-4 sm:p-5 bg-slate-950 border-t border-slate-800 flex-shrink-0 space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Entry Fee Picker */}
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-400 uppercase">Entry Fee:</span>
-              <div className="flex flex-wrap items-center gap-2">
-                {[25, 50, 100].map((fee) => (
-                  <button
-                    key={fee}
-                    onClick={() => { setSelectedFee(fee); setCustomFee(''); }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
-                      selectedFee === fee && !customFee
-                        ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20 ring-2 ring-amber-400/40 scale-105'
-                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800'
-                    }`}
-                  >
-                    ₹{fee}
-                  </button>
-                ))}
-                
-                <div className="relative">
-                  <span className="absolute left-2.5 top-2 text-slate-400 text-xs font-bold">₹</span>
-                  <input 
-                    type="number" 
-                    placeholder="Custom"
-                    value={customFee}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val && parseInt(val) > 1000) {
-                        setCustomFee('1000');
-                      } else {
-                        setCustomFee(val);
-                      }
-                      if (val) setSelectedFee(0);
-                    }}
-                    className={`w-20 pl-6 pr-2 py-1.5 rounded-xl text-xs font-extrabold bg-slate-900 border focus:outline-none transition-all ${
-                      customFee ? 'border-amber-400 text-amber-400' : 'border-slate-800 text-slate-300'
-                    }`}
-                  />
-                </div>
-                {customFee && parseInt(customFee) === 1000 && (
-                  <span className="text-[10px] text-amber-500 font-bold ml-1 animate-pulse hidden sm:inline">MAX limit is 1000</span>
-                )}
-              </div>
-            </div>
-
-            {/* Payout Matrix Preview */}
-            <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto text-xs w-full sm:w-auto mt-3 sm:mt-0">
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 block">6/6 Jackpot ({jackpotMultiplier ? `${jackpotMultiplier}X` : '??'})</span>
-                <span className="font-extrabold text-amber-400 text-sm">
-                  {jackpotMultiplier ? formatINR(actualFee * jackpotMultiplier) : 'SPIN TO REVEAL'}
-                </span>
-              </div>
-              <div className="text-right border-l border-slate-800 pl-3">
-                <span className="text-[10px] text-slate-400 block">5/6 Gain (10X)</span>
-                <span className="font-extrabold text-emerald-400 text-sm">
-                  {formatINR(actualFee * 10)}
-                </span>
-              </div>
-              <div className="text-right border-l border-slate-800 pl-3">
-                <span className="text-[10px] text-slate-400 block">4/6 Gain (3X)</span>
-                <span className="font-extrabold text-blue-400 text-sm">
-                  {formatINR(actualFee * 3)}
-                </span>
-              </div>
-              <div className="text-right border-l border-slate-800 pl-3">
-                <span className="text-[10px] text-slate-400 block">3/6 Guard (0.5X)</span>
-                <span className="font-extrabold text-slate-300 text-sm">
-                  {formatINR(actualFee * 0.5)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Action Bar */}
-          <div className="flex items-center justify-between gap-4 pt-2 border-t border-slate-800/80">
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-slate-400">
-                Wallet Balance: <span className="font-bold text-white">{formatINR(wallet.totalBalance)}</span>
-              </div>
-              {!canAfford && (
-                <span className="text-[11px] text-rose-400 font-semibold">
-                  (Needs ₹{actualFee - wallet.totalBalance} more)
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              {!isComplete ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-amber-400 font-semibold hidden sm:inline">
-                    Please make all 6 selections ({answeredCount}/6)
-                  </span>
-                  <button
-                    disabled
-                    className="px-6 py-2.5 rounded-xl bg-slate-800 text-slate-500 font-extrabold text-xs cursor-not-allowed border border-slate-700"
-                  >
-                    Complete 6 Picks ({answeredCount}/6)
-                  </button>
-                </div>
-              ) : !jackpotMultiplier ? (
-                <button
-                  disabled
-                  className="px-6 py-2.5 rounded-xl bg-amber-400/50 text-slate-900 font-extrabold text-xs cursor-not-allowed"
-                >
-                  Spin Wheel First!
-                </button>
-              ) : !canAfford ? (
-                <button
-                  onClick={onOpenDeposit}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>Add ₹{actualFee} via UPI & Submit</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/30"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Submit Selection Slip (₹{actualFee})</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
