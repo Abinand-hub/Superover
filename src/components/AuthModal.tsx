@@ -1,525 +1,328 @@
 import React, { useState } from 'react';
-import { 
-  X, 
-  Phone, 
-  ShieldCheck, 
-  CheckCircle2, 
-  User, 
-  Sparkles, 
-  RefreshCw, 
-  KeyRound, 
-  Mail, 
-  MapPin, 
-  AlertCircle, 
-  ArrowRight,
-  Gift,
-  UserPlus,
-  LogIn
-} from 'lucide-react';
-import { UserAccount } from '../types';
+import { X, Phone, Lock, User as UserIcon, Mail, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 
 interface AuthModalProps {
-  currentUser: UserAccount;
   onClose: () => void;
-  onUpdateProfile: (updated: UserAccount) => void;
-  onSwitchUser: (newUser: UserAccount) => void;
-  onRegisterUser: (newUser: UserAccount, welcomeBonus: number) => void;
-  allUsers: UserAccount[];
+  onLoginSuccess: (user: any) => void;
 }
 
-const INDIAN_STATES = [
-  'Maharashtra', 'Karnataka', 'Delhi (NCR)', 'Tamil Nadu', 'Uttar Pradesh', 
-  'Gujarat', 'Rajasthan', 'West Bengal', 'Punjab', 'Haryana', 
-  'Madhya Pradesh', 'Kerala', 'Bihar', 'Jharkhand', 'Himachal Pradesh',
-  'Uttarakhand', 'Goa', 'Chhattisgarh',
-  // Restricted states flagged:
-  'Andhra Pradesh (Restricted)', 'Telangana (Restricted)', 'Assam (Restricted)', 
-  'Odisha (Restricted)', 'Nagaland (Restricted)', 'Sikkim (Restricted)'
-];
+export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess }) => {
+  const [activeTab, setActiveTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  
+  // LOGIN STATE
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginStep, setLoginStep] = useState<'EMAIL' | 'OTP'>('EMAIL');
+  
+  // REGISTER STATE
+  const [regName, setRegName] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regStep, setRegStep] = useState<'DETAILS' | 'OTP'>('DETAILS');
 
-export const AuthModal: React.FC<AuthModalProps> = ({
-  currentUser,
-  onClose,
-  onUpdateProfile,
-  onSwitchUser,
-  onRegisterUser,
-  allUsers,
-}) => {
-  const [authMode, setAuthMode] = useState<'register' | 'login' | 'profile'>('register');
+  const [otp, setOtp] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
-  // Form Fields
-  const [name, setName] = useState<string>('');
-  const [phone, setPhone] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [upiId, setUpiId] = useState<string>('');
-  const [stateName, setStateName] = useState<string>('Maharashtra');
-  const [is18Plus, setIs18Plus] = useState<boolean>(true);
-  const [referralCode, setReferralCode] = useState<string>('SUPEROVER50');
-
-  // OTP State
-  const [otpStep, setOtpStep] = useState<boolean>(false);
-  const [otp, setOtp] = useState<string>('582910');
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string>('');
-  const [successMsg, setSuccessMsg] = useState<string>('');
-
-  // Login specific state
-  const [loginPhone, setLoginPhone] = useState<string>('');
-
-  const isRestrictedState = stateName.includes('(Restricted)');
-
-  const handleSendOtp = () => {
-    setErrorMsg('');
-    const targetPhone = authMode === 'register' ? phone : loginPhone;
-    
-    if (targetPhone.replace(/\D/g, '').length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number');
+  const handleSendOtp = async (email: string, action: 'login' | 'register') => {
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
       return;
     }
-
-    if (authMode === 'register') {
-      if (!name.trim()) {
-        setErrorMsg('Please enter your full name as per Government ID');
-        return;
-      }
-      if (isRestrictedState) {
-        setErrorMsg('Real-money skill gaming is restricted in this state due to local state regulations.');
-        return;
-      }
-      if (!is18Plus) {
-        setErrorMsg('You must be 18 years or older to participate.');
+    if (action === 'register') {
+      if (!regName || !regPhone || regPhone.length < 10) {
+        setError('Name and a valid 10-digit phone number are required for registration');
         return;
       }
     }
 
-    setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
-      setOtpStep(true);
-      setOtp('582910'); // Simulated instant OTP code
-    }, 600);
+    setError('');
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, action }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+      
+      setMessage(`OTP sent to ${email} (Check your server console)`);
+      if (action === 'login') setLoginStep('OTP');
+      else setRegStep('OTP');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleVerifyAndSubmit = () => {
-    setErrorMsg('');
-    if (otp.length < 6) {
-      setErrorMsg('Please enter the 6-digit OTP sent to your phone');
+  const handleVerifyOtp = async (email: string, action: 'login' | 'register') => {
+    if (!otp || otp.length !== 6) {
+      setError('Please enter a valid 6-digit OTP');
       return;
     }
 
-    setIsVerifying(true);
-
-    setTimeout(() => {
-      setIsVerifying(false);
-
-      if (authMode === 'register') {
-        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-        const newUser: UserAccount = {
-          id: `usr_${Date.now()}`,
-          phone: `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}`,
-          name: name.trim(),
-          email: email.trim() || undefined,
-          avatar: `https://images.unsplash.com/photo-${1534528741775 + Math.floor(Math.random() * 1000)}?w=150&auto=format&fit=crop&q=80`,
-          kycStatus: 'SUBMITTED',
-          upiId: upiId.trim() || `${cleanPhone}@upi`,
-          isBlocked: false,
-          joinedDate: new Date().toISOString().slice(0, 10),
-          dailyDepositLimit: 10000,
-          totalContestsJoined: 0,
-          totalWon: 0,
-        };
-
-        onRegisterUser(newUser, 50); // ₹50 Welcome Bonus
-        setSuccessMsg(`Welcome ${newUser.name}! ₹50 Welcome Bonus credited to your wallet.`);
-      } else if (authMode === 'login') {
-        const cleanPhone = loginPhone.replace(/\D/g, '').slice(-10);
-        const existing = allUsers.find(
-          (u) => u.phone.replace(/\D/g, '').endsWith(cleanPhone)
-        );
-
-        if (existing) {
-          onSwitchUser(existing);
-          setSuccessMsg(`Welcome back, ${existing.name}! Logged in successfully.`);
-        } else {
-          // Auto create or fallback
-          const newUser: UserAccount = {
-            id: `usr_${Date.now()}`,
-            phone: `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}`,
-            name: 'Cricket Enthusiast',
-            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-            kycStatus: 'UNVERIFIED',
-            upiId: `${cleanPhone}@upi`,
-            isBlocked: false,
-            joinedDate: new Date().toISOString().slice(0, 10),
-            dailyDepositLimit: 10000,
-            totalContestsJoined: 0,
-            totalWon: 0,
-          };
-          onRegisterUser(newUser, 50);
-          setSuccessMsg(`Logged in successfully as +91 ${cleanPhone}!`);
-        }
-      } else {
-        // Profile update
-        onUpdateProfile({
-          ...currentUser,
-          name: name.trim() || currentUser.name,
-          email: email.trim() || currentUser.email,
-          upiId: upiId.trim() || currentUser.upiId,
-        });
-        setSuccessMsg('Profile updated successfully!');
+    setError('');
+    setIsLoading(true);
+    try {
+      const body: any = { email, otp, action };
+      if (action === 'register') {
+        body.name = regName;
+        body.phone = regPhone;
       }
 
-      setTimeout(() => {
-        onClose();
-      }, 1200);
-    }, 700);
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+      
+      onLoginSuccess(data.user);
+    } catch (err: any) {
+      setError(err.message || 'Failed to verify OTP');
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#050816]/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-[#0D122B] border border-[#1A223E] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-auto p-5 sm:p-6 space-y-5">
-        {/* Top Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#FFAA00] text-white flex items-center justify-center shadow-lg shadow-[#FF6B00]/30 font-display">
-              {authMode === 'register' ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#03050D]/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-md bg-[#0D122B] border border-[#1A223E] rounded-3xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-300">
+        
+        {/* Header */}
+        <div className="p-6 bg-gradient-to-br from-indigo-950/40 to-slate-900 border-b border-[#1A223E] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] to-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white font-display">
-                {authMode === 'register' ? 'Register New Account' : authMode === 'login' ? 'User Sign In' : 'Account Profile'}
-              </h2>
-              <p className="text-xs text-slate-400">
-                {authMode === 'register' ? 'Join & get instant ₹50 bonus' : 'Enter OTP to access your predictions & wallet'}
-              </p>
+              <h2 className="text-lg font-black text-white">SuperOver</h2>
+              <p className="text-xs text-slate-400">Secure Authentication</p>
             </div>
           </div>
-
-          <button 
-            onClick={onClose} 
-            className="w-8 h-8 rounded-lg bg-[#131A38] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-            id="btn-close-auth-modal"
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-[#131A38] hover:bg-[#1A223E] text-slate-400 flex items-center justify-center transition-colors border border-[#1A223E]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Mode Selector Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-[#080C1D] border border-[#1A223E]">
+        {/* Segmented Control */}
+        <div className="flex p-2 bg-[#080C1D] border-b border-[#1A223E]">
           <button
             onClick={() => {
-              setAuthMode('register');
-              setOtpStep(false);
-              setErrorMsg('');
+              setActiveTab('LOGIN');
+              setError('');
+              setMessage('');
+              setOtp('');
+              setLoginStep('PHONE');
             }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              authMode === 'register'
-                ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+              activeTab === 'LOGIN' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400 hover:text-slate-200'
             }`}
-            id="tab-auth-register"
           >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>1. Register New</span>
+            Login
           </button>
-
           <button
             onClick={() => {
-              setAuthMode('login');
-              setOtpStep(false);
-              setErrorMsg('');
+              setActiveTab('REGISTER');
+              setError('');
+              setMessage('');
+              setOtp('');
+              setRegStep('DETAILS');
             }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              authMode === 'login'
-                ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
+              activeTab === 'REGISTER' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400 hover:text-slate-200'
             }`}
-            id="tab-auth-login"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>2. Login</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setAuthMode('profile');
-              setName(currentUser.name);
-              setEmail(currentUser.email || '');
-              setUpiId(currentUser.upiId || '');
-              setOtpStep(false);
-              setErrorMsg('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              authMode === 'profile'
-                ? 'bg-[#1A223E] text-[#FF6B00] shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-            id="tab-auth-profile"
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>Switch / Edit</span>
+            Register
           </button>
         </div>
 
-        {/* Welcome Bonus Callout on Register */}
-        {authMode === 'register' && (
-          <div className="p-3 rounded-xl bg-gradient-to-r from-[#FF6B00]/15 via-[#FFAA00]/10 to-transparent border border-[#FF6B00]/30 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#FF6B00]/20 text-[#FF6B00] flex items-center justify-center flex-shrink-0">
-              <Gift className="w-4 h-4" />
+        <div className="p-6">
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold text-center">
+              {error}
             </div>
-            <div>
-              <span className="text-xs font-black text-white block">₹50 Free Signup Welcome Bonus</span>
-              <span className="text-[11px] text-slate-300 block">Instant bonus balance ready to enter 100X cricket prediction contests!</span>
+          )}
+          {message && (
+            <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold text-center">
+              {message}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Notifications */}
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="p-3 rounded-xl bg-[#4ADE80]/20 border border-[#4ADE80]/40 text-[#4ADE80] text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#4ADE80] flex-shrink-0" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* REGISTER FORM */}
-        {authMode === 'register' && (
-          <div className="space-y-3.5 text-xs">
-            <div>
-              <label className="text-slate-300 font-bold block mb-1">Full Legal Name (as on PAN/Aadhaar): *</label>
-              <input
-                type="text"
-                placeholder="e.g. Rahul Dravid"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-medium focus:outline-none focus:border-[#FF6B00]"
-                id="input-reg-name"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Mobile Phone Number: *</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 font-bold text-slate-400">+91</span>
-                  <input
-                    type="tel"
-                    maxLength={10}
-                    placeholder="9876543210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-mono focus:outline-none focus:border-[#FF6B00]"
-                    id="input-reg-phone"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Email Address (optional):</label>
-                <input
-                  type="email"
-                  placeholder="fan@cricket.in"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-[#FF6B00]"
-                  id="input-reg-email"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">UPI ID (for fast withdrawals):</label>
-                <input
-                  type="text"
-                  placeholder="e.g. name@okhdfcbank"
-                  value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-mono focus:outline-none focus:border-[#FF6B00]"
-                  id="input-reg-upi"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">State of Residence: *</label>
-                <select
-                  value={stateName}
-                  onChange={(e) => setStateName(e.target.value)}
-                  className={`w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border text-white font-medium focus:outline-none ${
-                    isRestrictedState ? 'border-rose-500 text-rose-300' : 'border-[#1A223E] focus:border-[#FF6B00]'
-                  }`}
-                  id="select-reg-state"
-                >
-                  {INDIAN_STATES.map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {isRestrictedState && (
-              <p className="text-[11px] text-rose-400 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/30">
-                ⚠️ Residents of Andhra Pradesh, Assam, Nagaland, Odisha, Sikkim, and Telangana cannot play real-money contests.
-              </p>
-            )}
-
-            <div className="pt-1 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="check-18plus"
-                checked={is18Plus}
-                onChange={(e) => setIs18Plus(e.target.checked)}
-                className="w-4 h-4 rounded text-[#FF6B00] bg-[#080C1D] border-[#1A223E] focus:ring-0 cursor-pointer"
-              />
-              <label htmlFor="check-18plus" className="text-slate-300 text-xs font-semibold cursor-pointer">
-                I declare that I am 18+ years of age and agree to SuperOver Terms & Fair Play Rules.
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* LOGIN FORM */}
-        {authMode === 'login' && (
-          <div className="space-y-3.5 text-xs">
-            <div>
-              <label className="text-slate-300 font-bold block mb-1">Registered Mobile Number:</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-2.5 font-bold text-slate-400">+91</span>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  placeholder="9876543210"
-                  value={loginPhone}
-                  onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, ''))}
-                  className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-mono text-sm focus:outline-none focus:border-[#FF6B00]"
-                  id="input-login-phone"
-                />
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-              <span className="text-[11px] text-slate-400 font-bold block uppercase">Quick One-Click Test Accounts:</span>
-              <div className="grid grid-cols-2 gap-2">
-                {allUsers.slice(0, 4).map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      setLoginPhone(u.phone.replace(/\D/g, '').slice(-10));
-                    }}
-                    className="p-2 rounded-lg bg-[#131A38] hover:bg-[#1A223E] border border-[#1A223E] text-left transition-colors flex items-center gap-2"
-                  >
-                    <img src={u.avatar} alt={u.name} className="w-6 h-6 rounded-md object-cover" />
-                    <div className="truncate">
-                      <div className="font-bold text-white text-[11px] truncate">{u.name}</div>
-                      <div className="text-[10px] text-slate-400">{u.phone.slice(-10)}</div>
+          {/* ===================== LOGIN FLOW ===================== */}
+          {activeTab === 'LOGIN' && (
+            <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+              {loginStep === 'EMAIL' ? (
+                <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(loginEmail, 'login'); }} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Registered Email</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      />
                     </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PROFILE / SWITCHER FORM */}
-        {authMode === 'profile' && (
-          <div className="space-y-3.5 text-xs">
-            <div>
-              <label className="text-slate-300 font-bold block mb-1">Your Full Name:</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-[#FF6B00]"
-              />
-            </div>
-
-            <div>
-              <label className="text-slate-300 font-bold block mb-1">UPI ID:</label>
-              <input
-                type="text"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-mono focus:outline-none focus:border-[#FF6B00]"
-              />
-            </div>
-
-            <div className="pt-2 border-t border-[#1A223E] space-y-2">
-              <span className="text-[11px] text-slate-400 font-bold block uppercase">Switch Persona:</span>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                {allUsers.map((u) => (
+                  </div>
                   <button
-                    key={u.id}
-                    onClick={() => {
-                      onSwitchUser(u);
-                      setName(u.name);
-                      setEmail(u.email || '');
-                      setUpiId(u.upiId || '');
-                      setSuccessMsg(`Switched to ${u.name}`);
-                      setTimeout(() => setSuccessMsg(''), 2000);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left text-xs transition-all flex-shrink-0 ${
-                      currentUser.id === u.id
-                        ? 'bg-[#FF6B00]/20 border-[#FF6B00] text-white shadow-md'
-                        : 'bg-[#080C1D] border-[#1A223E] text-slate-400 hover:bg-[#131A38]'
-                    }`}
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                   >
-                    <div className="font-bold text-white text-[11px] truncate max-w-[120px]">{u.name}</div>
-                    <div className="text-[10px] text-slate-400">KYC: {u.kycStatus}</div>
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Get OTP'}
+                    {!isLoading && <ArrowRight className="w-4 h-4" />}
                   </button>
-                ))}
-              </div>
+                </form>
+              ) : (
+                <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(loginEmail, 'login'); }} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Enter 6-digit OTP</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-xl tracking-widest text-center font-black focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Secure Login'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setLoginStep('EMAIL'); setOtp(''); setMessage(''); setError(''); }}
+                    className="w-full text-xs text-slate-400 hover:text-white"
+                  >
+                    Change Email Address
+                  </button>
+                </form>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* OTP Verification Step */}
-        {otpStep ? (
-          <div className="p-4 rounded-xl bg-[#FF6B00]/10 border border-[#FF6B00]/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-[#FFAA00] font-black text-xs block">Enter 6-Digit OTP Code:</label>
-              <span className="text-[10px] text-[#4ADE80] font-bold">Auto-generated code: 582910</span>
-            </div>
+          {/* ===================== REGISTER FLOW ===================== */}
+          {activeTab === 'REGISTER' && (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+              {regStep === 'DETAILS' ? (
+                <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(regEmail, 'register'); }} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Full Name</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <UserIcon className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        placeholder="Virat Kohli"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Phone Number</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Phone className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="tel"
+                        value={regPhone}
+                        onChange={(e) => setRegPhone(e.target.value)}
+                        placeholder="9876543210"
+                        maxLength={10}
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      />
+                    </div>
+                  </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#FF6B00]/50 text-[#FFAA00] font-mono font-black text-center text-lg tracking-widest focus:outline-none"
-                id="input-auth-otp"
-              />
-              <button
-                onClick={handleVerifyAndSubmit}
-                disabled={isVerifying}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black text-xs whitespace-nowrap shadow-md hover:brightness-110 active:scale-95 transition-all"
-                id="btn-verify-otp-submit"
-              >
-                {isVerifying ? 'Verifying...' : 'Confirm & Login'}
-              </button>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Email Address</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        placeholder="virat@example.com"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Get OTP to Register'}
+                    {!isLoading && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(regEmail, 'register'); }} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Enter 6-digit OTP</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-xl tracking-widest text-center font-black focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete Registration'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setRegStep('DETAILS'); setOtp(''); setMessage(''); setError(''); }}
+                    className="w-full text-xs text-slate-400 hover:text-white"
+                  >
+                    Go Back
+                  </button>
+                </form>
+              )}
             </div>
-          </div>
-        ) : (
-          <button
-            onClick={handleSendOtp}
-            disabled={isVerifying}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B00]/30 transition-all"
-            id="btn-send-auth-otp"
-          >
-            {isVerifying ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-            <span>
-              {authMode === 'register' ? 'Register Account & Get ₹50 Bonus' : authMode === 'login' ? 'Send Login OTP' : 'Save Changes'}
-            </span>
-          </button>
-        )}
+          )}
+
+        </div>
       </div>
     </div>
   );

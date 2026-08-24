@@ -11,6 +11,7 @@ import {
   Award,
   ChevronRight,
   Zap,
+  Flame,
   ArrowDownLeft,
   ArrowUpRight,
   Wallet as WalletIcon,
@@ -285,9 +286,15 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                         <div className="text-left sm:text-right">
                           {isPending ? (
                             <div>
-                              <span className="px-2.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold inline-flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" /> Awaiting Results
-                              </span>
+                              {match?.status === 'LIVE' ? (
+                                <span className="px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-black inline-flex items-center gap-1.5 shadow-sm animate-pulse">
+                                  <Flame className="w-3.5 h-3.5" /> MATCH IS LIVE
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold inline-flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" /> Awaiting Results
+                                </span>
+                              )}
                               <span className="text-[10px] text-slate-400 block mt-1">
                                 Max Win: {formatINR(slip.entryFee * 100)} (100X)
                               </span>

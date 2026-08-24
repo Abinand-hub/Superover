@@ -11,7 +11,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedMultiplier, setSelectedMultiplier] = useState<number | null>(null);
 
-  const segments = [50, 100, 50, 150, 50, 200, 100, 250, 300, 150, 500];
+  const segments = [100, 125, 150, 200, 250, 300, 350, 400, 450, 500];
   const segmentAngle = 360 / segments.length;
 
   const spinWheel = () => {

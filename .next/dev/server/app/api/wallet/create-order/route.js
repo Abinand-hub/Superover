@@ -1,0 +1,10 @@
+var R=require("../../../../chunks/[turbopack]_runtime.js")("server/app/api/wallet/create-order/route.js")
+R.c("server/chunks/node_modules_next_0pdy0l4._.js")
+R.c("server/chunks/node_modules_mime-db_1o47td2._.js")
+R.c("server/chunks/node_modules_axios_dist_node_axios_cjs_1yd1wtp._.js")
+R.c("server/chunks/node_modules_razorpay_1hdgkum._.js")
+R.c("server/chunks/[root-of-the-server]__063hl86._.js")
+R.c("server/chunks/[root-of-the-server]__1gtm6le._.js")
+R.c("server/chunks/_next-internal_server_app_api_wallet_create-order_route_actions_106znfb.js")
+R.m("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/wallet/create-order/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)")
+module.exports=R.m("[project]/node_modules/next/dist/esm/build/templates/app-route.js { INNER_APP_ROUTE => \"[project]/app/api/wallet/create-order/route.ts [app-route] (ecmascript)\" } [app-route] (ecmascript)").exports

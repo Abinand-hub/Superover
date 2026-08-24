@@ -19,12 +19,11 @@ import {
   INITIAL_WALLET
 } from '../data/initialData';
 
-// Replace this with your actual backend URL once it's ready.
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = '/api';
 
 /**
  * Helper to fetch data from the API with a fallback to mock data.
- * This ensures the frontend doesn't break while you are still building your backend endpoints.
+ * It will try to read from localStorage first if the API fails, and if empty, use the provided mockData.
  */
 async function fetchWithMockFallback<T>(endpoint: string, options?: RequestInit, mockData?: T): Promise<T> {
   try {
@@ -54,28 +53,74 @@ async function fetchWithMockFallback<T>(endpoint: string, options?: RequestInit,
 
 export const api = {
   // Matches
-  getMatches: () => fetchWithMockFallback<CricketMatch[]>('/matches', { method: 'GET' }, INITIAL_MATCHES),
+  getMatches: async () => {
+    const rawMatches = await fetchWithMockFallback<any[]>('/matches', { method: 'GET' }, INITIAL_MATCHES);
+    return rawMatches.map((m: any) => {
+      // API returns matchStartTime and _id, need to map to frontend types
+      const startTimeIso = m.matchStartTime || m.startTime;
+      let lockTimeIso = m.lockTime;
+      if (!lockTimeIso && startTimeIso) {
+        // Default lock time is 1 min before start
+        lockTimeIso = new Date(new Date(startTimeIso).getTime() - 60 * 1000).toISOString();
+      }
+      
+      let status = m.status;
+      if (status === 'UPCOMING' && new Date() >= new Date(lockTimeIso)) {
+        status = 'LOCKED';
+      }
+
+      return {
+        ...m,
+        id: m._id || m.id,
+        startTime: startTimeIso,
+        lockTime: lockTimeIso,
+        status: status,
+      } as CricketMatch;
+    });
+  },
+  updateMatch: (payload: any) => fetchWithMockFallback<CricketMatch>('/matches/update', { method: 'POST', body: JSON.stringify(payload) }),
   
   // User Data
   getCurrentUser: () => fetchWithMockFallback<UserAccount>('/user/current', { method: 'GET' }, INITIAL_USER),
-  getAllUsers: () => fetchWithMockFallback<UserAccount[]>('/users', { method: 'GET' }, INITIAL_ALL_USERS),
+  getAllUsers: () => fetchWithMockFallback<UserAccount[]>('/users', { method: 'GET' }, []),
   
   // Wallet & Transactions
-  getWallet: () => fetchWithMockFallback<Wallet>('/wallet', { method: 'GET' }, INITIAL_WALLET),
-  getTransactions: () => fetchWithMockFallback<WalletTransaction[]>('/transactions', { method: 'GET' }, INITIAL_TRANSACTIONS),
+  getWallet: async () => {
+    const response = await fetch('/api/wallet', { method: 'GET' });
+    if (!response.ok) {
+       return { depositBalance: 0, winningsBalance: 0, bonusBalance: 0, totalBalance: 0, kycVerified: false, upiId: '' };
+    }
+    return response.json();
+  },
+  getTransactions: async () => {
+    const response = await fetch('/api/transactions', { method: 'GET' });
+    if (!response.ok) return [];
+    return response.json();
+  },
+  createOrder: (payload: { amount: number }) => fetchWithMockFallback<{ orderId: string, amount: number, currency: string }>('/wallet/create-order', { method: 'POST', body: JSON.stringify(payload) }),
+  verifyPayment: (payload: any) => fetchWithMockFallback<{ success: boolean, wallet: Wallet, transaction: WalletTransaction }>('/wallet/verify-payment', { method: 'POST', body: JSON.stringify(payload) }),
+  withdrawFunds: (payload: any) => fetchWithMockFallback<{ wallet: Wallet, transaction: WalletTransaction }>('/wallet/withdraw', { method: 'POST', body: JSON.stringify(payload) }),
+  
+  // Match Settlement
+  settleMatch: (payload: any) => fetchWithMockFallback<{ success: boolean, message: string }>('/matches/settle', { method: 'POST', body: JSON.stringify(payload) }),
+  autoDetectMatchResults: (matchId: string) => fetchWithMockFallback<{ answers: any, summaryNote: string }>(`/matches/scorecard?matchId=${matchId}`, { method: 'GET' }),
   
   // Slips
-  getSlips: () => fetchWithMockFallback<UserPredictionSlip[]>('/slips', { method: 'GET' }, INITIAL_SLIPS),
+  getSlips: () => fetchWithMockFallback<UserPredictionSlip[]>('/slips', { method: 'GET' }, []),
   submitPredictionSlip: (payload: any) => 
-    fetchWithMockFallback<UserPredictionSlip>('/slips', { 
+    fetchWithMockFallback<{ message: string, slip: UserPredictionSlip, wallet: Wallet }>('/slips', { 
       method: 'POST', 
       body: JSON.stringify(payload) 
     }, {
-      id: `slip_${Date.now()}`,
-      ...payload,
-      submittedAt: new Date().toISOString(),
-      status: 'PENDING'
-    } as UserPredictionSlip),
+      message: 'Success mock',
+      slip: {
+        id: `slip_${Date.now()}`,
+        ...payload,
+        submittedAt: new Date().toISOString(),
+        status: 'PENDING'
+      } as UserPredictionSlip,
+      wallet: INITIAL_WALLET
+    }),
 
   // Platform
   getMetrics: () => fetchWithMockFallback<PlatformMetrics>('/metrics', { method: 'GET' }, INITIAL_PLATFORM_METRICS),

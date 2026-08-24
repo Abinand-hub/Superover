@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { UserAccount, Wallet, WalletTransaction } from '../types';
 import { formatINR } from '../utils/payoutCalculator';
+import { api } from '../services/api';
 
 interface WalletModalProps {
   wallet: Wallet;
@@ -25,7 +26,7 @@ interface WalletModalProps {
   transactions: WalletTransaction[];
   initialTab?: 'deposit' | 'withdraw' | 'passbook';
   onClose: () => void;
-  onDeposit: (amount: number, method: string) => void;
+  onDeposit: (payload: any, method: string) => void;
   onWithdraw: (amount: number, upiId: string) => void;
   onOpenKyc: () => void;
 }
@@ -56,30 +57,81 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   const [withdrawSuccess, setWithdrawSuccess] = useState<boolean>(false);
   const [withdrawError, setWithdrawError] = useState<string>('');
 
-  const handleDepositSubmit = () => {
-    if (depositAmount < 25) return;
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleDepositSubmit = async () => {
+    if (depositAmount < 5) return;
     setIsProcessingDeposit(true);
 
-    setTimeout(() => {
+    const res = await loadRazorpayScript();
+    if (!res) {
+      alert('Razorpay SDK failed to load. Are you online?');
       setIsProcessingDeposit(false);
-      setDepositSuccess(true);
-      const methodName = selectedUpiApp === 'custom' 
-        ? `UPI ID: ${customUpiId}` 
-        : selectedUpiApp === 'qr'
-        ? 'Dynamic UPI QR'
-        : `${selectedUpiApp.toUpperCase()} UPI App`;
-      onDeposit(depositAmount, methodName);
+      return;
+    }
 
-      setTimeout(() => {
-        setDepositSuccess(false);
-      }, 2500);
-    }, 1000);
+    try {
+      // 1. Create Order on Backend
+      const order = await api.createOrder({ amount: depositAmount });
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TTavRCG2g2HcRS', 
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'SuperOver',
+        description: 'Add Cash to Wallet',
+        handler: function (response: any) {
+          // Payment successful
+          setIsProcessingDeposit(false);
+          setDepositSuccess(true);
+          
+          // Send verification details to App.tsx
+          onDeposit({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            amount: depositAmount
+          }, `Razorpay ID: ${response.razorpay_payment_id}`);
+          
+          setTimeout(() => {
+            setDepositSuccess(false);
+          }, 2500);
+        },
+        prefill: {
+          name: user.name,
+          contact: user.phone,
+        },
+        theme: {
+          color: '#FF6B00',
+        }
+      };
+
+      const rzp1 = new (window as any).Razorpay(options);
+      rzp1.on('payment.failed', function (response: any) {
+        alert(response.error.description);
+        setIsProcessingDeposit(false);
+      });
+      rzp1.open();
+    } catch (err) {
+      console.error('Failed to create order', err);
+      alert('Could not initialize payment. Please try again.');
+      setIsProcessingDeposit(false);
+    }
   };
 
   const handleWithdrawSubmit = () => {
     setWithdrawError('');
-    if (withdrawAmount < 50) {
-      setWithdrawError('Minimum withdrawal amount is ₹50');
+    if (withdrawAmount < 5) {
+      setWithdrawError('Minimum withdrawal amount is ₹5');
       return;
     }
     if (withdrawAmount > wallet.winningsBalance) {
@@ -222,7 +274,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                       Select Deposit Amount:
                     </label>
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                      {[25, 50, 100, 250, 500, 1000].map((amt) => (
+                      {[5, 25, 50, 100, 250, 500].map((amt) => (
                         <button
                           key={amt}
                           onClick={() => setDepositAmount(amt)}
@@ -243,12 +295,12 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                       <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">₹</span>
                       <input
                         type="number"
-                        min="25"
+                        min="5"
                         max="20000"
                         value={depositAmount}
                         onChange={(e) => setDepositAmount(Number(e.target.value))}
                         className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-black text-sm focus:outline-none focus:border-emerald-500"
-                        placeholder="Enter amount (min ₹25)"
+                        placeholder="Enter amount (min ₹5)"
                       />
                     </div>
                   </div>
@@ -356,7 +408,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 
                     <div className="text-right">
                       <span className="text-[10px] text-slate-400 block">Min. Withdrawal</span>
-                      <span className="text-xs font-bold text-white">₹50</span>
+                      <span className="text-xs font-bold text-white">₹5</span>
                     </div>
                   </div>
 
@@ -385,12 +437,12 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                       <span className="absolute left-3.5 top-2.5 text-sm font-bold text-slate-400">₹</span>
                       <input
                         type="number"
-                        min="50"
+                        min="5"
                         max={wallet.winningsBalance}
                         value={withdrawAmount}
                         onChange={(e) => setWithdrawAmount(Number(e.target.value))}
                         className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-black text-sm focus:outline-none focus:border-amber-400"
-                        placeholder="Enter amount (min ₹50)"
+                        placeholder="Enter amount (min ₹5)"
                         id="input-withdraw-amount"
                       />
                     </div>

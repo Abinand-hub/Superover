@@ -11,6 +11,7 @@ const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({
 const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
 const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
 const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
+const AdminLoginModal = React.lazy(() => import('./components/AdminLoginModal').then(m => ({ default: m.AdminLoginModal })));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 
 import { 
@@ -41,7 +42,7 @@ export default function App() {
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Core Application State
-  const [matches, setMatches] = useState<CricketMatch[]>(INITIAL_MATCHES);
+  const [matches, setMatches] = useState<CricketMatch[]>([]);
   const [currentUser, setCurrentUser] = useState<UserAccount>(INITIAL_USER);
   const [allUsers, setAllUsers] = useState<UserAccount[]>(INITIAL_ALL_USERS);
   const [wallet, setWallet] = useState<Wallet>(INITIAL_WALLET);
@@ -98,113 +99,125 @@ export default function App() {
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+
+  // Check for admin.html route on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/admin.html') {
+      if (!isAdminAuthenticated) {
+        setIsAdminLoginModalOpen(true);
+      } else {
+        setActiveTab('admin');
+      }
+    }
+  }, [isAdminAuthenticated]);
+
+  // Secret Admin Hotkey (Ctrl + Shift + A) - Kept for convenience
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        if (!isAdminAuthenticated) {
+          setIsAdminLoginModalOpen(true);
+        } else {
+          setActiveTab('admin');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // User submissions count awaiting settlement
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
-  const handleSubmitSelectionSlip = async (answers: Record<string, string>, entryFee: number, jackpotMultiplier: number) => {
+  const handleSubmitSelectionSlip = async (
+    answers: Record<string, string>, 
+    entryFee: number, 
+    totalPaid: number, 
+    jackpotMultiplier: number,
+    freeHit: boolean = false,
+    freeHitFee: number = 0,
+    wheelMultiplier?: number
+  ) => {
     if (!selectedMatchForPlay) return;
     const match = selectedMatchForPlay.match;
 
-    // Deduct exactly the stake amount (Free Hit is included)
-    const totalPaid = entryFee;
+    try {
+      const response = await api.submitPredictionSlip({
+        matchId: match.id,
+        answers,
+        entryFee,
+        freeHit,
+        freeHitFee,
+        totalPayable: totalPaid,
+        wheelMultiplier
+      });
 
-    // Deduct total paid from wallet (deposit first, then winnings)
-    let newDeposit = wallet.depositBalance;
-    let newWinnings = wallet.winningsBalance;
-    let remainingFee = totalPaid;
+      // Update state with response from backend
+      if (response && response.slip) {
+        setWallet(response.wallet);
+        setSlips((prev) => [response.slip as any, ...prev]);
+        
+        // Add local transaction history log
+        const newTx: WalletTransaction = {
+          id: `tx_ent_${Date.now()}`,
+          userId: currentUser.id,
+          type: 'CONTEST_ENTRY',
+          amount: -totalPaid,
+          status: 'SUCCESS',
+          timestamp: new Date().toISOString(),
+          description: `Stake for ${match.title}${freeHit ? ' + Free Hit' : ''}`,
+          referenceId: `ENTRY-${match.team1.code}${match.team2.code}-${Date.now().toString().slice(-4)}`,
+        };
+        setTransactions((prev) => [newTx, ...prev]);
 
-    if (newDeposit >= remainingFee) {
-      newDeposit -= remainingFee;
-      remainingFee = 0;
-    } else {
-      remainingFee -= newDeposit;
-      newDeposit = 0;
-      newWinnings -= remainingFee;
+        // Update match pool and entry counts
+        setMatches((prev) =>
+          prev.map((m) =>
+            m.id === match.id
+              ? { ...m, totalEntries: (m.totalEntries || 0) + 1, totalPool: (m.totalPool || 0) + entryFee }
+              : m
+          )
+        );
+
+        // Update platform metrics
+        setMetrics((prev) => ({
+          ...prev,
+          totalPoolCollected: prev.totalPoolCollected + entryFee,
+        }));
+
+        // Close prediction modal and redirect to My Contests tab
+        setSelectedMatchForPlay(null);
+        setActiveTab('my-contests');
+      }
+    } catch (error) {
+      console.error('Failed to submit slip:', error);
+      alert('Failed to submit prediction. Please check your balance or try again.');
     }
-
-    const updatedWallet: Wallet = {
-      ...wallet,
-      depositBalance: newDeposit,
-      winningsBalance: newWinnings,
-      totalBalance: newDeposit + newWinnings + wallet.bonusBalance,
-    };
-    setWallet(updatedWallet);
-
-    // Create entry transaction
-    const newTx: WalletTransaction = {
-      id: `tx_ent_${Date.now()}`,
-      userId: currentUser.id,
-      type: 'CONTEST_ENTRY',
-      amount: -totalPaid,
-      status: 'SUCCESS',
-      timestamp: new Date().toISOString(),
-      description: `Stake for ${match.title}`,
-      referenceId: `ENTRY-${match.team1.code}${match.team2.code}-${Date.now().toString().slice(-4)}`,
-    };
-    setTransactions((prev) => [newTx, ...prev]);
-
-    // Create user prediction slip
-    const newSlip: UserPredictionSlip = {
-      id: `slip_${Date.now()}`,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userPhone: currentUser.phone,
-      matchId: match.id,
-      matchTitle: match.title,
-      series: match.series,
-      team1Code: match.team1.code,
-      team2Code: match.team2.code,
-      matchStartTime: match.startTime,
-      answers,
-      entryFee,
-      jackpotMultiplier,
-      submittedAt: new Date().toISOString(),
-      status: 'PENDING',
-    };
-    setSlips((prev) => [newSlip, ...prev]);
-
-    // Update match pool and entry counts
-    setMatches((prev) =>
-      prev.map((m) =>
-        m.id === match.id
-          ? { ...m, totalEntries: m.totalEntries + 1, totalPool: m.totalPool + entryFee }
-          : m
-      )
-    );
-
-    // Update platform metrics
-    setMetrics((prev) => ({
-      ...prev,
-      totalPoolCollected: prev.totalPoolCollected + entryFee,
-    }));
-
-    // Close prediction modal and redirect to My Contests tab
-    setSelectedMatchForPlay(null);
-    setActiveTab('my-contests');
   };
 
-  // Handler: Deposit cash via UPI
-  const handleDepositCash = (amount: number, method: string) => {
-    const updatedWallet: Wallet = {
-      ...wallet,
-      depositBalance: wallet.depositBalance + amount,
-      totalBalance: wallet.totalBalance + amount,
-    };
-    setWallet(updatedWallet);
+  // Handler: Add Cash (Deposit via UPI)
+  const handleDepositCash = async (payload: any, method: string) => {
+    try {
+      // payload contains razorpay_order_id, razorpay_payment_id, razorpay_signature, amount
+      const data = await api.verifyPayment(payload);
 
-    const newTx: WalletTransaction = {
-      id: `tx_dep_${Date.now()}`,
-      userId: currentUser.id,
-      type: 'DEPOSIT',
-      amount,
-      status: 'SUCCESS',
-      timestamp: new Date().toISOString(),
-      description: `Added cash via ${method}`,
-      paymentMethod: method,
-      referenceId: `UPI-DEP-${Date.now().toString().slice(-6)}`,
-    };
-    setTransactions((prev) => [newTx, ...prev]);
+      if (data.success) {
+        // Update local wallet state
+        setWallet(data.wallet);
+        // Update transactions
+        if (data.transaction) {
+          setTransactions((prev) => [data.transaction, ...prev]);
+        }
+        
+        console.log('Deposit successful!', data);
+      }
+    } catch (error) {
+      console.error('Deposit Error:', error);
+      alert('Failed to verify payment. Please try again or contact support.');
+    }
   };
 
   // Handler: Withdraw winnings
@@ -252,7 +265,7 @@ export default function App() {
 
       const { settledSlip, payoutAmount } = settlePredictionSlip(slip, updatedMatch, results);
 
-      if (payoutAmount > 0) {
+      if (payoutAmount > 0 && settledSlip.status === 'WON') {
         totalPaidOutThisMatch += payoutAmount;
         if (slip.userId === currentUser.id) {
           userPayoutAmountForCurrent += payoutAmount;
@@ -299,6 +312,54 @@ export default function App() {
     }));
   };
 
+  // Handler: Admin Approve Jackpot
+  const handleApproveJackpot = (slipId: string) => {
+    const slip = slips.find(s => s.id === slipId);
+    if (!slip || slip.status !== 'PENDING_APPROVAL' || !slip.payoutAmount) return;
+
+    // Update slip status
+    setSlips(prev => prev.map(s => s.id === slipId ? { ...s, status: 'WON' } : s));
+
+    // Update Wallet & Transactions
+    const payoutTx: WalletTransaction = {
+      id: `tx_pay_${Date.now()}_${slip.id}`,
+      userId: slip.userId,
+      type: 'CONTEST_PAYOUT',
+      amount: slip.payoutAmount,
+      status: 'SUCCESS',
+      timestamp: new Date().toISOString(),
+      description: `Won ${slip.multiplierWon}X Cash Prize for ${slip.matchTitle} (6/6 Correct - Admin Approved)`,
+      referenceId: `PAY-${slip.team1Code}${slip.team2Code}-${slip.multiplierWon}X`,
+      payoutMultiplier: slip.multiplierWon,
+    };
+    setTransactions(prev => [payoutTx, ...prev]);
+
+    // Update metrics
+    setMetrics(prev => ({
+      ...prev,
+      totalPayoutsDisbursed: prev.totalPayoutsDisbursed + (slip.payoutAmount || 0)
+    }));
+
+    // If it's the current user, update their wallet live
+    if (slip.userId === currentUser.id) {
+      setWallet(prev => ({
+        ...prev,
+        winningsBalance: prev.winningsBalance + (slip.payoutAmount || 0),
+        totalBalance: prev.totalBalance + (slip.payoutAmount || 0),
+      }));
+      setCurrentUser(prev => ({
+        ...prev,
+        totalWon: prev.totalWon + (slip.payoutAmount || 0),
+      }));
+    }
+  };
+
+  // Handler: Admin Reject Jackpot
+  const handleRejectJackpot = (slipId: string) => {
+    // Just mark it as LOST or REJECTED. We'll use LOST since it's an existing status.
+    setSlips(prev => prev.map(s => s.id === slipId ? { ...s, status: 'LOST', payoutAmount: 0 } : s));
+  };
+
   // Handler: Admin Add Bonus Cash
   const handleAdminAddBonus = (userId: string, amount: number) => {
     if (userId === currentUser.id) {
@@ -333,23 +394,76 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#050816] text-slate-100 flex flex-col selection:bg-[#FF6B00] selection:text-white">
       {/* Top Main Navigation Header */}
-      <Header
-        user={currentUser}
-        wallet={wallet}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
-        openAuthModal={() => setIsAuthModalOpen(true)}
-        openKycModal={() => setIsKycModalOpen(true)}
-        openRulesModal={() => setIsRulesModalOpen(true)}
-        openResponsibleModal={() => setIsResponsibleModalOpen(true)}
-        isAdmin={isAdmin}
-        setIsAdmin={setIsAdmin}
-        pendingSlipsCount={pendingSlipsCount}
-      />
+      {!(typeof window !== 'undefined' && window.location.pathname === '/admin.html') && (
+        <Header 
+          user={currentUser}
+          wallet={wallet}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
+          openAuthModal={() => setIsAuthModalOpen(true)}
+          openKycModal={() => setIsKycModalOpen(true)}
+          openRulesModal={() => setIsRulesModalOpen(true)}
+          openResponsibleModal={() => setIsResponsibleModalOpen(true)}
+          isAdmin={isAdmin}
+          setIsAdmin={setIsAdmin}
+          pendingSlipsCount={pendingSlipsCount}
+        />
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {(typeof window !== 'undefined' && window.location.pathname === '/admin.html' && isAdminAuthenticated) ? (
+          <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
+            <AdminPanel
+              metrics={{ totalUsers: allUsers.length, totalBetsPlaced: slips.length, totalVolumeIn: slips.reduce((a,b)=>a+b.entryFee,0), totalVolumeOut: slips.reduce((a,b)=>a+(b.payoutAmount||0),0), activeMatches: matches.filter(m=>m.status==='LIVE').length }}
+              matches={matches}
+              allUsers={allUsers}
+              allSlips={slips}
+              allTransactions={transactions}
+              faqs={INITIAL_FAQS}
+              onUpdateMatch={async (m) => {
+                try {
+                  await api.updateMatch(m);
+                  setMatches(prev => prev.map(match => match.id === m.id ? m : match));
+                } catch(e) {
+                  console.error(e);
+                }
+              }}
+              onCreateMatch={(m) => setMatches(prev => [m, ...prev])}
+              onSettleMatch={async (matchId, results) => {
+                try {
+                  const res = await api.settleMatch({ matchId, picks: (results as any).answers, summary: (results as any).summaryNote });
+                  if (res.success || res.message) {
+                    const [fetchedMatches, fetchedSlips, fetchedTransactions, fetchedUsers] = await Promise.all([
+                      api.getMatches(),
+                      api.getSlips(),
+                      api.getTransactions(),
+                      api.getAllUsers()
+                    ]);
+                    setMatches(fetchedMatches);
+                    setSlips(fetchedSlips);
+                    setTransactions(fetchedTransactions);
+                    setAllUsers(fetchedUsers);
+                  } else {
+                    alert('Settlement failed. Please check logs.');
+                  }
+                } catch (error) {
+                  console.error('Settlement Error:', error);
+                  alert('Error processing settlement. Check console.');
+                }
+              }}
+              onUpdateUser={(u) => setAllUsers(prev => prev.map(user => user.id === u.id ? u : user))}
+              onApproveWithdrawal={(id) => {}}
+              onRejectWithdrawal={(id) => {}}
+              onUpdateFaq={(f) => {}}
+              onAddFaq={(f) => {}}
+              onDeleteFaq={(id) => {}}
+              onSendBonus={handleAdminAddBonus}
+            />
+          </React.Suspense>
+        ) : (
+          <>
         {/* VIEW 1: MATCH LOBBY & PROMO BANNER */}
         {activeTab === 'lobby' && (
           <div className="space-y-6">
@@ -361,6 +475,10 @@ export default function App() {
               matches={matches}
               userSlips={slips}
               onSelectMatchToPlay={(match, fee = 25) => {
+                if (currentUser.id === 'u_guest') {
+                  setIsAuthModalOpen(true);
+                  return;
+                }
                 setSelectedMatchForPlay({ match, fee });
               }}
               onViewMatchResult={(match, slip) => {
@@ -423,40 +541,7 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {/* VIEW 4: ORGANIZER ADMIN PANEL */}
-        {activeTab === 'admin' && (
-          <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
-            <AdminPanel
-              metrics={metrics}
-              matches={matches}
-              allUsers={allUsers}
-              allSlips={slips}
-              allTransactions={transactions}
-              faqs={INITIAL_FAQS}
-              onUpdateMatch={(updated) => setMatches((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))}
-              onCreateMatch={(newMatch) => setMatches((prev) => [newMatch, ...prev])}
-              onSettleMatch={handleSettleMatch}
-              onUpdateUser={(updated) => {
-                setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-                if (updated.id === currentUser.id) {
-                  setCurrentUser(updated);
-                }
-              }}
-              onApproveWithdrawal={(txId) => {
-                setTransactions((prev) =>
-                  prev.map((t) => (t.id === txId ? { ...t, status: 'SUCCESS' } : t))
-                );
-              }}
-              onRejectWithdrawal={(txId) => {
-                setTransactions((prev) =>
-                  prev.map((t) => (t.id === txId ? { ...t, status: 'REJECTED' } : t))
-                );
-              }}
-              onAddBonusCash={handleAdminAddBonus}
-              onCloseAdmin={() => setActiveTab('lobby')}
-            />
-          </React.Suspense>
+        </>
         )}
       </main>
 
@@ -476,7 +561,6 @@ export default function App() {
               <button onClick={() => setIsRulesModalOpen(true)} className="hover:text-white transition-colors">Rules & FAQs</button>
               <button onClick={() => setIsResponsibleModalOpen(true)} className="hover:text-white transition-colors">Responsible Gaming</button>
               <button onClick={() => setWalletModalState({ open: true, tab: 'deposit' })} className="hover:text-white transition-colors">UPI Deposit</button>
-              <button onClick={() => setActiveTab('admin')} className="text-purple-400 hover:text-purple-300 font-bold">Admin Portal</button>
             </div>
           </div>
 
@@ -539,38 +623,29 @@ export default function App() {
         {/* MODAL 4: User Authentication & Switcher */}
         {isAuthModalOpen && (
           <AuthModal
-            currentUser={currentUser}
-            allUsers={allUsers}
             onClose={() => setIsAuthModalOpen(false)}
-            onUpdateProfile={(updated) => {
-              setCurrentUser(updated);
-              setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-            }}
-            onSwitchUser={(newUser) => {
-              setCurrentUser(newUser);
-            }}
-            onRegisterUser={(newUser, welcomeBonus) => {
-              setAllUsers((prev) => [newUser, ...prev]);
-              setCurrentUser(newUser);
-              
-              // Credit welcome bonus to user wallet and add bonus transaction
-              setWallet((prev) => ({
-                ...prev,
-                bonusBalance: prev.bonusBalance + welcomeBonus,
-                totalBalance: prev.totalBalance + welcomeBonus,
-              }));
-
-              const welcomeTx: WalletTransaction = {
-                id: `tx_bon_reg_${Date.now()}`,
-                userId: newUser.id,
-                type: 'BONUS_REWARD',
-                amount: welcomeBonus,
-                status: 'SUCCESS',
-                timestamp: new Date().toISOString(),
-                description: '₹50 Signup Welcome Bonus Cash Credited!',
-                referenceId: `REG-BONUS-${Date.now().toString().slice(-4)}`,
+            onLoginSuccess={(user) => {
+              const enrichedUser = {
+                ...user,
+                avatar: `https://ui-avatars.com/api/?name=${user.name}&background=FF6B00&color=fff`,
+                kycStatus: 'PENDING',
+                isBlocked: false,
+                joinedDate: new Date().toISOString().split('T')[0],
+                dailyDepositLimit: 10000,
+                totalContestsJoined: 0,
+                totalWon: 0,
+                id: user._id || user.id, // Ensure frontend uses .id
               };
-              setTransactions((prev) => [welcomeTx, ...prev]);
+              setCurrentUser(enrichedUser);
+              setWallet(user.wallet);
+              // Update allUsers so they show up in Admin panel (Mock Mode)
+              setAllUsers(prev => {
+                if (!prev.find(u => u.id === enrichedUser.id)) {
+                  return [enrichedUser, ...prev];
+                }
+                return prev;
+              });
+              setIsAuthModalOpen(false);
             }}
           />
         )}
@@ -608,6 +683,24 @@ export default function App() {
             onClose={() => setIsResponsibleModalOpen(false)}
             onUpdateLimit={(limit) => {
               setCurrentUser((prev) => ({ ...prev, dailyDepositLimit: limit }));
+            }}
+          />
+        )}
+
+        {/* MODAL 8: Admin Login */}
+        {isAdminLoginModalOpen && (
+          <AdminLoginModal
+            onClose={() => {
+              setIsAdminLoginModalOpen(false);
+              // If closed without login and on admin.html, redirect back to home
+              if (window.location.pathname === '/admin.html') {
+                window.location.href = '/';
+              }
+            }}
+            onLoginSuccess={() => {
+              setIsAdminAuthenticated(true);
+              setIsAdminLoginModalOpen(false);
+              setActiveTab('admin');
             }}
           />
         )}

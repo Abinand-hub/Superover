@@ -11,7 +11,7 @@ import { CricketMatch, MatchResults, SettlementDetail, QuestionDefinition, UserP
  * C < 3: 0
  */
 export const PAYOUT_TIERS = [
-  { correct: 6, multiplier: 100, label: '100X Jackpot', badge: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950', returnRate: '10,000%' },
+  { correct: 6, multiplier: 50, label: '50X Jackpot', badge: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950', returnRate: '5,000%' },
   { correct: 5, multiplier: 10, label: '10X Super Win', badge: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40', returnRate: '1,000%' },
   { correct: 4, multiplier: 3, label: '3X Triple Win', badge: 'bg-blue-500/20 text-blue-300 border border-blue-500/40', returnRate: '300%' },
   { correct: 3, multiplier: 0.5, label: '0.5X Refund Guard', badge: 'bg-slate-700/50 text-slate-300 border border-slate-600/40', returnRate: '50%' },
@@ -20,7 +20,7 @@ export const PAYOUT_TIERS = [
   { correct: 0, multiplier: 0, label: 'No Payout', badge: 'text-slate-500', returnRate: '0%' },
 ];
 
-export function getMultiplierForCorrectCount(correctCount: number, jackpotMultiplier: number = 100): number {
+export function getMultiplierForCorrectCount(correctCount: number, jackpotMultiplier: number = 50): number {
   if (correctCount >= 6) return jackpotMultiplier;
   if (correctCount === 5) return 10;
   if (correctCount === 4) return 3;
@@ -87,9 +87,22 @@ export function settlePredictionSlip(
     });
   });
 
-  const multiplier = getMultiplierForCorrectCount(correctCount, slip.jackpotMultiplier || 100);
+  const wheelMult = slip.wheelMultiplier || 50;
+  const boostFactor = wheelMult / 50; // base 6/6 is 50, so if wheel is 100, boost is 2x
+  
+  let baseMultiplier = 0;
+  if (correctCount >= 6) baseMultiplier = wheelMult;
+  else if (correctCount === 5) baseMultiplier = 10 * boostFactor;
+  else if (correctCount === 4) baseMultiplier = 3 * boostFactor;
+  else if (correctCount === 3) baseMultiplier = 0.5; // 3/6 is refund, usually not boosted
+
+  const multiplier = baseMultiplier;
   const payoutAmount = slip.entryFee * multiplier;
-  const status: 'WON' | 'LOST' = multiplier > 0 ? 'WON' : 'LOST';
+  
+  let status: 'WON' | 'LOST' | 'PENDING_APPROVAL' = 'LOST';
+  if (multiplier > 0) {
+    status = correctCount === 6 ? 'PENDING_APPROVAL' : 'WON';
+  }
 
   const settledSlip: UserPredictionSlip = {
     ...slip,

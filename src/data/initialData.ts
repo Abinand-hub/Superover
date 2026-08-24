@@ -1,19 +1,19 @@
 import { CricketMatch, FAQItem, PlatformMetrics, Player, UserAccount, UserPredictionSlip, Wallet, WalletTransaction } from '../types';
 
 export const INITIAL_USER: UserAccount = {
-  id: 'usr_882910',
-  phone: '+91 98765 43210',
-  name: 'Rohit Sharma Fan',
-  email: 'rohit.cricketfan@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  kycStatus: 'VERIFIED',
-  panNumber: 'ABCDE1234F',
-  upiId: 'rohitfan@okaxis',
+  id: 'u_guest',
+  phone: '',
+  name: 'Guest',
+  email: '',
+  avatar: 'https://ui-avatars.com/api/?name=Guest&background=131A38&color=fff',
+  kycStatus: 'PENDING',
+  panNumber: '',
+  upiId: '',
   isBlocked: false,
-  joinedDate: '2026-04-10',
-  dailyDepositLimit: 10000,
-  totalContestsJoined: 14,
-  totalWon: 3750,
+  joinedDate: new Date().toISOString().split('T')[0],
+  dailyDepositLimit: 0,
+  totalContestsJoined: 0,
+  totalWon: 0,
 };
 
 export const INITIAL_WALLET: Wallet = {

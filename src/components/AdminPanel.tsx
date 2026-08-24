@@ -60,6 +60,8 @@ interface AdminPanelProps {
   onApproveWithdrawal: (txId: string) => void;
   onRejectWithdrawal: (txId: string) => void;
   onAddBonusCash: (userId: string, amount: number, note?: string) => void;
+  onApproveJackpot: (slipId: string) => void;
+  onRejectJackpot: (slipId: string) => void;
   onCloseAdmin: () => void;
 }
 
@@ -211,9 +213,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onApproveWithdrawal,
   onRejectWithdrawal,
   onAddBonusCash,
+  onApproveJackpot,
+  onRejectJackpot,
   onCloseAdmin,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'matches' | 'squads' | 'settlement' | 'users' | 'withdrawals' | 'financials'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials'>('overview');
 
   // Match Management State
   const [selectedMatchForSquad, setSelectedMatchForSquad] = useState<string>(matches[0]?.id || '');
@@ -441,10 +445,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {[
           { id: 'overview', label: 'Platform KPI', icon: BarChart3 },
           { id: 'matches', label: 'Match Lifecycle (Start/End)', icon: Trophy },
-          { id: 'squads', label: 'Player & Squad Manager', icon: UserPlus },
+          { id: 'squads', label: 'Match Squad Viewer', icon: UserPlus },
           { id: 'settlement', label: 'Result Settlement & Payouts', icon: Sparkles },
+          { id: 'jackpots', label: 'Jackpot Approvals', icon: Gift },
           { id: 'users', label: `User Inspector (${allUsers.length})`, icon: Users },
-          { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL').length})`, icon: ArrowUpRight },
+          { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL' && t.status === 'PENDING').length})`, icon: ArrowUpRight },
           { id: 'financials', label: 'Audit CSV & Rake', icon: FileSpreadsheet },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -514,7 +519,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div key={m.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between">
                     <div>
                       <div className="font-bold text-white text-xs">{m.title}</div>
-                      <div className="text-[11px] text-slate-400">Pool: {formatINR(m.totalPool)} • {m.totalEntries} entries</div>
+                      <div className="text-[11px] text-slate-400">Prize Pool: <span className="text-[#FFAA00] font-bold">{formatINR(allSlips.filter(s => s.matchId === m.id).reduce((sum, slip) => sum + slip.entryFee, 0))}</span> • {allSlips.filter(s => s.matchId === m.id).length} Entries</div>
                     </div>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
                       m.status === 'LIVE' ? 'bg-rose-500/20 text-rose-400 animate-pulse' :
@@ -597,8 +602,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
 
                   <h3 className="text-base font-extrabold text-white">{match.title}</h3>
-                  <div className="text-xs text-slate-400">
-                    Venue: {match.venue} • Pool: <span className="text-[#FFAA00] font-bold">{formatINR(match.totalPool)}</span> • {match.totalEntries} entries placed
+                  {match.status === 'LIVE' && match.liveScore && (
+                    <div className="text-sm font-black text-[#FF6B00] bg-[#FF6B00]/10 px-3 py-1 rounded-lg border border-[#FF6B00]/20 inline-block mt-1 animate-pulse">
+                      🔴 LIVE: {match.liveScore}
+                    </div>
+                  )}
+                  <div className="text-xs text-slate-400 mt-1">
+                    Venue: {match.venue} • Prize Pool: <span className="text-[#FFAA00] font-bold">
+                      {formatINR(allSlips.filter(s => s.matchId === match.id).reduce((sum, slip) => sum + slip.entryFee, 0))}
+                    </span> • {allSlips.filter(s => s.matchId === match.id).length} Entries Placed
                   </div>
                   <div className="text-[11px] text-slate-500">
                     Squads: {match.team1.code} ({match.squadTeam1.length} players) vs {match.team2.code} ({match.squadTeam2.length} players)
@@ -670,23 +682,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB CONTENT 3: SQUAD & PLAYERS MANAGER */}
+      {/* TAB CONTENT 3: SQUAD VIEWER */}
       {adminTab === 'squads' && (
         <div className="space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-black text-white">Player & Squad Manager</h2>
-              <p className="text-xs text-slate-400">Add, edit, or remove players for both teams in any match.</p>
+              <h2 className="text-lg font-black text-white">Match Squad Viewer</h2>
+              <p className="text-xs text-emerald-400 font-bold flex items-center gap-1"><Sparkles className="w-3.5 h-3.5"/> Fully synchronized directly from CricAPI.</p>
             </div>
-
-            <button
-              onClick={() => setShowAddPlayerModal(true)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/30 hover:brightness-110 self-start sm:self-auto"
-              id="btn-add-custom-player"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>+ Add New Player</span>
-            </button>
           </div>
 
           {/* Match & Team Selector */}
@@ -731,24 +734,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
 
-          {/* Quick 1-Click Star Player Add Preset Bar */}
-          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-            <span className="text-[11px] text-slate-400 font-bold uppercase block">Quick 1-Click Add Star Player Roster:</span>
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {STAR_PLAYERS_CATALOG.map((star) => (
-                <button
-                  key={star.id}
-                  onClick={() => handleAddStarPreset(star)}
-                  className="px-3 py-1.5 rounded-xl bg-[#0D122B] hover:bg-[#131A38] border border-[#1A223E] hover:border-[#FF6B00]/50 text-white text-xs font-bold flex items-center gap-2 flex-shrink-0 transition-all"
-                  title={`Add ${star.name} to ${selectedTeamForSquad === 'team1' ? currentMatchForSquad?.team1.code : currentMatchForSquad?.team2.code}`}
-                >
-                  <img src={star.avatar} alt={star.name} className="w-5 h-5 rounded-md object-cover" />
-                  <span>+ {star.shortName} ({star.role})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Current Squad Player Cards */}
           <div className="space-y-2">
             <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider">
@@ -775,14 +760,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div className="text-[11px] text-slate-400 mt-0.5 truncate max-w-xs">{player.careerStatHighlight}</div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => handleRemovePlayer(player.id)}
-                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                    title="Remove from squad"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               ))}
             </div>
@@ -831,7 +808,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           {/* Questions Winners Form */}
           <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4">
-            <h3 className="text-sm font-extrabold text-white">Enter Official Question Answers</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h3 className="text-sm font-extrabold text-white">Enter Official Question Answers</h3>
+              <button
+                onClick={async () => {
+                  if (!selectedMatchForSettlement) return;
+                  try {
+                    const res = await api.autoDetectMatchResults(selectedMatchForSettlement.id);
+                    if (res && res.answers) {
+                      const newPicks: any = {};
+                      Object.keys(res.answers).forEach(qId => {
+                        newPicks[qId] = {
+                          answerId: res.answers[qId] || '',
+                          answerText: res.answers[qId] || '',
+                          statValue: ''
+                        };
+                      });
+                      setSettlementPicks(newPicks);
+                      setSettlementSummary(res.summaryNote || 'Auto-fetched successfully.');
+                    }
+                  } catch (error) {
+                    console.error('Failed to auto-detect results', error);
+                    alert('Failed to auto-detect results. Ensure you are an Admin and CricAPI is reachable.');
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/20"
+                id="btn-auto-detect-results"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>✨ Auto-Detect Results via API</span>
+              </button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {selectedMatchForSettlement?.questions?.map((q) => {
@@ -901,6 +908,65 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <Sparkles className="w-4 h-4" />
               <span>Settle Match & Disburse Cash Payouts</span>
             </button>
+          </div>
+        </div>
+      )}
+      {/* TAB CONTENT: JACKPOT APPROVALS */}
+      {adminTab === 'jackpots' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Gift className="w-5 h-5 text-amber-500" />
+                6/6 Jackpot Approvals
+              </h2>
+              <p className="text-xs text-slate-400">Review and approve massive payouts for users who correctly guessed 6/6 stats.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {allSlips.filter(s => s.status === 'PENDING_APPROVAL').length === 0 ? (
+              <div className="p-8 text-center bg-[#0D122B] border border-[#1A223E] rounded-2xl">
+                <Gift className="w-12 h-12 text-slate-700 mx-auto mb-3" />
+                <h3 className="text-white font-bold">No Pending Jackpots</h3>
+                <p className="text-slate-400 text-sm mt-1">There are currently no 6/6 wins awaiting approval.</p>
+              </div>
+            ) : (
+              allSlips.filter(s => s.status === 'PENDING_APPROVAL').map(slip => (
+                <div key={slip.id} className="p-4 rounded-2xl bg-[#0D122B] border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-white">{slip.userName}</span>
+                      <span className="text-xs text-slate-400">({slip.userPhone})</span>
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase border border-amber-500/30">
+                        {slip.multiplierWon}X JACKPOT
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-300">
+                      Match: <span className="font-bold">{slip.matchTitle}</span>
+                    </div>
+                    <div className="text-xs text-slate-300 mt-0.5">
+                      Payout: <span className="font-mono font-black text-amber-500 text-lg ml-1">{formatINR(slip.payoutAmount || 0)}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onRejectJackpot(slip.id)}
+                      className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold text-xs transition-colors border border-rose-500/20"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => onApproveJackpot(slip.id)}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-colors shadow-lg shadow-emerald-600/20"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      Approve Payout
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

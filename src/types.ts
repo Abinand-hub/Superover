@@ -44,6 +44,7 @@ export interface TeamInfo {
   color: string;
   accentColor: string;
   flagOrLogo: string;
+  logoUrl?: string;
 }
 
 export interface CricketMatch {
@@ -67,6 +68,7 @@ export interface CricketMatch {
   questions: QuestionDefinition[];
   actualResults?: MatchResults;
   isFeatured?: boolean;
+  liveScore?: string;
 }
 
 export interface SettlementDetail {
@@ -94,8 +96,11 @@ export interface UserPredictionSlip {
   answers: Record<string, string>; // questionId -> answerId (playerId, teamName, 'yes'/'no', etc)
   entryFee: number; // 25, 50, or 100
   submittedAt: string;
-  status: 'PENDING' | 'LIVE' | 'WON' | 'LOST';
-  jackpotMultiplier: number; // The multiplier spun from Wheel of Fortune
+  status: 'PENDING' | 'LIVE' | 'WON' | 'LOST' | 'PENDING_APPROVAL' | 'REFUNDED';
+  freeHit?: boolean;
+  freeHitFee?: number;
+  totalPayable?: number;
+  wheelMultiplier?: number; // Multiplier unlocked via Free Hit wheel (e.g. 500)
   correctCount?: number;
   multiplierWon?: number;
   payoutAmount?: number;

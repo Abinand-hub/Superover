@@ -29,7 +29,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
   onSelectMatchToPlay,
   onViewMatchResult,
 }) => {
-  const [activeFilter, setActiveFilter] = useState<'ALL' | 'IPL' | 'INTL' | 'UPCOMING' | 'COMPLETED'>('ALL');
+  const [activeFilter, setActiveFilter] = useState<'UPCOMING' | 'IPL' | 'INTL' | 'COMPLETED'>('UPCOMING');
   const [now, setNow] = useState<Date>(new Date());
 
   // Update clock every second for precise countdown
@@ -41,11 +41,21 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
   }, []);
 
   const filteredMatches = matches.filter((m) => {
+    if (activeFilter === 'COMPLETED') return m.status === 'COMPLETED';
+    
+    // For UPCOMING, IPL, INTL - only show matches you can actually play!
+    if (m.status !== 'UPCOMING') return false;
+
+    // RULE: A user can only predict once per match.
+    // If they have already predicted this match, hide it from the lobby.
+    // They can track it in the 'My Selections' tab instead.
+    const hasPredicted = userSlips.some(slip => slip.matchId === m.id);
+    if (hasPredicted) return false;
+
     if (activeFilter === 'IPL') return m.series.includes('IPL');
     if (activeFilter === 'INTL') return m.series.includes('ICC') || m.series.includes('Championship');
-    if (activeFilter === 'UPCOMING') return m.status === 'UPCOMING';
-    if (activeFilter === 'COMPLETED') return m.status === 'COMPLETED';
-    return true;
+    
+    return true; // For UPCOMING
   });
 
   const getCountdownString = (startTimeIso: string, lockTimeIso: string, status: MatchStatus) => {
@@ -88,11 +98,9 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
         {/* Filter Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {[
-            { id: 'ALL', label: 'All Matches' },
+            { id: 'UPCOMING', label: 'All Upcoming' },
             { id: 'IPL', label: 'IPL 2026' },
             { id: 'INTL', label: 'International' },
-            { id: 'UPCOMING', label: 'Upcoming' },
-            { id: 'COMPLETED', label: 'Settled & Results' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -120,7 +128,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
 
           return (
             <article
-              key={match.id}
+              key={match.id || `match-${match.title}-${Math.random()}`}
               className={`rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between ${
                 match.isFeatured
                   ? 'bg-gradient-to-b from-[#0D122B] to-[#080B1A] border-[#FF6B00]/35 shadow-xl shadow-black/40 hover:border-[#FF6B00]/70'
@@ -167,7 +175,11 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                         className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center text-2xl shadow-inner relative border"
                         style={{ backgroundColor: `${match.team1.color}20`, borderColor: match.team1.color }}
                       >
-                        <span className="filter drop-shadow">{match.team1.flagOrLogo}</span>
+                        {match.team1.logoUrl ? (
+                          <img src={match.team1.logoUrl} alt={match.team1.code} className="w-10 h-10 object-contain drop-shadow-md" />
+                        ) : (
+                          <span className="filter drop-shadow">{match.team1.flagOrLogo}</span>
+                        )}
                         <div 
                           className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded text-white shadow-sm"
                           style={{ backgroundColor: match.team1.color }}
@@ -196,7 +208,11 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                         className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center text-2xl shadow-inner relative border"
                         style={{ backgroundColor: `${match.team2.color}20`, borderColor: match.team2.color }}
                       >
-                        <span className="filter drop-shadow">{match.team2.flagOrLogo}</span>
+                        {match.team2.logoUrl ? (
+                          <img src={match.team2.logoUrl} alt={match.team2.code} className="w-10 h-10 object-contain drop-shadow-md" />
+                        ) : (
+                          <span className="filter drop-shadow">{match.team2.flagOrLogo}</span>
+                        )}
                         <div 
                           className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded text-white shadow-sm"
                           style={{ backgroundColor: match.team2.color }}
@@ -210,8 +226,16 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                     </div>
                   </div>
 
+                  {/* LIVE SCORE BANNER */}
+                  {match.status === 'LIVE' && match.liveScore && (
+                    <div className="mt-2 mx-4 p-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00]/20 to-[#FF8800]/5 border border-[#FF6B00]/30 flex flex-col items-center justify-center text-center animate-pulse">
+                      <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider mb-0.5">🔴 Live Score</span>
+                      <span className="text-sm font-extrabold text-white">{match.liveScore}</span>
+                    </div>
+                  )}
+
                   {/* Venue & Pool stats */}
-                  <div className="mt-4 pt-3 border-t border-[#1A223E] flex items-center justify-between text-xs text-slate-400">
+                  <div className="mt-4 pt-3 border-t border-[#1A223E] flex items-center justify-between text-xs text-slate-400 mx-5 pb-4">
                     <div className="flex items-center gap-1 text-[11px] truncate max-w-[170px]">
                       <MapPin className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
                       <span className="truncate">{match.venue}, {match.city}</span>
@@ -267,7 +291,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] text-slate-400 font-semibold">Choose Entry:</span>
                       <div className="flex items-center gap-1.5">
-                        {match.entryFees.map((fee) => (
+                        {(match.entryFees || [25, 50, 100]).map((fee) => (
                           <button
                             key={fee}
                             onClick={() => onSelectMatchToPlay(match, fee)}

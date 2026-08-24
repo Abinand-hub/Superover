@@ -4,7 +4,7 @@ import {
   Search, ArrowRight, CheckCircle2, ChevronRight, AlertCircle
 } from 'lucide-react';
 import { CricketMatch, Player, PlayerRole, QuestionDefinition, UserAccount, Wallet } from '../types';
-import { formatINR } from '../utils/payoutCalculator';
+import { formatINR, PAYOUT_TIERS } from '../utils/payoutCalculator';
 import { WheelOfFortune } from './WheelOfFortune';
 
 interface PredictionModalProps {
@@ -13,7 +13,7 @@ interface PredictionModalProps {
   wallet: Wallet;
   initialFee?: number;
   onClose: () => void;
-  onSubmitSlip: (answers: Record<string, string>, entryFee: number, jackpotMultiplier: number) => void;
+  onSubmitSlip: (answers: Record<string, string>, entryFee: number, totalPaid: number, jackpotMultiplier: number, freeHit: boolean, freeHitFee: number, wheelMultiplier?: number) => void;
   onOpenDeposit: () => void;
 }
 
@@ -30,7 +30,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   
   // View states
   const [activePlayerQuestionId, setActivePlayerQuestionId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'QUESTIONS' | 'STAKE' | 'WHEEL'>('QUESTIONS');
+  const [currentView, setCurrentView] = useState<'QUESTIONS' | 'STAKE' | 'WHEEL' | 'WHEEL_RESULT'>('QUESTIONS');
   
   // Stake states
   const [selectedFee, setSelectedFee] = useState<number>(initialFee);
@@ -83,27 +83,87 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   // --- STAKE CALCULATION ---
   const presetFees = [25, 50, 100, 200, 250, 500, 1000];
   const baseStake = customFee ? parseInt(customFee) || selectedFee : selectedFee;
-  const freeHitFee = Math.round(baseStake * 0.4); // 40%
+  const freeHitFee = Math.ceil(baseStake * 0.4); // 40%
   const finalPayable = baseStake + freeHitFee;
-  const canAfford = wallet.totalBalance >= finalPayable;
+  const canAffordFreeHit = wallet.totalBalance >= finalPayable;
+  const canAffordStandard = wallet.totalBalance >= baseStake;
 
   const handleBuyFreeHit = () => {
-    if (!canAfford) {
+    if (!canAffordFreeHit) {
       onOpenDeposit();
       return;
     }
     setCurrentView('WHEEL');
   };
 
+  const handleSubmitPrediction = () => {
+    if (!canAffordStandard) {
+      onOpenDeposit();
+      return;
+    }
+    onSubmitSlip(answers, baseStake, baseStake, 50, false, 0, undefined);
+  };
+
   const handleWheelComplete = (multiplier: number) => {
     setJackpotMultiplier(multiplier);
-    // Auto submit after a short delay
+    // Don't auto-submit! Wait for user to confirm the boosted winnings.
     setTimeout(() => {
-      onSubmitSlip(answers, baseStake, multiplier);
+      setCurrentView('WHEEL_RESULT');
     }, 1500);
   };
 
   // --- RENDERERS ---
+
+  const renderWheelResult = () => {
+    // If not free hit, we just show standard breakdown, but this is WheelResult so it's always free hit
+    const wheelMult = jackpotMultiplier || 50;
+    const boostFactor = wheelMult / 50;
+    
+    return (
+      <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 max-w-sm mx-auto w-full flex flex-col items-center justify-center">
+          <div className="w-24 h-24 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 border-2 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+            <span className="text-4xl font-black text-amber-500">{wheelMult}x</span>
+          </div>
+          <h3 className="text-2xl font-black text-white font-display text-center mb-2">Multiplier Revealed!</h3>
+          <p className="text-sm text-slate-400 text-center mb-8">Your potential winnings have been boosted.</p>
+          
+          <div className="w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-4 mb-8 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+            <h4 className="text-sm font-bold text-amber-400 mb-3 text-center uppercase tracking-wider">Boosted Winning Preview</h4>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
+                <span className="text-slate-300">✅ 4 Correct</span>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-500 line-through mr-2">₹{Math.floor(baseStake * 3)}</span>
+                  <span className="font-mono font-bold text-amber-400">₹{Math.floor(baseStake * 3 * boostFactor)}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
+                <span className="text-slate-300">✅ 5 Correct</span>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-500 line-through mr-2">₹{Math.floor(baseStake * 10)}</span>
+                  <span className="font-mono font-bold text-amber-400">₹{Math.floor(baseStake * 10 * boostFactor)}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center bg-amber-500/20 p-2 rounded-lg border border-amber-500/30">
+                <span className="text-amber-500 font-bold">✅ 6 Correct (JACKPOT)</span>
+                <div className="text-right">
+                  <span className="font-mono font-black text-amber-500">₹{Math.floor(baseStake * wheelMult)}</span> 
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => onSubmitSlip(answers, baseStake, finalPayable, jackpotMultiplier || 50, true, freeHitFee, jackpotMultiplier || 50)}
+            className="w-full py-4 rounded-xl font-black text-slate-950 text-lg bg-emerald-500 hover:bg-emerald-400 transition-all flex flex-col items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+          >
+            <span>CONFIRM & PAY ₹{finalPayable}</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const renderPlayerPickerPopup = () => {
     if (!activePlayerQuestionId) return null;
@@ -139,8 +199,8 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
           {/* Filters */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
             <button onClick={() => setTeamFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>All</button>
-            <button onClick={() => setTeamFilter('TEAM1')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM1' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team1.shortName}</button>
-            <button onClick={() => setTeamFilter('TEAM2')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM2' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team2.shortName}</button>
+            <button onClick={() => setTeamFilter('TEAM1')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM1' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team1.shortName || match.team1.code}</button>
+            <button onClick={() => setTeamFilter('TEAM2')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM2' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team2.shortName || match.team2.code}</button>
             <div className="w-px h-4 bg-slate-700 mx-1"></div>
             <button onClick={() => setRoleFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
             <button onClick={() => setRoleFilter('BAT')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'BAT' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Bat</button>
@@ -180,6 +240,13 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     <div className="flex-1 overflow-y-auto relative p-4 sm:p-6 space-y-4">
       {renderPlayerPickerPopup()}
       
+      {match.status === 'LIVE' && match.liveScore && (
+        <div className="mb-4 p-3 rounded-xl bg-[#080C1D] border border-[#FF6B00]/40 flex flex-col items-center justify-center text-center shadow-[0_0_15px_rgba(255,107,0,0.1)]">
+          <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider animate-pulse flex items-center gap-1"><div className="w-1.5 h-1.5 bg-rose-500 rounded-full"></div>Live Scoreboard</span>
+          <span className="text-sm font-black text-white mt-0.5 font-mono">{match.liveScore}</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-white font-black text-lg font-display">Make Your Predictions</h3>
@@ -302,7 +369,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     const isCustomError = parseInt(customFee) > 1000;
     
     return (
-      <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950">
+      <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950 overflow-y-auto custom-scrollbar">
         <button 
           onClick={() => setCurrentView('QUESTIONS')}
           className="self-start mb-6 text-sm text-slate-400 hover:text-white flex items-center gap-1"
@@ -353,23 +420,67 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
             )}
           </div>
 
-          {/* Wallet Balance Warning */}
-          <div className={`mb-6 text-xs flex items-center gap-1.5 p-3 rounded-xl ${canAfford ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-            {canAfford ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span className="font-bold">Wallet Balance: {formatINR(wallet.totalBalance)}</span>
+          {/* Payout Breakdown */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
+              <Award className="w-4 h-4 text-emerald-500" /> Potential Winnings
+            </h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {PAYOUT_TIERS.map((tier) => (
+                <div key={tier.correct} className="flex justify-between items-center p-2 rounded-lg bg-slate-800/50">
+                  <span className="text-slate-400">{tier.correct}/6 Correct</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {tier.multiplier}x (₹{Math.floor(baseStake * tier.multiplier)})
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <button 
-            onClick={handleBuyFreeHit}
-            disabled={isCustomError}
-            className={`w-full py-4 rounded-xl font-black text-slate-950 text-lg transition-all flex flex-col items-center justify-center ${
-              isCustomError 
-                ? 'bg-slate-700 text-slate-500 cursor-not-allowed' 
-                : 'bg-amber-500 hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_30px_rgba(245,158,11,0.3)]'
-            }`}
-          >
-            <span>BUY A FREE HIT</span>
-          </button>
+          {/* Wallet Balance Warning */}
+          {!canAffordStandard && (
+            <div className={`mb-6 text-xs flex items-center gap-1.5 p-3 rounded-xl bg-red-500/10 text-red-400`}>
+              <AlertCircle className="w-4 h-4" />
+              <span className="font-bold">Insufficient Wallet Balance: {formatINR(wallet.totalBalance)}</span>
+            </div>
+          )}
+
+          <div className="space-y-3 pb-4">
+            <button 
+              onClick={handleSubmitPrediction}
+              disabled={isCustomError}
+              className={`w-full py-3.5 rounded-xl font-bold text-white text-base transition-all flex items-center justify-center gap-2 ${
+                isCustomError 
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                  : 'bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98]'
+              }`}
+            >
+              <span>SUBMIT PREDICTION (₹{baseStake})</span>
+            </button>
+
+          </div>
+
+          {/* FREE HIT CARD */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mt-6 mb-4">
+            <h4 className="text-sm font-black text-white flex items-center gap-2 mb-2">
+              💥 Increase Winnings Up to 500x
+            </h4>
+            <p className="text-xs text-slate-400 mb-4">
+              Buy Free Hit for +40% and spin the wheel to boost your multiplier
+            </p>
+            <button 
+              onClick={handleBuyFreeHit}
+              disabled={isCustomError}
+              className={`w-full py-3.5 rounded-xl font-black text-slate-950 text-base transition-all flex items-center justify-center gap-2 ${
+                isCustomError 
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                  : 'bg-amber-500 hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+              }`}
+            >
+              <Zap className="w-4 h-4" />
+              <span>BUY FREE HIT - ₹{freeHitFee}</span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -390,9 +501,9 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-black text-white mt-1 font-display flex items-center gap-2">
-              <span>{match.team1.shortName}</span>
+              <span>{match.team1.shortName || match.team1.name || match.team1.code}</span>
               <span className="text-slate-500 text-sm font-semibold">vs</span>
-              <span>{match.team2.shortName}</span>
+              <span>{match.team2.shortName || match.team2.name || match.team2.code}</span>
             </h2>
           </div>
 
@@ -412,12 +523,12 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
             <WheelOfFortune onComplete={handleWheelComplete} />
             {jackpotMultiplier && (
               <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-4">
-                <div className="text-xl font-black text-white">Submitting Prediction...</div>
-                <div className="text-sm text-slate-400 mt-2">Locking in your {jackpotMultiplier}X Multiplier</div>
+                <div className="text-xl font-black text-white">Calculating Boost...</div>
               </div>
             )}
           </div>
         )}
+        {currentView === 'WHEEL_RESULT' && renderWheelResult()}
       </div>
     </div>
   );

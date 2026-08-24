@@ -34,6 +34,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
   onPlayAnother,
 }) => {
   const isWon = slip && slip.status === 'WON' && (slip.multiplierWon || 0) > 0;
+  const isPendingApproval = slip && slip.status === 'PENDING_APPROVAL';
 
   useEffect(() => {
     if (isWon) {
@@ -99,7 +100,9 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
           {slip ? (
             <div
               className={`p-4 sm:p-5 rounded-2xl border ${
-                isWon
+                isPendingApproval
+                  ? 'bg-gradient-to-br from-amber-500/20 via-amber-950/30 to-slate-900 border-amber-400/50 shadow-lg shadow-amber-500/10'
+                  : isWon
                   ? 'bg-gradient-to-br from-amber-500/20 via-emerald-950/30 to-slate-900 border-amber-400/50 shadow-lg'
                   : 'bg-slate-950/60 border-slate-800'
               }`}
@@ -108,34 +111,39 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                 <div className="flex items-center gap-3.5">
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black ${
-                      isWon
+                      isPendingApproval
+                        ? 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/30'
+                        : isWon
                         ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30'
                         : 'bg-slate-800 text-slate-400'
                     }`}
                   >
-                    {isWon ? <Trophy className="w-6 h-6" /> : <XCircle className="w-6 h-6 text-slate-400" />}
+                    {isPendingApproval ? <ShieldCheck className="w-6 h-6" /> : isWon ? <Trophy className="w-6 h-6" /> : <XCircle className="w-6 h-6 text-slate-400" />}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-base font-black ${isWon ? 'text-amber-400' : 'text-slate-300'}`}>
-                        {isWon ? `${slip.multiplierWon}X Cash Prize Won!` : 'Better Luck Next SuperOver'}
+                      <span className={`text-base font-black ${isPendingApproval ? 'text-amber-400' : isWon ? 'text-amber-400' : 'text-slate-300'}`}>
+                        {isPendingApproval ? `${slip.multiplierWon}X Jackpot Pending Approval ⏳` : isWon ? `${slip.multiplierWon}X Cash Prize Won!` : 'Better Luck Next SuperOver'}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
                         {slip.correctCount ?? 0} / 6 Correct
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Entry: {formatINR(slip.entryFee)} • Submitted {new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {isPendingApproval 
+                        ? 'Your massive win is undergoing standard security checks by the admin.'
+                        : `Entry: ${formatINR(slip.entryFee)} • Submitted ${new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      }
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right sm:border-l sm:border-slate-800 sm:pl-4">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
-                    Cash Credited
+                    {isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
                   </span>
-                  <span className={`text-2xl font-black font-display ${isWon ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  <span className={`text-2xl font-black font-display ${isPendingApproval ? 'text-amber-400 animate-pulse' : isWon ? 'text-emerald-400' : 'text-slate-500'}`}>
                     {formatINR(slip.payoutAmount || 0)}
                   </span>
                 </div>

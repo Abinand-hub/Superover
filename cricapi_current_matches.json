@@ -1,0 +1,11 @@
+{
+  "apikey": "ba8bbefd-0db6-4e19-b509-950aa7cb5197",
+  "info": {
+    "hitsToday": 115,
+    "hitsUsed": 1,
+    "hitsLimit": 100,
+    "credits": 0
+  },
+  "status": "failure",
+  "reason": "Blocking since hits today exceeded hits limit"
+}

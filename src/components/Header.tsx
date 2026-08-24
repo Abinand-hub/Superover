@@ -153,83 +153,85 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right Section: Wallet & Profile & Admin Switch */}
         <div className="flex items-center gap-2.5">
           {/* Quick Wallet Balance Pill */}
-          <div className="flex items-center bg-[#0D122B] rounded-xl p-1 border border-[#1A223E] shadow-inner">
-            <button
-              onClick={() => openWalletModal('passbook')}
-              className="flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[#131A38] rounded-lg transition-colors group"
-              title="Click to view wallet details"
-              id="btn-wallet-balance"
-            >
-              <div className="w-7 h-7 rounded-lg bg-[#4ADE80]/20 border border-[#4ADE80]/30 flex items-center justify-center text-[#4ADE80]">
-                <WalletIcon className="w-3.5 h-3.5" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
-                <span className="text-xs font-extrabold text-white group-hover:text-[#4ADE80] transition-colors">
-                  {formatINR(wallet.totalBalance)}
-                </span>
-              </div>
-            </button>
+          {user.id !== 'u_guest' && (
+            <div className="flex items-center bg-[#0D122B] rounded-xl p-1 border border-[#1A223E] shadow-inner">
+              <button
+                onClick={() => openWalletModal('passbook')}
+                className="flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[#131A38] rounded-lg transition-colors group"
+                title="Click to view wallet details"
+                id="btn-wallet-balance"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#4ADE80]/20 border border-[#4ADE80]/30 flex items-center justify-center text-[#4ADE80]">
+                  <WalletIcon className="w-3.5 h-3.5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
+                  <span className="text-xs font-extrabold text-white group-hover:text-[#4ADE80] transition-colors">
+                    {formatINR(wallet.totalBalance)}
+                  </span>
+                </div>
+              </button>
 
-            <button
-              onClick={() => openWalletModal('deposit')}
-              className="ml-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/30 flex items-center gap-1"
-              id="btn-quick-add-money"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add ₹</span>
-            </button>
-          </div>
+              <button
+                onClick={() => openWalletModal('deposit')}
+                className="ml-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/30 flex items-center gap-1"
+                id="btn-quick-add-money"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Add ₹</span>
+              </button>
+            </div>
+          )}
 
           {/* User Account / KYC Profile Pill */}
           <div className="relative">
-            <button
-              onClick={openAuthModal}
-              className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#0D122B] hover:bg-[#131A38] border border-[#1A223E] transition-all text-left group"
-              id="btn-user-profile"
-            >
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-7 h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
-              />
-              <div className="hidden lg:flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">{user.name}</span>
-                  {user.kycStatus === 'VERIFIED' ? (
-                    <span className="text-[#4ADE80] text-[10px]" title="KYC Verified">✓</span>
-                  ) : (
-                    <span className="text-[#FFAA00] text-[10px]" title="KYC Pending">⚠️</span>
-                  )}
+            {user.id === 'u_guest' ? (
+              <button
+                onClick={openAuthModal}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:brightness-110"
+              >
+                <UserIcon className="w-3.5 h-3.5" />
+                <span>Login / Register</span>
+              </button>
+            ) : (
+              <button
+                onClick={openAuthModal}
+                className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#0D122B] hover:bg-[#131A38] border border-[#1A223E] transition-all text-left group"
+                id="btn-user-profile"
+              >
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-7 h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
+                />
+                <div className="hidden lg:flex flex-col">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">{user.name}</span>
+                    {user.kycStatus === 'VERIFIED' ? (
+                      <span className="text-[#4ADE80] text-[10px]" title="KYC Verified">✓</span>
+                    ) : (
+                      <span className="text-[#FFAA00] text-[10px]" title="KYC Pending">⚠️</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-400">{user.phone}</span>
                 </div>
-                <span className="text-[10px] text-slate-400">{user.phone}</span>
-              </div>
-            </button>
+              </button>
+            )}
           </div>
-
-          {/* Admin Switcher Toggle */}
-          <div className="pl-1 border-l border-[#1A223E]">
-            <button
-              onClick={() => {
-                if (activeTab === 'admin') {
-                  setActiveTab('lobby');
-                } else {
-                  setActiveTab('admin');
-                }
-              }}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
-                activeTab === 'admin'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-md shadow-purple-600/30 ring-2 ring-purple-500/30'
-                  : 'bg-[#0D122B] hover:bg-[#131A38] text-purple-300 border-purple-500/30 hover:border-purple-400/50'
-              }`}
-              id="btn-toggle-admin-portal"
-              title="Switch to Organizer Admin Panel to manage matches, enter results, settle payouts, and approve withdrawals"
-            >
-              <Settings className="w-3.5 h-3.5 text-purple-300" />
-              <span className="hidden sm:inline">{activeTab === 'admin' ? 'Exit Admin' : 'Admin Panel'}</span>
-              <span className="sm:hidden">Admin</span>
-            </button>
-          </div>
+          {/* Admin link */}
+          {user.role === 'ADMIN' && (
+            <div className="pl-1 border-l border-[#1A223E]">
+              <a
+                href="/admin"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-md shadow-purple-600/30 ring-2 ring-purple-500/30 hover:brightness-110"
+                title="Go to Admin Panel"
+              >
+                <Settings className="w-3.5 h-3.5 text-white" />
+                <span className="hidden sm:inline">Admin Panel</span>
+                <span className="sm:hidden">Admin</span>
+              </a>
+            </div>
+          )}
         </div>
       </div>
 
