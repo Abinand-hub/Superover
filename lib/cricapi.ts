@@ -238,6 +238,13 @@ async function mockSyncMatches() {
       squadTeam1: getMockSquad('India', 'IND'),
       squadTeam2: getMockSquad('Australia', 'AUS'),
     });
+  } else {
+    // Push the demo match into the future if it's about to lock or already passed, so we can always test!
+    if (new Date(mockUpcomingMatch.matchStartTime).getTime() < Date.now() + 2 * 60 * 1000) {
+      mockUpcomingMatch.matchStartTime = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour ahead
+      mockUpcomingMatch.status = 'UPCOMING';
+      await mockUpcomingMatch.save();
+    }
   }
 
   return { success: true, count: 2, mock: true };
