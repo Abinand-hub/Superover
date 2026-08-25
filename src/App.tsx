@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Target, Award, Crosshair, ShieldCheck, Zap, Flame } from 'lucide-react';
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
+import { LogoLoader } from './components/Loader';
 const PredictionModal = React.lazy(() => import('./components/PredictionModal').then(m => ({ default: m.PredictionModal })));
 const SlipResultModal = React.lazy(() => import('./components/SlipResultModal').then(m => ({ default: m.SlipResultModal })));
 const MyContestsView = React.lazy(() => import('./components/MyContestsView').then(m => ({ default: m.MyContestsView })));
@@ -11,7 +12,6 @@ const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({
 const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
 const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
 const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
-import { LogoLoader } from './components/Loader';
 
 
 import { 
