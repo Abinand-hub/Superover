@@ -478,7 +478,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Pool Volume</span>
               <span className="text-2xl sm:text-3xl font-black text-white font-display mt-1 block">
-                {formatINR(metrics.totalPoolCollected)}
+                {formatINR(allSlips.reduce((sum, slip) => sum + (slip.entryFee || 0), 0))}
               </span>
               <span className="text-[11px] text-[#4ADE80] mt-1 block">From ₹25, ₹50, ₹100 entry fees</span>
             </div>
@@ -486,7 +486,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Won Payouts</span>
               <span className="text-2xl sm:text-3xl font-black text-[#FFAA00] font-display mt-1 block">
-                {formatINR(metrics.totalPayoutsDisbursed)}
+                {formatINR(allTransactions.filter(t => t.type === 'PAYOUT' || t.type === 'CONTEST_PAYOUT').reduce((sum, t) => sum + t.amount, 0))}
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">0.5X, 3X, 10X & 100X Winners</span>
             </div>
@@ -494,9 +494,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-950/40 to-[#0D122B] border border-purple-500/30 shadow-md">
               <span className="text-[10px] text-purple-300 font-bold uppercase tracking-wider block">Platform Net Rake</span>
               <span className="text-2xl sm:text-3xl font-black text-[#4ADE80] font-display mt-1 block">
-                {formatINR(metrics.platformProfit)}
+                {formatINR(allSlips.reduce((sum, slip) => sum + (slip.entryFee || 0), 0) * 0.15)}
               </span>
-              <span className="text-[11px] text-purple-400 mt-1 block">~{metrics.commissionRate}% House Commission</span>
+              <span className="text-[11px] text-purple-400 mt-1 block">~15% House Commission</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
@@ -632,7 +632,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   )}
 
                   {/* END & SETTLE BUTTON */}
-                  {match.status !== 'COMPLETED' && (
+                  {match.status === 'LIVE' && (
                     <button
                       onClick={() => handleEndMatch(match)}
                       className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-purple-600/30"
