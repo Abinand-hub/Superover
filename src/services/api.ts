@@ -10,7 +10,8 @@ import {
 
 import {
   INITIAL_USER,
-  INITIAL_WALLET
+  INITIAL_WALLET,
+  INITIAL_PLATFORM_METRICS
 } from '../data/initialData';
 
 const BASE_URL = '/api';
