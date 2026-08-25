@@ -11,20 +11,27 @@ export async function syncMatchesFromCricAPI() {
   }
 
   try {
-    const res = await fetch(`${CRICAPI_BASE_URL}/matches?apikey=${CRICAPI_KEY}&offset=0`);
-    const data = await res.json();
+    let allMatches = [];
+    for (let offset of [0, 25, 50]) {
+      const res = await fetch(`${CRICAPI_BASE_URL}/matches?apikey=${CRICAPI_KEY}&offset=${offset}`);
+      const data = await res.json();
+      if (data.status === 'success' && data.data) {
+        allMatches = allMatches.concat(data.data);
+      }
+      await new Promise(resolve => setTimeout(resolve, 300)); // avoid rate limit
+    }
 
-    if (data.status !== 'success') {
-      console.warn('CricAPI Sync Failed or Limit Reached:', data.reason);
+    if (allMatches.length === 0) {
+      console.warn('CricAPI Sync Failed or Limit Reached');
       console.warn('Falling back to mock live matches to keep app functional!');
       return mockSyncMatches();
     }
 
-    const matches = data.data;
+    const matches = allMatches;
 
     for (const match of matches) {
       // ONLY fetch UPCOMING matches (matchStarted === false) to save API calls and meet user requirement
-      if (['t20', 'odi', 'test'].includes(match.matchType) && match.matchStarted === false) {
+      if (match.matchStarted === false) {
         
         const existingMatch = await Match.findOne({ apiId: match.id });
         if (!existingMatch) {
