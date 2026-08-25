@@ -8,14 +8,25 @@ export async function GET(req: Request) {
   try {
     await connectToDatabase();
     
-    // Return all matches, sorted by matchStartTime ascending
-    let matches = await Match.find({}).sort({ matchStartTime: 1 }).lean();
+    const now = new Date();
+    // Allow up to 48 hours in the past so admins have time to settle results
+    const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    // If the database is completely empty, auto-sync from CricAPI to populate it
+    // Return matches from 48h ago to 7 days from now, sorted by start time
+    const query = {
+      matchStartTime: {
+        $gte: twoDaysAgo.toISOString(),
+        $lte: sevenDaysFromNow.toISOString()
+      }
+    };
+    
+    let matches = await Match.find(query).sort({ matchStartTime: 1 }).lean();
+    // If the database has no upcoming matches in this window, auto-sync from CricAPI
     if (matches.length === 0) {
-      console.log('DB empty! Auto-syncing matches from CricAPI...');
+      console.log('No recent/upcoming matches! Auto-syncing matches from CricAPI...');
       await syncMatchesFromCricAPI();
-      matches = await Match.find({}).sort({ matchStartTime: 1 }).lean();
+      matches = await Match.find(query).sort({ matchStartTime: 1 }).lean();
     }
 
     return NextResponse.json(matches);
