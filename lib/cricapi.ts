@@ -29,9 +29,14 @@ export async function syncMatchesFromCricAPI() {
 
     const matches = allMatches;
 
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
     for (const match of matches) {
-      // ONLY fetch UPCOMING matches (matchStarted === false) to save API calls and meet user requirement
-      if (match.matchStarted === false) {
+      const matchDate = new Date(match.dateTimeGMT);
+      
+      // ONLY fetch UPCOMING matches (matchStarted === false) that are within the next 7 days
+      if (match.matchStarted === false && matchDate <= sevenDaysFromNow) {
         
         const existingMatch = await Match.findOne({ apiId: match.id });
         if (!existingMatch) {
@@ -180,6 +185,15 @@ function generateDefaultQuestions() {
 }
 
 async function mockSyncMatches() {
+  const getMockSquad = (teamName: string, teamCode: string) => [
+    { id: `p_${teamCode}_1`, name: `${teamName} Player 1`, shortName: `Player 1`, team: teamCode, teamName: teamName, role: 'BAT', avatar: 'https://ui-avatars.com/api/?name=P1', country: 'IND', recentForm: [], careerStatHighlight: 'BAT' },
+    { id: `p_${teamCode}_2`, name: `${teamName} Player 2`, shortName: `Player 2`, team: teamCode, teamName: teamName, role: 'BAT', avatar: 'https://ui-avatars.com/api/?name=P2', country: 'IND', recentForm: [], careerStatHighlight: 'BAT' },
+    { id: `p_${teamCode}_3`, name: `${teamName} Player 3`, shortName: `Player 3`, team: teamCode, teamName: teamName, role: 'AR', avatar: 'https://ui-avatars.com/api/?name=P3', country: 'IND', recentForm: [], careerStatHighlight: 'AR' },
+    { id: `p_${teamCode}_4`, name: `${teamName} Player 4`, shortName: `Player 4`, team: teamCode, teamName: teamName, role: 'WK', avatar: 'https://ui-avatars.com/api/?name=P4', country: 'IND', recentForm: [], careerStatHighlight: 'WK' },
+    { id: `p_${teamCode}_5`, name: `${teamName} Player 5`, shortName: `Player 5`, team: teamCode, teamName: teamName, role: 'BOWL', avatar: 'https://ui-avatars.com/api/?name=P5', country: 'IND', recentForm: [], careerStatHighlight: 'BOWL' },
+    { id: `p_${teamCode}_6`, name: `${teamName} Player 6`, shortName: `Player 6`, team: teamCode, teamName: teamName, role: 'BOWL', avatar: 'https://ui-avatars.com/api/?name=P6', country: 'IND', recentForm: [], careerStatHighlight: 'BOWL' },
+  ];
+
   const mockLiveMatch = await Match.findOne({ apiId: 'mock-live-1' });
   if (!mockLiveMatch) {
     await Match.create({
@@ -195,8 +209,8 @@ async function mockSyncMatches() {
       totalPool: 0,
       totalEntries: 0,
       questions: generateDefaultQuestions(),
-      squadTeam1: [],
-      squadTeam2: [],
+      squadTeam1: getMockSquad('Chennai Super Kings', 'CSK'),
+      squadTeam2: getMockSquad('Mumbai Indians', 'MI'),
     });
   } else {
     // Keep score moving for demo
@@ -221,8 +235,8 @@ async function mockSyncMatches() {
       totalEntries: 0,
       entryFees: [5, 25, 50, 100], // Allow 5 rupees entry
       questions: generateDefaultQuestions(),
-      squadTeam1: [],
-      squadTeam2: [],
+      squadTeam1: getMockSquad('India', 'IND'),
+      squadTeam2: getMockSquad('Australia', 'AUS'),
     });
   }
 
