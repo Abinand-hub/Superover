@@ -8,13 +8,6 @@ import {
   WalletTransaction
 } from '../types';
 
-import {
-  INITIAL_ALL_USERS,
-  INITIAL_FAQS,
-  INITIAL_MATCHES,
-  INITIAL_PLATFORM_METRICS,
-  INITIAL_SLIPS,
-  INITIAL_TRANSACTIONS,
   INITIAL_USER,
   INITIAL_WALLET
 } from '../data/initialData';
@@ -54,7 +47,15 @@ async function fetchWithMockFallback<T>(endpoint: string, options?: RequestInit,
 export const api = {
   // Matches
   getMatches: async () => {
-    const rawMatches = await fetchWithMockFallback<any[]>('/matches', { method: 'GET' }, INITIAL_MATCHES);
+    let rawMatches = [];
+    try {
+      const res = await fetch('/api/matches', { method: 'GET' });
+      if (res.ok) {
+        rawMatches = await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to fetch matches:', e);
+    }
     return rawMatches.map((m: any) => {
       // API returns matchStartTime and _id, need to map to frontend types
       const startTimeIso = m.matchStartTime || m.startTime;
@@ -79,18 +80,15 @@ export const api = {
       } as CricketMatch;
     });
   },
-  updateMatch: (payload: any) => fetchWithMockFallback<CricketMatch>('/matches/update', { method: 'POST', body: JSON.stringify(payload) }),
+  updateMatch: (payload: any) => fetch('/api/matches/update', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
   
   // User Data
-  getCurrentUser: () => fetchWithMockFallback<UserAccount>('/user/current', { method: 'GET' }, INITIAL_USER),
-  getAllUsers: () => fetchWithMockFallback<UserAccount[]>('/users', { method: 'GET' }, []),
+  getCurrentUser: () => fetch('/api/user/current', { method: 'GET' }).then(r => r.json()),
+  getAllUsers: () => fetch('/api/users', { method: 'GET' }).then(r => r.json()),
   
   // Wallet & Transactions
   getWallet: async () => {
     const response = await fetch('/api/wallet', { method: 'GET' });
-    if (!response.ok) {
-       return { depositBalance: 0, winningsBalance: 0, bonusBalance: 0, totalBalance: 0, kycVerified: false, upiId: '' };
-    }
     return response.json();
   },
   getTransactions: async () => {
