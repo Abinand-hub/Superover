@@ -854,19 +854,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     <div>
                       <label className="text-[10px] text-slate-400 block mb-1">Official Winner Answer/Player ID:</label>
-                      <input
-                        type="text"
-                        value={currentPick.answerId}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSettlementPicks((prev) => ({
-                            ...prev,
-                            [q.id]: { ...currentPick, answerId: val, answerText: val },
-                          }));
-                        }}
-                        placeholder="e.g. p_vkohli or Yes"
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
-                      />
+                      {q.type === 'PLAYER' ? (
+                        <select
+                          value={currentPick.answerId}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const combinedSquad = [...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])];
+                            const player = combinedSquad.find(p => p.id === val);
+                            setSettlementPicks((prev) => ({
+                              ...prev,
+                              [q.id]: { ...currentPick, answerId: val, answerText: player ? player.name : val },
+                            }));
+                          }}
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                        >
+                          <option value="">Select a player...</option>
+                          {[...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])].map((p: any) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name} ({p.team})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={currentPick.answerId}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSettlementPicks((prev) => ({
+                              ...prev,
+                              [q.id]: { ...currentPick, answerId: val, answerText: val },
+                            }));
+                          }}
+                          placeholder="e.g. p_vkohli or Yes"
+                          className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                        />
+                      )}
                     </div>
 
                     <div>
