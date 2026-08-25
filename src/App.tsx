@@ -74,9 +74,9 @@ export default function App() {
         ]);
 
         setMatches(fetchedMatches);
-        setCurrentUser(fetchedUser);
-        setAllUsers(fetchedAllUsers);
-        setWallet(fetchedWallet);
+        setCurrentUser(fetchedUser.error ? INITIAL_USER : fetchedUser);
+        setAllUsers(fetchedAllUsers.error ? INITIAL_ALL_USERS : fetchedAllUsers);
+        setWallet(fetchedWallet.error ? INITIAL_WALLET : fetchedWallet);
         setSlips(fetchedSlips);
         setTransactions(fetchedTransactions);
         setMetrics(fetchedMetrics);

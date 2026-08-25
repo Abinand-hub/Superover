@@ -79,23 +79,23 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main navigation header */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1 sm:gap-4">
         {/* Brand Logo */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button 
             onClick={() => setActiveTab('lobby')}
             className="flex items-center gap-2.5 text-left group focus:outline-none"
             id="btn-brand-home"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] via-[#FF8800] to-[#FFAA00] p-0.5 shadow-lg shadow-[#FF6B00]/25 group-hover:scale-105 transition-transform flex items-center justify-center">
-              <div className="w-full h-full bg-[#050816] rounded-[10px] flex items-center justify-center text-[#FF6B00] relative overflow-hidden">
-                <Zap className="w-5 h-5 fill-[#FF6B00] text-[#FF6B00]" />
-                <div className="absolute -bottom-1 -right-1 text-[9px] font-black text-[#FF6B00]/40">6</div>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] via-[#FF8800] to-[#FFAA00] p-0.5 shadow-lg shadow-[#FF6B00]/25 group-hover:scale-105 transition-transform flex items-center justify-center">
+              <div className="w-full h-full bg-[#050816] rounded-[8px] sm:rounded-[10px] flex items-center justify-center text-[#FF6B00] relative overflow-hidden">
+                <Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-[#FF6B00] text-[#FF6B00]" />
+                <div className="absolute -bottom-1 -right-1 text-[8px] sm:text-[9px] font-black text-[#FF6B00]/40">6</div>
               </div>
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl font-extrabold tracking-tight text-white font-display">
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight text-white font-display">
                   Super<span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00]">Over</span>
                 </span>
                 <span className="px-1.5 py-0.2 rounded bg-[#FF6B00]/20 text-[#FF6B00] text-[10px] font-black tracking-wider uppercase border border-[#FF6B00]/40">
@@ -152,18 +152,18 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Section: Wallet & Profile & Admin Switch */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1 sm:gap-2.5">
           {/* Quick Wallet Balance Pill */}
           {user.id !== 'u_guest' && (
-            <div className="flex items-center bg-[#0D122B] rounded-xl p-1 border border-[#1A223E] shadow-inner">
+            <div className="flex items-center bg-[#0D122B] rounded-xl p-0.5 sm:p-1 border border-[#1A223E] shadow-inner">
               <button
                 onClick={() => openWalletModal('passbook')}
-                className="flex items-center gap-2 px-2.5 py-1 text-left hover:bg-[#131A38] rounded-lg transition-colors group"
+                className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 text-left hover:bg-[#131A38] rounded-lg transition-colors group"
                 title="Click to view wallet details"
                 id="btn-wallet-balance"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#4ADE80]/20 border border-[#4ADE80]/30 flex items-center justify-center text-[#4ADE80]">
-                  <WalletIcon className="w-3.5 h-3.5" />
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-[#4ADE80]/20 border border-[#4ADE80]/30 flex items-center justify-center text-[#4ADE80]">
+                  <WalletIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </div>
                 <div className="flex flex-col">
                   <span className="hidden sm:block text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
@@ -189,22 +189,22 @@ export const Header: React.FC<HeaderProps> = ({
             {user.id === 'u_guest' ? (
               <button
                 onClick={openAuthModal}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:brightness-110"
+                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[11px] sm:text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:brightness-110"
               >
-                <UserIcon className="w-3.5 h-3.5" />
+                <UserIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>Login <span className="hidden sm:inline">/ Register</span></span>
               </button>
             ) : (
               <div className="flex items-center bg-[#0D122B] rounded-xl border border-[#1A223E] overflow-hidden shadow-inner group">
                 <button
                   onClick={openAuthModal}
-                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 hover:bg-[#131A38] transition-all text-left"
+                  className="flex items-center gap-1 sm:gap-2 p-1 sm:px-2.5 sm:py-1 hover:bg-[#131A38] transition-all text-left"
                   id="btn-user-profile"
                 >
                   <img
                     src={user.avatar}
                     alt={user.name}
-                    className="w-7 h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
                   />
                   <div className="hidden lg:flex flex-col pr-2 border-r border-[#1A223E]">
                     <div className="flex items-center gap-1">
@@ -220,10 +220,10 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button
                   onClick={onSignOut}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 transition-colors"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 transition-colors"
                   title="Sign Out"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="hidden sm:inline">Sign Out</span>
                 </button>
               </div>
