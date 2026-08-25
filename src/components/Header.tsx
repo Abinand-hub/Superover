@@ -10,7 +10,8 @@ import {
   Trophy,
   PlusCircle,
   Clock,
-  ArrowUpRight
+  ArrowUpRight,
+  LogOut
 } from 'lucide-react';
 import { UserAccount, Wallet } from '../types';
 import { formatINR } from '../utils/payoutCalculator';
@@ -28,6 +29,7 @@ interface HeaderProps {
   isAdmin: boolean;
   setIsAdmin: (val: boolean) => void;
   pendingSlipsCount: number;
+  onSignOut: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -43,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   isAdmin,
   setIsAdmin,
   pendingSlipsCount,
+  onSignOut
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#050816]/95 backdrop-blur-md border-b border-[#1A223E] shadow-xl shadow-black/40">
@@ -194,28 +197,37 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Login / Register</span>
               </button>
             ) : (
-              <button
-                onClick={openAuthModal}
-                className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#0D122B] hover:bg-[#131A38] border border-[#1A223E] transition-all text-left group"
-                id="btn-user-profile"
-              >
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-7 h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
-                />
-                <div className="hidden lg:flex flex-col">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">{user.name}</span>
-                    {user.kycStatus === 'VERIFIED' ? (
-                      <span className="text-[#4ADE80] text-[10px]" title="KYC Verified">✓</span>
-                    ) : (
-                      <span className="text-[#FFAA00] text-[10px]" title="KYC Pending">⚠️</span>
-                    )}
+              <div className="flex items-center bg-[#0D122B] rounded-xl border border-[#1A223E] overflow-hidden shadow-inner group">
+                <button
+                  onClick={openAuthModal}
+                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 hover:bg-[#131A38] transition-all text-left"
+                  id="btn-user-profile"
+                >
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-7 h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
+                  />
+                  <div className="hidden lg:flex flex-col pr-2 border-r border-[#1A223E]">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">{user.name}</span>
+                      {user.kycStatus === 'VERIFIED' ? (
+                        <span className="text-[#4ADE80] text-[10px]" title="KYC Verified">✓</span>
+                      ) : (
+                        <span className="text-[#FFAA00] text-[10px]" title="KYC Pending">⚠️</span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-slate-400">{user.phone}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">{user.phone}</span>
-                </div>
-              </button>
+                </button>
+                <button
+                  onClick={onSignOut}
+                  className="px-3 py-2 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </div>
           {/* Admin link */}

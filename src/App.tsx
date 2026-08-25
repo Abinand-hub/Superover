@@ -129,8 +129,20 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // User submissions count awaiting settlement
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
+
+  const handleSignOut = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Logout failed:', e);
+    }
+    setCurrentUser({ id: 'u_guest', name: 'Guest', role: 'USER', wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 0, totalBalance: 0 } });
+    setActiveTab('lobby');
+    setSlips([]);
+    setTransactions([]);
+    setWallet({ depositBalance: 0, winningsBalance: 0, bonusBalance: 0, totalBalance: 0 });
+  };
 
   const handleSubmitSelectionSlip = async (
     answers: Record<string, string>, 
@@ -408,6 +420,7 @@ export default function App() {
           isAdmin={isAdmin}
           setIsAdmin={setIsAdmin}
           pendingSlipsCount={pendingSlipsCount}
+          onSignOut={handleSignOut}
         />
       )}
 

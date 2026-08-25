@@ -38,21 +38,24 @@ export async function POST(req: Request) {
 
     if (action === 'register') {
       if (user) {
-        return NextResponse.json({ error: 'Email already registered. Please login.' }, { status: 409 });
-      }
-      
-      if (!name || !phone) {
-        return NextResponse.json({ error: 'Name and phone are required for registration.' }, { status: 400 });
-      }
+        console.log(`[Verify-OTP] User ${email} already exists, logging them in and updating details`);
+        if (name) user.name = name;
+        if (phone) user.phone = phone;
+        await user.save();
+      } else {
+        if (!name || !phone) {
+          return NextResponse.json({ error: 'Name and phone are required for registration.' }, { status: 400 });
+        }
 
-      console.log(`[Verify-OTP] Registering new user ${email}`);
-      user = await User.create({
-        name,
-        phone,
-        email,
-        role: 'FAN',
-        wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 50 }, // Give 50 bonus for joining
-      });
+        console.log(`[Verify-OTP] Registering new user ${email}`);
+        user = await User.create({
+          name,
+          phone,
+          email,
+          role: 'FAN',
+          wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 50 }, // Give 50 bonus for joining
+        });
+      }
     } else if (action === 'login') {
       if (!user) {
         return NextResponse.json({ error: 'User not found. Please register.' }, { status: 404 });
