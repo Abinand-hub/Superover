@@ -6,18 +6,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/admin.html',
-        destination: '/',
-      },
-      {
-        source: '/admin',
-        destination: '/',
-      },
-    ];
-  },
 };
 
 export default nextConfig;
