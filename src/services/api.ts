@@ -75,6 +75,7 @@ export const api = {
         startTime: startTimeIso,
         lockTime: lockTimeIso,
         status: status,
+        results: m.actualResults || m.results,
       } as CricketMatch;
     });
   },

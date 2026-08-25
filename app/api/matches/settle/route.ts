@@ -36,8 +36,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 });
     }
 
-    // Save official results to match if we want to (schema doesn't have it yet, but we can set status)
+    // Save official results to match
     match.status = 'COMPLETED';
+    match.actualResults = {
+      answers: picks,
+      summaryNote: summary
+    };
     await match.save();
 
     // Fetch all slips for this match
@@ -72,19 +76,28 @@ export async function POST(req: Request) {
       if (correctAnswers === 6) {
          slipStatus = 'PENDING_APPROVAL'; // 100x payout needs admin approval
          wonAmount = entryFee * 100;
+         slip.multiplierWon = 100;
       } else if (correctAnswers === 5) {
          slipStatus = 'WON';
          wonAmount = entryFee * 10;
+         slip.multiplierWon = 10;
       } else if (correctAnswers === 4) {
          slipStatus = 'WON';
-         wonAmount = entryFee * 2;
+         wonAmount = entryFee * 3; // 3x payout
+         slip.multiplierWon = 3;
+      } else if (correctAnswers === 3) {
+         slipStatus = 'WON';
+         wonAmount = entryFee * 0.5; // 0.5x payout
+         slip.multiplierWon = 0.5;
       }
 
       slip.status = slipStatus;
+      slip.payoutAmount = wonAmount;
+      slip.correctCount = correctAnswers;
       await slip.save();
 
-      // Process automatic payouts for 4 and 5 correct
-      if ((correctAnswers === 4 || correctAnswers === 5) && wonAmount > 0) {
+      // Process automatic payouts for 3, 4 and 5 correct
+      if ((correctAnswers === 3 || correctAnswers === 4 || correctAnswers === 5) && wonAmount > 0) {
          user.wallet.winningsBalance += wonAmount;
          user.wallet.totalBalance = user.wallet.depositBalance + user.wallet.winningsBalance + user.wallet.bonusBalance;
          await user.save();
