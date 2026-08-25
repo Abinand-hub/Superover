@@ -8,6 +8,7 @@ import {
   WalletTransaction
 } from '../types';
 
+import {
   INITIAL_USER,
   INITIAL_WALLET
 } from '../data/initialData';
