@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       dailyDepositLimit: user.dailyDepositLimit || 10000,
       totalContestsJoined: user.totalContestsJoined || 0,
       totalWon: user.totalWon || 0,
-      avatar: user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=131A38&color=fff`,
+      avatar: user.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.name}&backgroundColor=FF6B00`,
     });
   } catch (error: any) {
     console.error('Fetch Current User Error:', error);

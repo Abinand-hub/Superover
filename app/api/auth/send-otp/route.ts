@@ -26,24 +26,18 @@ export async function POST(req: Request) {
       }
     }
 
-    // Generate random 6-digit OTP (or use 123456 in development for testing)
-    const otp = process.env.NODE_ENV === 'production' 
-      ? Math.floor(100000 + Math.random() * 900000).toString()
-      : '123456';
+    // Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store OTP in database (expires in 5 minutes)
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     
     // Upsert OTP for this email
-    try {
-      await Otp.findOneAndUpdate(
-        { email },
-        { otp, expiresAt },
-        { upsert: true, new: true }
-      );
-    } catch (dbError) {
-      console.warn('⚠️ Mock OTP generated, skipping DB write.');
-    }
+    await Otp.findOneAndUpdate(
+      { email },
+      { otp, expiresAt },
+      { upsert: true, new: true }
+    );
 
     // MOCK EMAIL PROVIDER: Log to console during development
     console.log(`\n\n=== 📩 EMAIL MOCK ===`);

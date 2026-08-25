@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="zapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00" />
+      <stop offset="50%" stop-color="#FF8800" />
+      <stop offset="100%" stop-color="#FFAA00" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer gradient border box -->
+  <rect x="0" y="0" width="64" height="64" rx="16" fill="url(#zapGradient)" />
+  
+  <!-- Inner dark background -->
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="#050816" />
+  
+  <!-- Zap Icon -->
+  <path d="M26 12L12 36H28L26 52L48 24H30L34 12Z" fill="#FF6B00" />
+  
+  <!-- The '6' text in corner -->
+  <text x="46" y="54" font-family="Arial, sans-serif" font-weight="900" font-size="20" fill="rgba(255,107,0,0.4)">6</text>
+</svg>

@@ -5,9 +5,8 @@ const CRICAPI_BASE_URL = 'https://api.cricapi.com/v1';
 
 export async function syncMatchesFromCricAPI() {
   if (CRICAPI_KEY === 'MOCK_KEY') {
-    console.log('Using MOCK CricAPI. In a real environment, provide CRICAPI_KEY in .env.local');
-    // For demo purposes, we will just return a mocked structure if no key is provided
-    return mockSyncMatches();
+    console.warn('Using MOCK_KEY for CricAPI. You must provide a valid CRICAPI_KEY to fetch real matches.');
+    return { success: false, fetched: 0 };
   }
 
   try {
@@ -23,8 +22,7 @@ export async function syncMatchesFromCricAPI() {
 
     if (allMatches.length === 0) {
       console.warn('CricAPI Sync Failed or Limit Reached');
-      console.warn('Falling back to mock live matches to keep app functional!');
-      return mockSyncMatches();
+      return { success: false, fetched: 0 };
     }
 
     const matches = allMatches;

@@ -11,8 +11,8 @@ const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({
 const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
 const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
 const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
-const AdminLoginModal = React.lazy(() => import('./components/AdminLoginModal').then(m => ({ default: m.AdminLoginModal })));
-const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+import { LogoLoader } from './components/Loader';
+
 
 import { 
   CricketMatch, 
@@ -50,9 +50,7 @@ export default function App() {
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [metrics, setMetrics] = useState<PlatformMetrics>(INITIAL_PLATFORM_METRICS);
 
-  // Navigation & View Tabs
-  const [activeTab, setActiveTab] = useState<'lobby' | 'my-contests' | 'payouts-rules' | 'admin'>('lobby');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'lobby' | 'my-contests' | 'payouts-rules'>('lobby');
 
   useEffect(() => {
     async function loadInitialData() {
@@ -99,35 +97,7 @@ export default function App() {
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
-  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
 
-  // Check for admin.html route on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname === '/admin.html') {
-      if (!isAdminAuthenticated) {
-        setIsAdminLoginModalOpen(true);
-      } else {
-        setActiveTab('admin');
-      }
-    }
-  }, [isAdminAuthenticated]);
-
-  // Secret Admin Hotkey (Ctrl + Shift + A) - Kept for convenience
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        if (!isAdminAuthenticated) {
-          setIsAdminLoginModalOpen(true);
-        } else {
-          setActiveTab('admin');
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
@@ -398,7 +368,7 @@ export default function App() {
   if (isInitializing) {
     return (
       <div className="min-h-screen bg-[#050816] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div>
+        <LogoLoader size="xl" text="Loading SuperOver..." />
       </div>
     );
   }
@@ -406,77 +376,23 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#050816] text-slate-100 flex flex-col selection:bg-[#FF6B00] selection:text-white">
       {/* Top Main Navigation Header */}
-      {!(typeof window !== 'undefined' && window.location.pathname === '/admin.html') && (
-        <Header 
-          user={currentUser}
-          wallet={wallet}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
-          openAuthModal={() => setIsAuthModalOpen(true)}
-          openKycModal={() => setIsKycModalOpen(true)}
-          openRulesModal={() => setIsRulesModalOpen(true)}
-          openResponsibleModal={() => setIsResponsibleModalOpen(true)}
-          isAdmin={isAdmin}
-          setIsAdmin={setIsAdmin}
-          pendingSlipsCount={pendingSlipsCount}
-          onSignOut={handleSignOut}
-        />
-      )}
+      <Header 
+        user={currentUser}
+        wallet={wallet}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
+        openAuthModal={() => setIsAuthModalOpen(true)}
+        openKycModal={() => setIsKycModalOpen(true)}
+        openRulesModal={() => setIsRulesModalOpen(true)}
+        openResponsibleModal={() => setIsResponsibleModalOpen(true)}
+        pendingSlipsCount={pendingSlipsCount}
+        onSignOut={handleSignOut}
+      />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {(typeof window !== 'undefined' && window.location.pathname === '/admin.html' && isAdminAuthenticated) ? (
-          <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
-            <AdminPanel
-              metrics={{ totalUsers: allUsers.length, totalBetsPlaced: slips.length, totalVolumeIn: slips.reduce((a,b)=>a+b.entryFee,0), totalVolumeOut: slips.reduce((a,b)=>a+(b.payoutAmount||0),0), activeMatches: matches.filter(m=>m.status==='LIVE').length }}
-              matches={matches}
-              allUsers={allUsers}
-              allSlips={slips}
-              allTransactions={transactions}
-              faqs={INITIAL_FAQS}
-              onUpdateMatch={async (m) => {
-                try {
-                  await api.updateMatch(m);
-                  setMatches(prev => prev.map(match => match.id === m.id ? m : match));
-                } catch(e) {
-                  console.error(e);
-                }
-              }}
-              onCreateMatch={(m) => setMatches(prev => [m, ...prev])}
-              onSettleMatch={async (matchId, results) => {
-                try {
-                  const res = await api.settleMatch({ matchId, picks: (results as any).answers, summary: (results as any).summaryNote });
-                  if (res.success || res.message) {
-                    const [fetchedMatches, fetchedSlips, fetchedTransactions, fetchedUsers] = await Promise.all([
-                      api.getMatches(),
-                      api.getSlips(),
-                      api.getTransactions(),
-                      api.getAllUsers()
-                    ]);
-                    setMatches(fetchedMatches);
-                    setSlips(fetchedSlips);
-                    setTransactions(fetchedTransactions);
-                    setAllUsers(fetchedUsers);
-                  } else {
-                    alert('Settlement failed. Please check logs.');
-                  }
-                } catch (error) {
-                  console.error('Settlement Error:', error);
-                  alert('Error processing settlement. Check console.');
-                }
-              }}
-              onUpdateUser={(u) => setAllUsers(prev => prev.map(user => user.id === u.id ? u : user))}
-              onApproveWithdrawal={(id) => {}}
-              onRejectWithdrawal={(id) => {}}
-              onUpdateFaq={(f) => {}}
-              onAddFaq={(f) => {}}
-              onDeleteFaq={(id) => {}}
-              onSendBonus={handleAdminAddBonus}
-            />
-          </React.Suspense>
-        ) : (
-          <>
+      {/* Main Content Area - Optimized for mobile */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+
         {/* VIEW 1: MATCH LOBBY & PROMO BANNER */}
         {activeTab === 'lobby' && (
           <div className="space-y-6">
@@ -554,8 +470,7 @@ export default function App() {
             </div>
           </div>
         )}
-        </>
-        )}
+
       </main>
 
       {/* Footer & Compliance Notice */}
@@ -640,7 +555,7 @@ export default function App() {
             onLoginSuccess={(user) => {
               const enrichedUser = {
                 ...user,
-                avatar: `https://ui-avatars.com/api/?name=${user.name}&background=FF6B00&color=fff`,
+                avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.name}&backgroundColor=FF6B00`,
                 kycStatus: 'PENDING',
                 isBlocked: false,
                 joinedDate: new Date().toISOString().split('T')[0],
@@ -700,23 +615,6 @@ export default function App() {
           />
         )}
 
-        {/* MODAL 8: Admin Login */}
-        {isAdminLoginModalOpen && (
-          <AdminLoginModal
-            onClose={() => {
-              setIsAdminLoginModalOpen(false);
-              // If closed without login and on admin.html, redirect back to home
-              if (window.location.pathname === '/admin.html') {
-                window.location.href = '/';
-              }
-            }}
-            onLoginSuccess={() => {
-              setIsAdminAuthenticated(true);
-              setIsAdminLoginModalOpen(false);
-              setActiveTab('admin');
-            }}
-          />
-        )}
       </React.Suspense>
     </div>
   );

@@ -5,7 +5,7 @@ export const INITIAL_USER: UserAccount = {
   phone: '',
   name: 'Guest',
   email: '',
-  avatar: 'https://ui-avatars.com/api/?name=Guest&background=131A38&color=fff',
+  avatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Guest&backgroundColor=FF6B00',
   kycStatus: 'PENDING',
   panNumber: '',
   upiId: '',

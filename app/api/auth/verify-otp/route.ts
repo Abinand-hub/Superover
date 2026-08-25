@@ -19,11 +19,16 @@ export async function POST(req: Request) {
     console.log(`[Verify-OTP] Processing for ${email}`);
     
     // Find valid OTP
-    const validOtp = await Otp.findOne({
-      email,
-      otp,
-      expiresAt: { $gt: new Date() }
-    });
+    let validOtp = null;
+    try {
+      validOtp = await Otp.findOne({
+        email,
+        otp,
+        expiresAt: { $gt: new Date() }
+      });
+    } catch (e) {
+      console.log('DB error when finding OTP', e);
+    }
 
     if (!validOtp) {
       console.log(`[Verify-OTP] Invalid or expired OTP for ${email}`);
@@ -31,7 +36,11 @@ export async function POST(req: Request) {
     }
 
     // Mark OTP as used (or delete it)
-    await Otp.deleteOne({ _id: validOtp._id });
+    if (validOtp) {
+      try {
+        await Otp.deleteOne({ _id: validOtp._id });
+      } catch (e) {}
+    }
 
     // Find or create user
     let user = await User.findOne({ email });
@@ -52,8 +61,8 @@ export async function POST(req: Request) {
           name,
           phone,
           email,
-          role: 'FAN',
-          wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 50 }, // Give 50 bonus for joining
+          role: 'USER',
+          wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 100 }, // Give 50 bonus for joining
         });
       }
     } else if (action === 'login') {

@@ -48,7 +48,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       
       if (!res.ok) throw new Error(data.error);
       
-      setMessage(`OTP sent to ${email} (Check your server console)`);
+      setMessage(`OTP sent to ${email} (Please check your inbox/spam)`);
       if (action === 'login') setLoginStep('OTP');
       else setRegStep('OTP');
     } catch (err: any) {

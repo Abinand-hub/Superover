@@ -9,6 +9,12 @@
   h1, h2, h3, h4, h5, h6, .font-display {
     font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
   }
+  
+  button, 
+  [role="button"],
+  a {
+    cursor: pointer !important;
+  }
 }
 
 /* Custom vibrant scrollbar */

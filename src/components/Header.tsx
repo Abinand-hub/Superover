@@ -19,15 +19,14 @@ import { formatINR } from '../utils/payoutCalculator';
 interface HeaderProps {
   user: UserAccount;
   wallet: Wallet;
-  activeTab: 'lobby' | 'my-contests' | 'payouts-rules' | 'admin';
-  setActiveTab: (tab: 'lobby' | 'my-contests' | 'payouts-rules' | 'admin') => void;
+  activeTab: 'lobby' | 'my-contests' | 'payouts-rules';
+  setActiveTab: (tab: 'lobby' | 'my-contests' | 'payouts-rules') => void;
   openWalletModal: (mode?: 'deposit' | 'withdraw' | 'passbook') => void;
   openAuthModal: () => void;
   openKycModal: () => void;
   openRulesModal: () => void;
   openResponsibleModal: () => void;
-  isAdmin: boolean;
-  setIsAdmin: (val: boolean) => void;
+
   pendingSlipsCount: number;
   onSignOut: () => void;
 }
@@ -42,8 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   openKycModal,
   openRulesModal,
   openResponsibleModal,
-  isAdmin,
-  setIsAdmin,
+
   pendingSlipsCount,
   onSignOut
 }) => {
@@ -81,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main navigation header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}
         <div className="flex items-center gap-4">
           <button 
@@ -168,8 +166,8 @@ export const Header: React.FC<HeaderProps> = ({
                   <WalletIcon className="w-3.5 h-3.5" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
-                  <span className="text-xs font-extrabold text-white group-hover:text-[#4ADE80] transition-colors">
+                  <span className="hidden sm:block text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
+                  <span className="text-[10px] sm:text-xs font-extrabold text-white group-hover:text-[#4ADE80] transition-colors">
                     {formatINR(wallet.totalBalance)}
                   </span>
                 </div>
@@ -177,11 +175,11 @@ export const Header: React.FC<HeaderProps> = ({
 
               <button
                 onClick={() => openWalletModal('deposit')}
-                className="ml-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/30 flex items-center gap-1"
+                className="ml-0.5 sm:ml-1 px-2 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/30 flex items-center gap-1"
                 id="btn-quick-add-money"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
-                <span>Add ₹</span>
+                <span className="hidden sm:inline">Add ₹</span>
               </button>
             </div>
           )}
@@ -191,10 +189,10 @@ export const Header: React.FC<HeaderProps> = ({
             {user.id === 'u_guest' ? (
               <button
                 onClick={openAuthModal}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:brightness-110"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold transition-all shadow-md shadow-indigo-500/20 hover:brightness-110"
               >
                 <UserIcon className="w-3.5 h-3.5" />
-                <span>Login / Register</span>
+                <span>Login <span className="hidden sm:inline">/ Register</span></span>
               </button>
             ) : (
               <div className="flex items-center bg-[#0D122B] rounded-xl border border-[#1A223E] overflow-hidden shadow-inner group">
@@ -222,28 +220,16 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button
                   onClick={onSignOut}
-                  className="px-3 py-2 text-xs font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 transition-colors"
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sign Out</span>
                 </button>
               </div>
             )}
           </div>
-          {/* Admin link */}
-          {user.role === 'ADMIN' && (
-            <div className="pl-1 border-l border-[#1A223E]">
-              <a
-                href="/admin"
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-md shadow-purple-600/30 ring-2 ring-purple-500/30 hover:brightness-110"
-                title="Go to Admin Panel"
-              >
-                <Settings className="w-3.5 h-3.5 text-white" />
-                <span className="hidden sm:inline">Admin Panel</span>
-                <span className="sm:hidden">Admin</span>
-              </a>
-            </div>
-          )}
+
         </div>
       </div>
 
