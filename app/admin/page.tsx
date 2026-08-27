@@ -40,25 +40,20 @@ export default function AdminPage() {
     setIsLoading(true);
     try {
       const [matches, allUsers, slips, transactions] = await Promise.all([
-        api.getMatches(),
+        api.getAdminMatches(),
         api.getAllUsers(),
         api.getSlips(),
         api.getTransactions()
       ]);
 
       // Calculate dynamic metrics since api.getMetrics is deprecated
-      const activeMatches = matches.filter(m => m.status === 'LIVE').length;
-      const totalBetsPlaced = slips.length;
-      const totalVolumeIn = slips.reduce((sum, slip) => sum + slip.entryFee, 0);
-      const totalVolumeOut = slips.reduce((sum, slip) => sum + (slip.payoutAmount || 0), 0);
-
-      const computedMetrics: PlatformMetrics = {
-        totalUsers: allUsers.length,
-        activeMatches,
-        totalBetsPlaced,
-        totalVolumeIn,
-        totalVolumeOut,
-        netRake: totalVolumeIn - totalVolumeOut
+      const metrics: PlatformMetrics = {
+        totalUsers: Array.isArray(allUsers) ? allUsers.length : 0,
+        totalPoolCollected: Array.isArray(slips) ? slips.reduce((sum: number, s: any) => sum + (s.entryFee || 0), 0) : 0,
+        totalPayoutsDisbursed: Array.isArray(transactions) ? transactions.filter((t: any) => t.type === 'CONTEST_PAYOUT' || t.type === 'PAYOUT').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) : 0,
+        activeMatches: Array.isArray(matches) ? matches.filter((m: any) => m.status === 'LIVE' || m.status === 'UPCOMING' || m.status === 'LOCKED').length : 0,
+        commissionRate: 0.15,
+        platformProfit: (Array.isArray(slips) ? slips.reduce((sum, slip) => sum + slip.entryFee, 0) : 0) - (Array.isArray(transactions) ? transactions.filter((t: any) => t.type === 'CONTEST_PAYOUT' || t.type === 'PAYOUT').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) : 0)
       };
 
       setData({ 
@@ -66,7 +61,7 @@ export default function AdminPage() {
         allUsers, 
         slips, 
         transactions, 
-        metrics: computedMetrics 
+        metrics
       });
     } catch (e) {
       console.error("Failed to load admin data:", e);
@@ -154,7 +149,7 @@ export default function AdminPage() {
               if (res.success || res.message) {
                 loadAdminData(); // refresh everything
               } else {
-                throw new Error(res.error || "Unknown Error");
+                throw new Error(res.message || "Unknown Error");
               }
             } catch(e) {
               console.error(e);
@@ -163,6 +158,11 @@ export default function AdminPage() {
           }}
           onUpdateUser={() => {}}
           onApproveWithdrawal={() => {}}
+          onRejectWithdrawal={() => {}}
+          onAddBonusCash={() => {}}
+          onApproveJackpot={() => {}}
+          onRejectJackpot={() => {}}
+          onCloseAdmin={() => {}}
         />
       </main>
     </div>

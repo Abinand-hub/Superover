@@ -6,7 +6,7 @@ export const INITIAL_USER: UserAccount = {
   name: 'Guest',
   email: '',
   avatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Guest&backgroundColor=FF6B00',
-  kycStatus: 'PENDING',
+  kycStatus: 'UNVERIFIED',
   panNumber: '',
   upiId: '',
   isBlocked: false,
@@ -487,9 +487,10 @@ export const DEFAULT_QUESTIONS: QuestionDefinition[] = [
     shortTitle: 'Winner',
     subtitle: 'Which team will win this match?',
     criteria: 'Team that scores more runs or wins the super over.',
-    iconName: 'Award',
-    badgeColor: 'from-amber-500 to-orange-500',
+    iconName: 'TROPHY',
+    badgeColor: 'bg-purple-900 text-purple-400',
     type: 'TEAM',
+    optionsType: 'FIXED'
   },
   {
     id: 'q2',
@@ -498,9 +499,10 @@ export const DEFAULT_QUESTIONS: QuestionDefinition[] = [
     shortTitle: 'Highest Runs',
     subtitle: 'Which batsman will score the most runs in the match?',
     criteria: 'Player with highest individual aggregate score in both innings.',
-    iconName: 'Target',
-    badgeColor: 'from-blue-500 to-indigo-500',
+    iconName: 'BAT',
+    badgeColor: 'bg-[#FF6B00]/20 text-[#FF6B00]',
     type: 'PLAYER',
+    optionsType: 'DYNAMIC_SQUAD'
   },
   {
     id: 'q3',
@@ -509,9 +511,10 @@ export const DEFAULT_QUESTIONS: QuestionDefinition[] = [
     shortTitle: '100+ Runs',
     subtitle: 'Will any player score 100 or more runs?',
     criteria: 'At least one player scores 100+ runs.',
-    iconName: 'Flame',
-    badgeColor: 'from-rose-500 to-red-600',
+    iconName: 'STAR',
+    badgeColor: 'bg-indigo-900 text-indigo-400',
     type: 'YES_NO',
+    optionsType: 'FIXED',
     options: ['Yes', 'No']
   },
   {
@@ -521,10 +524,11 @@ export const DEFAULT_QUESTIONS: QuestionDefinition[] = [
     shortTitle: 'Total 6s',
     subtitle: 'How many sixes will be hit in the entire match?',
     criteria: 'Combined sixes hit by both teams.',
-    iconName: 'Zap',
-    badgeColor: 'from-emerald-500 to-teal-500',
+    iconName: 'BOWL',
+    badgeColor: 'bg-green-900 text-green-400',
     type: 'MULTIPLE_CHOICE',
-    options: ['Under 10', '10 - 15', '16 - 20', 'Over 20']
+    optionsType: 'FIXED',
+    options: ['Over 14.5', 'Under 14.5']
   },
   {
     id: 'q5',
@@ -536,6 +540,7 @@ export const DEFAULT_QUESTIONS: QuestionDefinition[] = [
     iconName: 'Crosshair',
     badgeColor: 'from-purple-500 to-indigo-500',
     type: 'PLAYER',
+    optionsType: 'DYNAMIC_SQUAD',
   },
   {
     id: 'q6',
@@ -547,6 +552,7 @@ export const DEFAULT_QUESTIONS: QuestionDefinition[] = [
     iconName: 'ShieldCheck',
     badgeColor: 'from-slate-500 to-slate-700',
     type: 'TEAM',
+    optionsType: 'FIXED',
   },
 ];
 
@@ -824,8 +830,8 @@ export const INITIAL_SLIPS: UserPredictionSlip[] = [
     },
     submittedAt: new Date(Date.now() - 15 * 60 * 60 * 1000).toISOString(),
     status: 'WON',
-    jackpotMultiplier: 10,
-    correctCount: 5,
+    freeHitFee: 0,
+    wheelMultiplier: 1,
     multiplierWon: 10,
     payoutAmount: 500, // 50 * 10 = ₹500
     settlementDetails: [

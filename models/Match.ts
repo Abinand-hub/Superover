@@ -8,7 +8,7 @@ export interface IMatch extends Document {
   team1: { name: string; code: string; logoUrl?: string };
   team2: { name: string; code: string; logoUrl?: string };
   matchStartTime: string;
-  status: 'UPCOMING' | 'LIVE' | 'LOCKED' | 'COMPLETED';
+  status: 'FETCHED' | 'DRAFT' | 'UPCOMING' | 'LIVE' | 'LOCKED' | 'COMPLETED';
   totalPool: number;
   totalEntries: number;
   entryFees: number[];
@@ -36,7 +36,7 @@ const MatchSchema: Schema = new Schema(
       logoUrl: { type: String },
     },
     matchStartTime: { type: String, required: true },
-    status: { type: String, enum: ['UPCOMING', 'LIVE', 'LOCKED', 'COMPLETED'], default: 'UPCOMING' },
+    status: { type: String, enum: ['FETCHED', 'DRAFT', 'UPCOMING', 'LIVE', 'LOCKED', 'COMPLETED'], default: 'FETCHED' },
     totalPool: { type: Number, default: 0 },
     totalEntries: { type: Number, default: 0 },
     entryFees: { type: [Number], default: [25, 50, 100] },
@@ -49,4 +49,5 @@ const MatchSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Match || mongoose.model<IMatch>('Match', MatchSchema);
+const Match = (mongoose.models.Match as mongoose.Model<IMatch>) || mongoose.model<IMatch>('Match', MatchSchema);
+export default Match;

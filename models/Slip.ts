@@ -18,6 +18,7 @@ export interface ISlip extends Document {
   totalPayable: number;
   wheelMultiplier?: number;
   status: 'PENDING' | 'LIVE' | 'WON' | 'LOST' | 'PENDING_APPROVAL' | 'REFUNDED';
+  streakCount?: number;
   correctCount?: number;
   multiplierWon?: number;
   payoutAmount?: number;
@@ -44,6 +45,7 @@ const SlipSchema: Schema = new Schema(
     totalPayable: { type: Number, required: true },
     wheelMultiplier: { type: Number },
     status: { type: String, enum: ['PENDING', 'LIVE', 'WON', 'LOST', 'PENDING_APPROVAL', 'REFUNDED'], default: 'PENDING' },
+    streakCount: { type: Number },
     correctCount: { type: Number },
     multiplierWon: { type: Number },
     payoutAmount: { type: Number },
@@ -52,4 +54,5 @@ const SlipSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.models.Slip || mongoose.model<ISlip>('Slip', SlipSchema);
+const Slip = (mongoose.models.Slip as mongoose.Model<ISlip>) || mongoose.model<ISlip>('Slip', SlipSchema);
+export default Slip;

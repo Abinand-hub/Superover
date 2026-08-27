@@ -92,58 +92,89 @@ export const RulesFAQModal: React.FC<RulesFAQModalProps> = ({ faqs, onClose }) =
           {activeTab === 'payouts' && (
             <div className="space-y-4 text-xs">
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                <span className="font-bold text-white block">Official Mathematical Payout Scale:</span>
+                <span className="font-bold text-white block">BASE PAYOUT (Streak Rule: Breaks on first wrong)</span>
                 <p className="text-slate-400 text-[11px]">
-                  Payouts depend strictly on your count of correct predictions C out of 6. Platform deducts net rake prior to settlement.
+                  Payouts depend strictly on your consecutive streak of correct predictions starting from Q1.
                 </p>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-800 mb-4">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th className="p-3">Correct Streak</th>
+                      <th className="p-3">Example</th>
+                      <th className="p-3">Payout</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
+                    <tr className="bg-amber-500/10 font-bold">
+                      <td className="p-3 text-amber-400">6</td>
+                      <td className="p-3 text-amber-400">Q1✓ to Q6✓</td>
+                      <td className="p-3 text-amber-400 font-black">50X</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-emerald-300 font-bold">5</td>
+                      <td className="p-3 text-emerald-300">Q1✓ to Q5✓</td>
+                      <td className="p-3 text-emerald-400 font-black">10X</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-blue-300 font-bold">4</td>
+                      <td className="p-3 text-blue-300">Q1✓ Q2✓ Q3✓ Q4✓</td>
+                      <td className="p-3 text-blue-400 font-black">3X</td>
+                    </tr>
+                    <tr>
+                      <td className="p-3 text-slate-300 font-bold">3</td>
+                      <td className="p-3 text-slate-300">Q1✓ Q2✓ Q3✓</td>
+                      <td className="p-3 text-slate-300 font-black">0.5X</td>
+                    </tr>
+                    <tr className="text-slate-500">
+                      <td className="p-3">0, 1, 2</td>
+                      <td className="p-3">Q1✓ Q2✓ (then wrong)</td>
+                      <td className="p-3">0X</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="font-bold text-white block">WITH FREE HIT (+40% fee, bought AFTER Q6 submit, BEFORE result)</span>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-800">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
                     <tr>
-                      <th className="p-3">Correct Answers (C)</th>
-                      <th className="p-3">Gross Multiplier</th>
-                      <th className="p-3">₹25 Entry Win</th>
-                      <th className="p-3">₹50 Entry Win</th>
-                      <th className="p-3">₹100 Entry Win</th>
+                      <th className="p-3">Correct Streak</th>
+                      <th className="p-3">If NO Free Hit</th>
+                      <th className="p-3">If YES Free Hit (Wheel)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
                     <tr className="bg-amber-500/10 font-bold">
-                      <td className="p-3 text-amber-400">6 / 6 Correct</td>
-                      <td className="p-3 text-amber-400 font-black">100X</td>
-                      <td className="p-3 font-mono text-emerald-400">{formatINR(2500)}</td>
-                      <td className="p-3 font-mono text-emerald-400">{formatINR(5000)}</td>
-                      <td className="p-3 font-mono text-emerald-400">{formatINR(10000)}</td>
+                      <td className="p-3 text-amber-400">6</td>
+                      <td className="p-3 text-amber-400">50X</td>
+                      <td className="p-3 text-amber-400 font-black">75X to 500X (Wheel)</td>
                     </tr>
                     <tr>
-                      <td className="p-3 text-emerald-300 font-bold">5 / 6 Correct</td>
-                      <td className="p-3 text-emerald-400 font-black">10X</td>
-                      <td className="p-3 font-mono text-emerald-300">{formatINR(250)}</td>
-                      <td className="p-3 font-mono text-emerald-300">{formatINR(500)}</td>
-                      <td className="p-3 font-mono text-emerald-300">{formatINR(1000)}</td>
+                      <td className="p-3 text-emerald-300 font-bold">5</td>
+                      <td className="p-3 text-emerald-300">10X</td>
+                      <td className="p-3 text-emerald-300">10X (extra fee lost)</td>
                     </tr>
                     <tr>
-                      <td className="p-3 text-blue-300 font-bold">4 / 6 Correct</td>
-                      <td className="p-3 text-blue-400 font-black">3X</td>
-                      <td className="p-3 font-mono text-blue-300">{formatINR(75)}</td>
-                      <td className="p-3 font-mono text-blue-300">{formatINR(150)}</td>
-                      <td className="p-3 font-mono text-blue-300">{formatINR(300)}</td>
+                      <td className="p-3 text-blue-300 font-bold">4</td>
+                      <td className="p-3 text-blue-300">3X</td>
+                      <td className="p-3 text-blue-300">3X (extra fee lost)</td>
                     </tr>
                     <tr>
-                      <td className="p-3 text-slate-300 font-bold">3 / 6 Correct</td>
-                      <td className="p-3 text-slate-300 font-black">0.5X (Guard)</td>
-                      <td className="p-3 font-mono text-slate-300">{formatINR(12.5)}</td>
-                      <td className="p-3 font-mono text-slate-300">{formatINR(25)}</td>
-                      <td className="p-3 font-mono text-slate-300">{formatINR(50)}</td>
+                      <td className="p-3 text-slate-300 font-bold">3</td>
+                      <td className="p-3 text-slate-300">0.5X</td>
+                      <td className="p-3 text-slate-300">0.5X (extra fee lost)</td>
                     </tr>
                     <tr className="text-slate-500">
-                      <td className="p-3">0 - 2 Correct</td>
+                      <td className="p-3">0, 1, 2</td>
                       <td className="p-3">0X</td>
-                      <td className="p-3">₹0</td>
-                      <td className="p-3">₹0</td>
-                      <td className="p-3">₹0</td>
+                      <td className="p-3">0X (extra fee lost)</td>
                     </tr>
                   </tbody>
                 </table>

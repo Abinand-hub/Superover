@@ -6,6 +6,8 @@ export interface ITransaction extends Document {
   amount: number;
   status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REJECTED';
   referenceId?: string; // e.g. slip ID or UPI reference
+  description?: string;
+  paymentMethod?: string;
   createdAt: Date;
 }
 
@@ -16,8 +18,11 @@ const TransactionSchema: Schema = new Schema(
     amount: { type: Number, required: true },
     status: { type: String, enum: ['PENDING', 'SUCCESS', 'FAILED', 'REJECTED'], default: 'SUCCESS' },
     referenceId: { type: String },
+    description: { type: String },
+    paymentMethod: { type: String },
   },
   { timestamps: true }
 );
 
-export default mongoose.models.Transaction || mongoose.model<ITransaction>('Transaction', TransactionSchema);
+const Transaction = (mongoose.models.Transaction as mongoose.Model<ITransaction>) || mongoose.model<ITransaction>('Transaction', TransactionSchema);
+export default Transaction;

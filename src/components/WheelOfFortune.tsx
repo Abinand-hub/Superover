@@ -11,7 +11,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedMultiplier, setSelectedMultiplier] = useState<number | null>(null);
 
-  const segments = [100, 125, 150, 200, 250, 300, 350, 400, 450, 500];
+  const segments = [75, 100, 120, 150, 200, 500];
   const segmentAngle = 360 / segments.length;
 
   const spinWheel = () => {
@@ -19,8 +19,17 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
     
     setIsSpinning(true);
     
-    // Choose a random segment to win
-    const winningIndex = Math.floor(Math.random() * segments.length);
+    // Weighted probability selection
+    // 75X: 40%, 100X: 30%, 120X: 15%, 150X: 10%, 200X: 4%, 500X: 1%
+    const rand = Math.random() * 100;
+    let winningIndex = 0;
+    if (rand < 40) winningIndex = 0; // 75
+    else if (rand < 70) winningIndex = 1; // 100
+    else if (rand < 85) winningIndex = 2; // 120
+    else if (rand < 95) winningIndex = 3; // 150
+    else if (rand < 99) winningIndex = 4; // 200
+    else winningIndex = 5; // 500
+
     const winningMultiplier = segments[winningIndex];
     
     // Calculate final rotation
@@ -69,25 +78,20 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
     return `M 150 150 L ${x1} ${y1} A 150 150 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
   };
 
-  const getSegmentColor = (index: number) => {
-    const colors = [
-      '#901C3A', // Maroon
-      '#3482C5', // Blue
-      '#F2B807', // Yellow
-      '#E54546', // Red
-      '#C8C9BD', // Silver/Off-White
-      '#1F9B7A', // Teal
-      '#EB6E48', // Orange
-      '#901C3A', // Maroon
-      '#3482C5', // Blue
-      '#F2B807', // Yellow
-      '#E54546', // Red
+  const getSegmentGradients = (index: number) => {
+    const gradients = [
+      { id: 'grad-0', from: '#ff4d4d', to: '#cc0000' }, // Red
+      { id: 'grad-1', from: '#4d94ff', to: '#004de6' }, // Blue
+      { id: 'grad-2', from: '#ffcc00', to: '#e69900' }, // Gold
+      { id: 'grad-3', from: '#00e673', to: '#00994d' }, // Green
+      { id: 'grad-4', from: '#b366ff', to: '#6600cc' }, // Purple
+      { id: 'grad-5', from: '#ff66a3', to: '#e6005c' }, // Pink
     ];
-    return colors[index % colors.length];
+    return gradients[index % gradients.length];
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-slate-950/80 rounded-2xl border border-[#FF6B00]/30 shadow-2xl">
+    <div className="flex flex-col items-center justify-center p-6 sm:p-8 bg-slate-900/90 rounded-3xl border border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.15)] backdrop-blur-xl">
       <h3 className="text-xl font-black text-white font-display mb-2 text-center">
         Spin for your Jackpot!
       </h3>
@@ -95,11 +99,22 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
         Your 6 selections are locked in! Spin the wheel to determine your potential multiplier if you get 6/6 correct.
       </p>
 
-      <div className="relative w-[250px] h-[250px] sm:w-72 sm:h-72 mb-6 drop-shadow-2xl">
-        {/* Pointer */}
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-          <svg width="24" height="40" viewBox="0 0 24 40">
-            <path d="M4 0 H20 V24 L12 36 L4 24 Z" fill="#F2B807" stroke="#b38703" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))" />
+      <div className="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] mb-8 mt-4 drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+        {/* Glow behind wheel */}
+        <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-3xl animate-pulse"></div>
+        
+        {/* Pointer (Premium Golden Arrow) */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_5px_10px_rgba(0,0,0,0.6)]">
+          <svg width="40" height="60" viewBox="0 0 40 60">
+            <defs>
+              <linearGradient id="goldArrowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fff3a1" />
+                <stop offset="50%" stopColor="#d4af37" />
+                <stop offset="100%" stopColor="#996515" />
+              </linearGradient>
+            </defs>
+            <path d="M20 60 L0 25 C0 10, 10 0, 20 0 C30 0, 40 10, 40 25 Z" fill="url(#goldArrowGrad)" stroke="#ffffff" strokeWidth="2" />
+            <circle cx="20" cy="20" r="6" fill="#ffffff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))" />
           </svg>
         </div>
 
@@ -112,13 +127,44 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
             transitionTimingFunction: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
           }}
         >
-          <svg viewBox="0 0 300 300" className="w-full h-full rounded-full overflow-hidden filter drop-shadow-xl">
-            {/* Base Red Outer Rim Background */}
-            <circle cx="150" cy="150" r="150" fill="#CC0000" />
+          <svg viewBox="0 0 300 300" className="w-full h-full rounded-full overflow-hidden">
+            <defs>
+              <radialGradient id="metalGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="40%" stopColor="#d4af37" />
+                <stop offset="80%" stopColor="#aa7c11" />
+                <stop offset="100%" stopColor="#6b4c05" />
+              </radialGradient>
+              <radialGradient id="rimGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="85%" stopColor="transparent" />
+                <stop offset="95%" stopColor="#1a1a1a" />
+                <stop offset="100%" stopColor="#000000" />
+              </radialGradient>
+              {segments.map((_, i) => {
+                const grad = getSegmentGradients(i);
+                return (
+                  <linearGradient key={grad.id} id={grad.id} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={grad.from} />
+                    <stop offset="100%" stopColor={grad.to} />
+                  </linearGradient>
+                );
+              })}
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Base Dark Outer Rim Background */}
+            <circle cx="150" cy="150" r="150" fill="#111" />
             
             {/* The sliced inner wheel */}
             <g transform="translate(0,0)">
               {segments.map((mult, i) => {
+                const grad = getSegmentGradients(i);
                 const textAngle = i * segmentAngle + (segmentAngle / 2);
                 const textRad = (textAngle - 90) * Math.PI / 180;
                 // Place text closer to edge
@@ -129,24 +175,22 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
                   <g key={i}>
                     <path 
                       d={createSegmentPath(i)} 
-                      fill={getSegmentColor(i)}
-                      stroke="#444"
-                      strokeWidth="1"
+                      fill={`url(#${grad.id})`}
+                      stroke="#ffe699"
+                      strokeWidth="2"
                     />
                     <text 
                       x={textX} 
                       y={textY} 
-                      fill="white" 
-                      fontSize={mult >= 200 ? "18" : "14"} 
+                      fill="#ffffff" 
+                      fontSize={mult >= 200 ? "24" : "18"} 
                       fontWeight="900"
                       fontFamily="Outfit, sans-serif"
-                      stroke="black"
-                      strokeWidth="2.5"
-                      paintOrder="stroke"
                       textAnchor="middle" 
                       alignmentBaseline="middle"
                       transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
-                      className="drop-shadow-md"
+                      filter="url(#glow)"
+                      className="drop-shadow-lg"
                     >
                       {mult}X
                     </text>
@@ -155,39 +199,38 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
               })}
             </g>
 
-            {/* Thick Red Rim overlay */}
-            <circle cx="150" cy="150" r="140" fill="none" stroke="#CC0000" strokeWidth="20" />
-            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="3" />
+            {/* Premium Gold Rim overlay */}
+            <circle cx="150" cy="150" r="140" fill="none" stroke="url(#metalGrad)" strokeWidth="20" />
+            <circle cx="150" cy="150" r="150" fill="url(#rimGrad)" pointerEvents="none" />
+            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            <circle cx="150" cy="150" r="148" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="4" />
             
-            {/* Metallic Studs around the rim */}
-            {Array.from({ length: 12 }).map((_, i) => {
-              const angle = i * 30;
+            {/* Glowing Neon Lights around the rim */}
+            {Array.from({ length: 24 }).map((_, i) => {
+              const angle = i * 15;
               const rad = (angle - 90) * Math.PI / 180;
               const cx = 150 + 140 * Math.cos(rad);
               const cy = 150 + 140 * Math.sin(rad);
+              const isEven = i % 2 === 0;
               return (
                 <circle 
-                  key={`stud-${i}`} 
-                  cx={cx} cy={cy} r="3.5" 
-                  fill="url(#metalGrad)" 
-                  stroke="#555" strokeWidth="0.5" 
-                  filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.5))"
-                />
+                  key={`light-${i}`} 
+                  cx={cx} cy={cy} r={isEven ? "4" : "2.5"} 
+                  fill={isEven ? "#ffffff" : "#ffe699"} 
+                  filter={isEven ? "url(#glow)" : "none"}
+                  opacity={isSpinning ? 0.8 : 1}
+                >
+                  {isSpinning && (
+                    <animate attributeName="opacity" values="0.2;1;0.2" dur={`${0.1 + Math.random() * 0.2}s`} repeatCount="indefinite" />
+                  )}
+                </circle>
               );
             })}
 
-            {/* Center Metallic Hub */}
-            <circle cx="150" cy="150" r="18" fill="url(#metalGrad)" stroke="#666" strokeWidth="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))" />
-
-            {/* Defs for Gradients */}
-            <defs>
-              <radialGradient id="metalGrad" cx="30%" cy="30%" r="70%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="40%" stopColor="#d4d4d4" />
-                <stop offset="80%" stopColor="#999999" />
-                <stop offset="100%" stopColor="#666666" />
-              </radialGradient>
-            </defs>
+            {/* Center Premium Metallic Hub */}
+            <circle cx="150" cy="150" r="22" fill="#111" stroke="url(#metalGrad)" strokeWidth="4" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.7))" />
+            <circle cx="150" cy="150" r="12" fill="url(#metalGrad)" />
+            <circle cx="150" cy="150" r="6" fill="#333" />
           </svg>
         </div>
       </div>

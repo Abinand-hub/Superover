@@ -96,8 +96,8 @@ export async function syncMatchesFromCricAPI() {
             team1: { name: match.teams[0], code: team1Code, logoUrl: team1Logo },
             team2: { name: match.teams[1], code: team2Code, logoUrl: team2Logo },
             matchStartTime: match.dateTimeGMT,
-            status: match.matchStarted ? 'LIVE' : 'UPCOMING',
-            questions: generateDefaultQuestions(),
+            status: match.matchStarted ? 'LIVE' : 'FETCHED',
+            questions: [], // Admin will attach 6 questions from Question Bank
             entryFees: [25, 50, 100],
             squadTeam1,
             squadTeam2,
@@ -232,10 +232,14 @@ async function mockSyncMatches() {
       totalPool: 0,
       totalEntries: 0,
       entryFees: [5, 25, 50, 100], // Allow 5 rupees entry
-      questions: generateDefaultQuestions(),
+      questions: [], // For mock, we can leave it empty or generate default. We'll generate default for testing player app.
       squadTeam1: getMockSquad('India', 'IND'),
       squadTeam2: getMockSquad('Australia', 'AUS'),
     });
+    
+    // Add default questions to the upcoming match to ensure app works
+    mockUpcomingMatch.questions = generateDefaultQuestions();
+    await mockUpcomingMatch.save();
   } else {
     // Push the demo match into the future if it's about to lock or already passed, so we can always test!
     if (new Date(mockUpcomingMatch.matchStartTime).getTime() < Date.now() + 2 * 60 * 1000) {

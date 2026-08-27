@@ -14,20 +14,22 @@ export async function GET(req: Request) {
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // Return matches from 48h ago to 7 days from now, sorted by start time
+    // Only return published matches (exclude FETCHED and DRAFT)
     const query = {
+      status: { $in: ['UPCOMING', 'LOCKED', 'LIVE', 'COMPLETED'] },
       matchStartTime: {
         $gte: twoDaysAgo.toISOString(),
         $lte: sevenDaysFromNow.toISOString()
       }
     };
     
-    let matches = await Match.find(query).sort({ matchStartTime: 1 }).lean();
+    let matches = await Match.find(query as any).sort({ matchStartTime: 1 }).lean();
 
     // If the database has no upcoming matches in this window, auto-sync from CricAPI
     if (matches.length === 0) {
       console.log('No recent/upcoming matches! Auto-syncing matches from CricAPI...');
       await syncMatchesFromCricAPI();
-      matches = await Match.find(query).sort({ matchStartTime: 1 }).lean();
+      matches = await Match.find(query as any).sort({ matchStartTime: 1 }).lean();
     }
 
     // Fallback: If CricAPI failed to provide squad data (e.g. rate limits), inject generic mock players

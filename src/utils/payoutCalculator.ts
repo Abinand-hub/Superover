@@ -3,12 +3,12 @@ import { CricketMatch, MatchResults, SettlementDetail, QuestionDefinition, UserP
 
 
 /**
- * Payout Multipliers:
- * C = 3: 0.5X (50% return)
- * C = 4: 3X (300% return)
- * C = 5: 10X (1000% return)
- * C = 6: 100X (10000% return)
- * C < 3: 0
+ * Payout Multipliers (Streak Rule):
+ * Streak 6: 50X (or Wheel Multiplier if Free Hit active)
+ * Streak 5: 10X
+ * Streak 4: 3X
+ * Streak 3: 0.5X
+ * Streak < 3: 0
  */
 export const PAYOUT_TIERS = [
   { correct: 6, multiplier: 50, label: '50X Jackpot', badge: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950', returnRate: '5,000%' },
@@ -20,16 +20,16 @@ export const PAYOUT_TIERS = [
   { correct: 0, multiplier: 0, label: 'No Payout', badge: 'text-slate-500', returnRate: '0%' },
 ];
 
-export function getMultiplierForCorrectCount(correctCount: number, jackpotMultiplier: number = 50): number {
-  if (correctCount >= 6) return jackpotMultiplier;
-  if (correctCount === 5) return 10;
-  if (correctCount === 4) return 3;
-  if (correctCount === 3) return 0.5;
+export function getMultiplierForStreak(streakCount: number, jackpotMultiplier: number = 50, isFreeHit: boolean = false): number {
+  if (streakCount >= 6) return isFreeHit ? jackpotMultiplier : 50;
+  if (streakCount === 5) return 10;
+  if (streakCount === 4) return 3;
+  if (streakCount === 3) return 0.5;
   return 0;
 }
 
-export function calculatePotentialPayout(entryFee: number, correctCount: number): number {
-  const multiplier = getMultiplierForCorrectCount(correctCount);
+export function calculatePotentialPayout(entryFee: number, streakCount: number, wheelMult: number, isFreeHit: boolean): number {
+  const multiplier = getMultiplierForStreak(streakCount, wheelMult, isFreeHit);
   return entryFee * multiplier;
 }
 
@@ -47,6 +47,8 @@ export function settlePredictionSlip(
   const playerMap = new Map(allPlayers.map((p) => [p.id, p]));
 
   let correctCount = 0;
+  let streakCount = 0;
+  let isStreakBroken = false;
   const settlementDetails: SettlementDetail[] = [];
 
   match.questions.forEach((q) => {
@@ -62,6 +64,11 @@ export function settlePredictionSlip(
 
     if (isCorrect) {
       correctCount += 1;
+      if (!isStreakBroken) {
+        streakCount += 1;
+      }
+    } else {
+      isStreakBroken = true;
     }
 
     // Try to resolve names if it's a player
@@ -88,26 +95,26 @@ export function settlePredictionSlip(
   });
 
   const wheelMult = slip.wheelMultiplier || 50;
-  const boostFactor = wheelMult / 50; // base 6/6 is 50, so if wheel is 100, boost is 2x
   
   let baseMultiplier = 0;
-  if (correctCount >= 6) baseMultiplier = wheelMult;
-  else if (correctCount === 5) baseMultiplier = 10 * boostFactor;
-  else if (correctCount === 4) baseMultiplier = 3 * boostFactor;
-  else if (correctCount === 3) baseMultiplier = 0.5; // 3/6 is refund, usually not boosted
+  if (streakCount >= 6) baseMultiplier = slip.freeHit ? wheelMult : 50;
+  else if (streakCount === 5) baseMultiplier = 10;
+  else if (streakCount === 4) baseMultiplier = 3;
+  else if (streakCount === 3) baseMultiplier = 0.5;
 
   const multiplier = baseMultiplier;
-  const payoutAmount = slip.entryFee * multiplier;
+  const payoutAmount = slip.entryFee * multiplier; // note: entryFee is the base stake. freeHitFee is lost.
   
   let status: 'WON' | 'LOST' | 'PENDING_APPROVAL' = 'LOST';
   if (multiplier > 0) {
-    status = correctCount === 6 ? 'PENDING_APPROVAL' : 'WON';
+    status = streakCount === 6 ? 'PENDING_APPROVAL' : 'WON';
   }
 
   const settledSlip: UserPredictionSlip = {
     ...slip,
     status,
     correctCount,
+    streakCount,
     multiplierWon: multiplier,
     payoutAmount,
     settlementDetails,

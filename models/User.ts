@@ -7,6 +7,12 @@ export interface IUser extends Document {
   address?: string;
   role: 'FAN' | 'ADMIN';
   kycVerified: boolean;
+  kycStatus?: 'UNVERIFIED' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+  isBlocked?: boolean;
+  joinedDate?: string;
+  dailyDepositLimit?: number;
+  totalContestsJoined?: number;
+  avatar?: string;
   wallet: {
     depositBalance: number;
     winningsBalance: number;
@@ -25,6 +31,12 @@ const UserSchema: Schema = new Schema(
     address: { type: String },
     role: { type: String, enum: ['FAN', 'ADMIN'], default: 'FAN' },
     kycVerified: { type: Boolean, default: false },
+    kycStatus: { type: String, enum: ['UNVERIFIED', 'SUBMITTED', 'VERIFIED', 'REJECTED'], default: 'UNVERIFIED' },
+    isBlocked: { type: Boolean, default: false },
+    joinedDate: { type: String },
+    dailyDepositLimit: { type: Number, default: 10000 },
+    totalContestsJoined: { type: Number, default: 0 },
+    avatar: { type: String },
     wallet: {
       depositBalance: { type: Number, default: 0 },
       winningsBalance: { type: Number, default: 0 },
@@ -38,7 +50,7 @@ const UserSchema: Schema = new Schema(
 );
 
 // Virtual for totalBalance
-UserSchema.virtual('wallet.totalBalance').get(function() {
+UserSchema.virtual('wallet.totalBalance').get(function(this: any) {
   return this.wallet.depositBalance + this.wallet.winningsBalance + this.wallet.bonusBalance;
 });
 
@@ -46,4 +58,5 @@ UserSchema.virtual('wallet.totalBalance').get(function() {
 UserSchema.set('toJSON', { virtuals: true });
 UserSchema.set('toObject', { virtuals: true });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+const User = (mongoose.models.User as mongoose.Model<IUser>) || mongoose.model<IUser>('User', UserSchema);
+export default User;

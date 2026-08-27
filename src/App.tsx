@@ -107,11 +107,11 @@ export default function App() {
     } catch (e) {
       console.error('Logout failed:', e);
     }
-    setCurrentUser({ id: 'u_guest', name: 'Guest', role: 'USER', wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 0, totalBalance: 0 } });
+    setCurrentUser(INITIAL_USER);
     setActiveTab('lobby');
     setSlips([]);
     setTransactions([]);
-    setWallet({ depositBalance: 0, winningsBalance: 0, bonusBalance: 0, totalBalance: 0 });
+    setWallet(INITIAL_WALLET);
   };
 
   const handleSubmitSelectionSlip = async (

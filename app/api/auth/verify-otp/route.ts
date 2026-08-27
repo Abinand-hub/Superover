@@ -61,7 +61,7 @@ export async function POST(req: Request) {
           name,
           phone,
           email,
-          role: 'USER',
+          role: 'FAN',
           wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 100 }, // Give 50 bonus for joining
         });
       }

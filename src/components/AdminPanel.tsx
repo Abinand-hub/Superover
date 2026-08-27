@@ -29,7 +29,10 @@ import {
   Eye,
   Gift,
   ShieldCheck,
-  ArrowDownLeft
+  ArrowDownLeft,
+  Calendar,
+  Database,
+  TrendingUp
 } from 'lucide-react';
 import { 
   CricketMatch, 
@@ -44,7 +47,12 @@ import {
   WalletTransaction 
 } from '../types';
 import { formatINR } from '../utils/payoutCalculator';
+import { api } from '../services/api';
 import { DEFAULT_QUESTIONS } from '../data/initialData';
+import { LiveMarketAnalysis } from './admin/LiveMarketAnalysis';
+import { QuestionBankManager } from './admin/QuestionBankManager';
+import { MatchSelectionManager } from './admin/MatchSelectionManager';
+import { MatchConfigurator } from './admin/MatchConfigurator';
 
 interface AdminPanelProps {
   metrics: PlatformMetrics;
@@ -217,7 +225,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onRejectJackpot,
   onCloseAdmin,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'publishing' | 'questionBank' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials' | 'market'>('overview');
+  
+  // Publishing State
+  const [publishingView, setPublishingView] = useState<'list' | 'config'>('list');
+  const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
 
   // Match Management State
   const [selectedMatchForSquad, setSelectedMatchForSquad] = useState<string>(matches[0]?.id || '');
@@ -444,6 +456,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-[#1A223E]">
         {[
           { id: 'overview', label: 'Platform KPI', icon: BarChart3 },
+          { id: 'publishing', label: 'Match Publishing', icon: Calendar },
+          { id: 'questionBank', label: 'Question Bank', icon: Database },
           { id: 'matches', label: 'Match Lifecycle (Start/End)', icon: Trophy },
           { id: 'squads', label: 'Match Squad Viewer', icon: UserPlus },
           { id: 'settlement', label: 'Result Settlement & Payouts', icon: Sparkles },
@@ -451,6 +465,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           { id: 'users', label: `User Inspector (${allUsers.length})`, icon: Users },
           { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL' && t.status === 'PENDING').length})`, icon: ArrowUpRight },
           { id: 'financials', label: 'Audit CSV & Rake', icon: FileSpreadsheet },
+          { id: 'market', label: 'Live Market Analysis', icon: TrendingUp },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -486,7 +501,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Won Payouts</span>
               <span className="text-2xl sm:text-3xl font-black text-[#FFAA00] font-display mt-1 block">
-                {formatINR(allTransactions.filter(t => t.type === 'PAYOUT' || t.type === 'CONTEST_PAYOUT').reduce((sum, t) => sum + t.amount, 0))}
+                {formatINR(allTransactions.filter(t => t.type === 'CONTEST_PAYOUT').reduce((sum, t) => sum + t.amount, 0))}
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">0.5X, 3X, 10X & 100X Winners</span>
             </div>
@@ -825,7 +840,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         };
                       });
                       setSettlementPicks(newPicks);
-                      setSettlementSummary(res.summaryNote || 'Auto-fetched successfully.');
+                      setSettlementSummaryNote(res.summaryNote || 'Auto-fetched successfully.');
                     }
                   } catch (error) {
                     console.error('Failed to auto-detect results', error);
@@ -1613,6 +1628,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
         </div>
+      )}
+      
+      {adminTab === 'publishing' && (
+        <div className="space-y-4">
+          {publishingView === 'list' && (
+            <MatchSelectionManager 
+              allMatches={matches}
+              onMatchesDrafted={() => {}} // Could reload data if necessary
+              onGoToDrafts={(matchId: string) => { setConfiguringMatchId(matchId); setPublishingView('config'); }}
+            />
+          )}
+          {publishingView === 'config' && configuringMatchId && (
+            <MatchConfigurator 
+              matchId={configuringMatchId}
+              onBack={() => setPublishingView('list')}
+              onMatchPublished={() => { setPublishingView('list'); setAdminTab('matches'); }}
+            />
+          )}
+        </div>
+      )}
+
+      {adminTab === 'questionBank' && (
+        <QuestionBankManager />
+      )}
+
+      {adminTab === 'market' && (
+        <LiveMarketAnalysis matches={matches} slips={allSlips} />
       )}
     </div>
   );

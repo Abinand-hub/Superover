@@ -91,15 +91,13 @@ export async function POST(req: Request) {
          slip.multiplierWon = 0.5;
       }
 
-      slip.status = slipStatus;
+      slip.status = slipStatus as any;
       slip.payoutAmount = wonAmount;
       slip.correctCount = correctAnswers;
       await slip.save();
 
-      // Process automatic payouts for 3, 4 and 5 correct
       if ((correctAnswers === 3 || correctAnswers === 4 || correctAnswers === 5) && wonAmount > 0) {
          user.wallet.winningsBalance += wonAmount;
-         user.wallet.totalBalance = user.wallet.depositBalance + user.wallet.winningsBalance + user.wallet.bonusBalance;
          await user.save();
 
          // Create Transaction

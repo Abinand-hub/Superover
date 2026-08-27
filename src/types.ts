@@ -14,12 +14,12 @@ export interface Player {
   careerStatHighlight: string; // e.g. "SR: 154.2 • Avg: 39.4" or "Econ: 6.8 • Wkts: 142"
 }
 
-export type MatchStatus = 'UPCOMING' | 'LOCKED' | 'LIVE' | 'COMPLETED';
+export type MatchStatus = 'FETCHED' | 'DRAFT' | 'UPCOMING' | 'LOCKED' | 'LIVE' | 'COMPLETED';
 
 export type QuestionType = 'PLAYER' | 'TEAM' | 'NUMBER' | 'YES_NO' | 'MULTIPLE_CHOICE';
 
 export interface QuestionDefinition {
-  id: string;
+  id: string; // the bank ID
   number: number;
   title: string;
   shortTitle: string;
@@ -28,7 +28,19 @@ export interface QuestionDefinition {
   iconName: string;
   badgeColor: string;
   type: QuestionType;
+  optionsType: 'FIXED' | 'DYNAMIC_SQUAD';
   options?: string[]; // For YES_NO, TEAM, or MULTIPLE_CHOICE (e.g. ['Team A', 'Team B'], ['Yes', 'No'])
+}
+
+export interface QuestionBankItem {
+  _id?: string;
+  title: string;
+  shortTitle: string;
+  subtitle: string;
+  type: QuestionType;
+  optionsType: 'FIXED' | 'DYNAMIC_SQUAD';
+  options?: string[];
+  iconName: string;
 }
 
 export interface MatchResults {
@@ -101,6 +113,7 @@ export interface UserPredictionSlip {
   freeHitFee?: number;
   totalPayable?: number;
   wheelMultiplier?: number; // Multiplier unlocked via Free Hit wheel (e.g. 500)
+  streakCount?: number;
   correctCount?: number;
   multiplierWon?: number;
   payoutAmount?: number;

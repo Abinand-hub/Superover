@@ -120,7 +120,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
               setError('');
               setMessage('');
               setOtp('');
-              setLoginStep('PHONE');
+              setLoginStep('EMAIL');
             }}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
               activeTab === 'LOGIN' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400 hover:text-slate-200'

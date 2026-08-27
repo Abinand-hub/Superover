@@ -30,7 +30,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   
   // View states
   const [activePlayerQuestionId, setActivePlayerQuestionId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'QUESTIONS' | 'STAKE' | 'WHEEL' | 'WHEEL_RESULT'>('QUESTIONS');
+  const [currentView, setCurrentView] = useState<'QUESTIONS' | 'STAKE' | 'FREE_HIT_PROMPT' | 'WHEEL' | 'WHEEL_RESULT'>('QUESTIONS');
   
   // Stake states
   const [selectedFee, setSelectedFee] = useState<number>(initialFee);
@@ -88,6 +88,10 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   const canAffordFreeHit = wallet.totalBalance >= finalPayable;
   const canAffordStandard = wallet.totalBalance >= baseStake;
 
+  const handleProceedToFreeHit = () => {
+    setCurrentView('FREE_HIT_PROMPT');
+  };
+
   const handleBuyFreeHit = () => {
     if (!canAffordFreeHit) {
       onOpenDeposit();
@@ -96,7 +100,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     setCurrentView('WHEEL');
   };
 
-  const handleSubmitPrediction = () => {
+  const handleSubmitNormal = () => {
     if (!canAffordStandard) {
       onOpenDeposit();
       return;
@@ -132,21 +136,21 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
             <h4 className="text-sm font-bold text-amber-400 mb-3 text-center uppercase tracking-wider">Boosted Winning Preview</h4>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
-                <span className="text-slate-300">✅ 4 Correct</span>
+                <span className="text-slate-300">✅ Streak 4</span>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-500 line-through mr-2">₹{Math.floor(baseStake * 3)}</span>
-                  <span className="font-mono font-bold text-amber-400">₹{Math.floor(baseStake * 3 * boostFactor)}</span>
+                  <span className="font-mono font-bold text-blue-400">₹{Math.floor(baseStake * 3)}</span>
+                  <span className="text-[10px] text-slate-500 block">(Extra fee lost)</span>
                 </div>
               </div>
               <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
-                <span className="text-slate-300">✅ 5 Correct</span>
+                <span className="text-slate-300">✅ Streak 5</span>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-500 line-through mr-2">₹{Math.floor(baseStake * 10)}</span>
-                  <span className="font-mono font-bold text-amber-400">₹{Math.floor(baseStake * 10 * boostFactor)}</span>
+                  <span className="font-mono font-bold text-emerald-400">₹{Math.floor(baseStake * 10)}</span>
+                  <span className="text-[10px] text-slate-500 block">(Extra fee lost)</span>
                 </div>
               </div>
               <div className="flex justify-between items-center bg-amber-500/20 p-2 rounded-lg border border-amber-500/30">
-                <span className="text-amber-500 font-bold">✅ 6 Correct (JACKPOT)</span>
+                <span className="text-amber-500 font-bold">✅ Streak 6 (JACKPOT)</span>
                 <div className="text-right">
                   <span className="font-mono font-black text-amber-500">₹{Math.floor(baseStake * wheelMult)}</span> 
                 </div>
@@ -447,38 +451,82 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
           <div className="space-y-3 pb-4">
             <button 
-              onClick={handleSubmitPrediction}
+              onClick={handleProceedToFreeHit}
               disabled={isCustomError}
-              className={`w-full py-3.5 rounded-xl font-bold text-white text-base transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-4 rounded-xl font-bold text-white text-lg transition-all flex items-center justify-center gap-2 ${
                 isCustomError 
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
                   : 'bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98]'
               }`}
             >
-              <span>SUBMIT PREDICTION (₹{baseStake})</span>
+              <span>PROCEED (₹{baseStake})</span>
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
+  const renderFreeHitPrompt = () => {
+    return (
+      <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950 overflow-y-auto custom-scrollbar">
+        <button 
+          onClick={() => setCurrentView('STAKE')}
+          className="self-start mb-6 text-sm text-slate-400 hover:text-white flex items-center gap-1"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" /> Back to Stake
+        </button>
+
+        <div className="flex-1 max-w-sm mx-auto w-full flex flex-col justify-center">
+          <div className="bg-gradient-to-b from-amber-500/20 to-slate-900 border border-amber-500/30 rounded-2xl p-6 mb-6 text-center shadow-[0_0_30px_rgba(245,158,11,0.15)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-3 opacity-20">
+              <Zap className="w-24 h-24 text-amber-500" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-white font-display mb-3 relative z-10">BOOST YOUR 6/6 WIN!</h3>
+            
+            <p className="text-base text-slate-300 font-medium mb-4 relative z-10">
+              Boost your 6/6 win from 50X to <span className="text-amber-400 font-bold">up to 500X!</span>
+            </p>
+            
+            <div className="bg-slate-950/80 p-4 rounded-xl mb-4 border border-amber-500/20 relative z-10 text-left">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-400">Base Stake:</span>
+                <span className="text-sm text-white font-mono font-bold">₹{baseStake}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-amber-400 font-bold">Free Hit (+40%):</span>
+                <span className="text-sm text-amber-400 font-mono font-bold">+₹{freeHitFee}</span>
+              </div>
+              <div className="h-px w-full bg-slate-800 my-2"></div>
+              <div className="flex justify-between items-center">
+                <span className="text-base text-white font-bold">Total Entry:</span>
+                <span className="text-xl text-white font-mono font-black">₹{finalPayable}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-amber-500 font-bold relative z-10">
+              Buy Free Hit for ₹{freeHitFee} extra and Spin the Wheel NOW!
+            </p>
           </div>
 
-          {/* FREE HIT CARD */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mt-6 mb-4">
-            <h4 className="text-sm font-black text-white flex items-center gap-2 mb-2">
-              💥 Increase Winnings Up to 500x
-            </h4>
-            <p className="text-xs text-slate-400 mb-4">
-              Buy Free Hit for +40% and spin the wheel to boost your multiplier
-            </p>
+          <div className="space-y-3">
             <button 
               onClick={handleBuyFreeHit}
-              disabled={isCustomError}
-              className={`w-full py-3.5 rounded-xl font-black text-slate-950 text-base transition-all flex items-center justify-center gap-2 ${
-                isCustomError 
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
-                  : 'bg-amber-500 hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(245,158,11,0.2)]'
-              }`}
+              className="w-full py-4 rounded-xl font-black text-slate-950 text-lg bg-amber-500 hover:bg-amber-400 transition-all flex flex-col items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.3)] animate-pulse"
             >
-              <Zap className="w-4 h-4" />
-              <span>BUY FREE HIT - ₹{freeHitFee}</span>
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                <span>YES, SPIN THE WHEEL!</span>
+              </div>
+              <span className="text-xs font-bold text-slate-900/80">Pay ₹{finalPayable} total</span>
+            </button>
+            
+            <button 
+              onClick={handleSubmitNormal}
+              className="w-full py-4 rounded-xl font-bold text-slate-400 text-sm bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:text-white transition-all flex items-center justify-center"
+            >
+              <span>No thanks, submit normally (₹{baseStake})</span>
             </button>
           </div>
         </div>
@@ -518,6 +566,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
         {/* Modal Body */}
         {currentView === 'QUESTIONS' && renderQuestions()}
         {currentView === 'STAKE' && renderStakePalette()}
+        {currentView === 'FREE_HIT_PROMPT' && renderFreeHitPrompt()}
         {currentView === 'WHEEL' && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950">
             <WheelOfFortune onComplete={handleWheelComplete} />

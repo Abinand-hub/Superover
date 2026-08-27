@@ -79,7 +79,7 @@ export async function POST(req: Request) {
 
     // Check if match lock time has passed
     const now = new Date();
-    if (match.lockTime && now >= new Date(match.lockTime)) {
+    if (match.matchStartTime && now >= new Date(match.matchStartTime)) {
       match.status = 'LOCKED';
       await match.save();
       return NextResponse.json({ error: 'Match is locked for predictions' }, { status: 400 });
@@ -130,7 +130,6 @@ export async function POST(req: Request) {
     user.wallet.depositBalance = newDeposit;
     user.wallet.winningsBalance = newWinnings;
     user.wallet.bonusBalance = newBonus;
-    user.wallet.totalBalance = newDeposit + newWinnings + newBonus;
     await user.save();
 
     // 5. Create the Slip
@@ -143,7 +142,7 @@ export async function POST(req: Request) {
       series: match.series,
       team1Code: match.team1.code,
       team2Code: match.team2.code,
-      matchStartTime: match.matchStartTime || match.startTime,
+      matchStartTime: match.matchStartTime,
       answers,
       entryFee,
       freeHit: freeHit || false,

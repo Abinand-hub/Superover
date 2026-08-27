@@ -82,7 +82,32 @@ export const api = {
       } as CricketMatch;
     });
   },
+  
+  // Admin Match Management
+  getAdminMatches: async () => {
+    try {
+      const res = await fetch('/api/admin/matches', { method: 'GET' });
+      if (res.ok) {
+        const raw = await res.json();
+        return raw.map((m: any) => ({
+          ...m,
+          id: m._id || m.apiId || m.id,
+          startTime: m.matchStartTime || m.startTime,
+          lockTime: m.lockTime || m.matchStartTime,
+        })) as CricketMatch[];
+      }
+    } catch(e) {
+      console.warn('Failed to fetch admin matches:', e);
+    }
+    return [];
+  },
+  updateMatchAdmin: (id: string, payload: any) => fetch(`/api/admin/matches/${id}`, { method: 'PUT', body: JSON.stringify(payload) }).then(r => r.json()),
+  
   updateMatch: (payload: any) => fetch('/api/matches/update', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+  
+  // Question Bank
+  getQuestionBank: () => fetch('/api/admin/questions', { method: 'GET' }).then(r => r.json()),
+  createQuestionBank: (payload: any) => fetch('/api/admin/questions', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
   
   // User Data
   getCurrentUser: () => fetch('/api/user/current', { method: 'GET' }).then(r => r.json()),
