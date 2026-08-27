@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Phone, Lock, User as UserIcon, Mail, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
+import { X, Phone, Lock, User as UserIcon, Mail, ShieldCheck, ArrowRight, Loader2, Key } from 'lucide-react';
+import { api } from '../services/api';
 
 interface AuthModalProps {
   onClose?: () => void;
@@ -7,24 +8,55 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess }) => {
-  const [activeTab, setActiveTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [activeTab, setActiveTab] = useState<'LOGIN' | 'REGISTER' | 'FORGOT'>('LOGIN');
   
   // LOGIN STATE
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginStep, setLoginStep] = useState<'EMAIL' | 'OTP'>('EMAIL');
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   
   // REGISTER STATE
   const [regName, setRegName] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regEmail, setRegEmail] = useState('');
-  const [regStep, setRegStep] = useState<'DETAILS' | 'OTP'>('DETAILS');
+  const [regUsername, setRegUsername] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regStep, setRegStep] = useState<'DETAILS' | 'OTP' | 'SETUP'>('DETAILS');
+
+  // FORGOT PASSWORD STATE
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotStep, setForgotStep] = useState<'EMAIL' | 'OTP'>('EMAIL');
 
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleSendOtp = async (email: string, action: 'login' | 'register') => {
+  const resetMessages = () => {
+    setError('');
+    setMessage('');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginUsername || !loginPassword) {
+      setError('Username and password are required');
+      return;
+    }
+    setError('');
+    setIsLoading(true);
+    try {
+      const data = await api.login({ username: loginUsername, password: loginPassword });
+      if (data.error) throw new Error(data.error);
+      onLoginSuccess(data.user);
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendOtp = async (email: string, action: 'register' | 'reset-password') => {
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email address');
       return;
@@ -36,7 +68,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       }
     }
 
-    setError('');
+    resetMessages();
     setIsLoading(true);
     try {
       const res = await fetch('/api/auth/send-otp', {
@@ -48,9 +80,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
       
       if (!res.ok) throw new Error(data.error);
       
-      setMessage(`OTP sent to ${email} (Please check your inbox/spam)`);
-      if (action === 'login') setLoginStep('OTP');
-      else setRegStep('OTP');
+      setMessage(`OTP sent to ${email} (Please check your inbox)`);
+      if (action === 'register') setRegStep('OTP');
+      else setForgotStep('OTP');
     } catch (err: any) {
       setError(err.message || 'Failed to send OTP');
     } finally {
@@ -58,33 +90,81 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
     }
   };
 
-  const handleVerifyOtp = async (email: string, action: 'login' | 'register') => {
+  const handleVerifyOtpIntermediate = async (email: string, action: 'register' | 'reset-password') => {
     if (!otp || otp.length !== 6) {
       setError('Please enter a valid 6-digit OTP');
       return;
     }
-
-    setError('');
+    resetMessages();
     setIsLoading(true);
     try {
-      const body: any = { email, otp, action };
-      if (action === 'register') {
-        body.name = regName;
-        body.phone = regPhone;
-      }
-
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ email, otp, action }),
       });
       const data = await res.json();
-      
       if (!res.ok) throw new Error(data.error);
       
+      setMessage('OTP Verified! Please proceed.');
+      if (action === 'register') setRegStep('SETUP');
+    } catch (err: any) {
+      setError(err.message || 'Invalid OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFinalRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regUsername || !regPassword) {
+      setError('Username and password are required');
+      return;
+    }
+    resetMessages();
+    setIsLoading(true);
+    try {
+      const data = await api.register({
+        name: regName,
+        phone: regPhone,
+        email: regEmail,
+        otp,
+        username: regUsername,
+        password: regPassword
+      });
+      if (data.error) throw new Error(data.error);
       onLoginSuccess(data.user);
     } catch (err: any) {
-      setError(err.message || 'Failed to verify OTP');
+      setError(err.message || 'Registration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || !forgotNewPassword) {
+      setError('OTP and new password are required');
+      return;
+    }
+    resetMessages();
+    setIsLoading(true);
+    try {
+      const data = await api.resetPassword({
+        email: forgotEmail,
+        otp,
+        newPassword: forgotNewPassword
+      });
+      if (data.error) throw new Error(data.error);
+      setMessage(data.message);
+      setTimeout(() => {
+        setActiveTab('LOGIN');
+        setForgotStep('EMAIL');
+        resetMessages();
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Reset failed');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -117,13 +197,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
         {/* Segmented Control */}
         <div className="flex p-2 bg-[#080C1D] border-b border-[#1A223E]">
           <button
-            onClick={() => {
-              setActiveTab('LOGIN');
-              setError('');
-              setMessage('');
-              setOtp('');
-              setLoginStep('EMAIL');
-            }}
+            onClick={() => { setActiveTab('LOGIN'); resetMessages(); setOtp(''); }}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
               activeTab === 'LOGIN' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -131,13 +205,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
             Login
           </button>
           <button
-            onClick={() => {
-              setActiveTab('REGISTER');
-              setError('');
-              setMessage('');
-              setOtp('');
-              setRegStep('DETAILS');
-            }}
+            onClick={() => { setActiveTab('REGISTER'); resetMessages(); setOtp(''); setRegStep('DETAILS'); }}
             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${
               activeTab === 'REGISTER' ? 'bg-[#FF6B00]/20 text-[#FF6B00]' : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -161,73 +229,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
           {/* ===================== LOGIN FLOW ===================== */}
           {activeTab === 'LOGIN' && (
             <div className="animate-in fade-in slide-in-from-left-4 duration-300">
-              {loginStep === 'EMAIL' ? (
-                <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(loginEmail, 'login'); }} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Registered Email</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Mail className="w-4 h-4 text-slate-500" />
-                      </div>
-                      <input
-                        type="email"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                      />
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Username, Email, or Phone</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <UserIcon className="w-4 h-4 text-slate-500" />
                     </div>
+                    <input
+                      type="text"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      placeholder="super_fan_99 or email"
+                      className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Get OTP'}
-                    {!isLoading && <ArrowRight className="w-4 h-4" />}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(loginEmail, 'login'); }} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Enter 6-digit OTP</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="w-4 h-4 text-slate-500" />
-                      </div>
-                      <input
-                        type="text"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        placeholder="000000"
-                        maxLength={6}
-                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-xl tracking-widest text-center font-black focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                      />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="w-4 h-4 text-slate-500" />
                     </div>
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                    />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FF6B00] to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                  >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Secure Login'}
-                  </button>
+                </div>
+                
+                <div className="flex justify-end">
                   <button
                     type="button"
-                    onClick={() => { setLoginStep('EMAIL'); setOtp(''); setMessage(''); setError(''); }}
-                    className="w-full text-xs text-slate-400 hover:text-white"
+                    onClick={() => { setActiveTab('FORGOT'); resetMessages(); setOtp(''); setForgotStep('EMAIL'); }}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 font-bold"
                   >
-                    Change Email Address
+                    Forgot Password?
                   </button>
-                </form>
-              )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Login securely'}
+                  {!isLoading && <ArrowRight className="w-4 h-4" />}
+                </button>
+              </form>
             </div>
           )}
 
           {/* ===================== REGISTER FLOW ===================== */}
           {activeTab === 'REGISTER' && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              {regStep === 'DETAILS' ? (
+              {regStep === 'DETAILS' && (
                 <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(regEmail, 'register'); }} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Full Name</label>
@@ -287,13 +346,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                     {!isLoading && <ArrowRight className="w-4 h-4" />}
                   </button>
                 </form>
-              ) : (
-                <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(regEmail, 'register'); }} className="space-y-4">
+              )}
+
+              {regStep === 'OTP' && (
+                <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtpIntermediate(regEmail, 'register'); }} className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Enter 6-digit OTP</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="w-4 h-4 text-slate-500" />
+                        <Key className="w-4 h-4 text-slate-500" />
                       </div>
                       <input
                         type="text"
@@ -310,11 +371,144 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
                     disabled={isLoading}
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                   >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete Registration'}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify OTP'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setRegStep('DETAILS'); setOtp(''); setMessage(''); setError(''); }}
+                    onClick={() => { setRegStep('DETAILS'); resetMessages(); }}
+                    className="w-full text-xs text-slate-400 hover:text-white"
+                  >
+                    Go Back
+                  </button>
+                </form>
+              )}
+
+              {regStep === 'SETUP' && (
+                <form onSubmit={handleFinalRegister} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Choose Username</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <UserIcon className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={regUsername}
+                        onChange={(e) => setRegUsername(e.target.value)}
+                        placeholder="unique_username"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Create Password</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="password"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Account'}
+                    {!isLoading && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* ===================== FORGOT PASSWORD FLOW ===================== */}
+          {activeTab === 'FORGOT' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              {forgotStep === 'EMAIL' ? (
+                <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(forgotEmail, 'reset-password'); }} className="space-y-4">
+                  <p className="text-sm text-slate-400 mb-4 text-center">
+                    Enter your registered email address to receive a password reset OTP.
+                  </p>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Email Address</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-[#FF6B00] to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Reset OTP'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setActiveTab('LOGIN'); resetMessages(); setOtp(''); }}
+                    className="w-full text-xs text-slate-400 hover:text-white"
+                  >
+                    Back to Login
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Enter 6-digit OTP</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Key className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-xl tracking-widest text-center font-black focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">New Password</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="password"
+                        value={forgotNewPassword}
+                        onChange={(e) => setForgotNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-[#050816] border border-[#1A223E] rounded-xl py-3 pl-10 pr-4 text-white text-sm font-bold focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-[#FF6B00] to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-black text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm New Password'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotStep('EMAIL'); resetMessages(); }}
                     className="w-full text-xs text-slate-400 hover:text-white"
                   >
                     Go Back

@@ -11,7 +11,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     
     // Body can contain { status: 'DRAFT' } or { status: 'UPCOMING', questions: [...] }
     const match = await Match.findOneAndUpdate(
-      { apiId: id },
+      { _id: id },
       { $set: body },
       { new: true }
     ).lean();

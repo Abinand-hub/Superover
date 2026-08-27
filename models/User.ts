@@ -1,6 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IUser extends Document {
+  username?: string;
+  password?: string;
+  refId: string;
   name: string;
   phone: string;
   email: string;
@@ -25,6 +28,9 @@ export interface IUser extends Document {
 
 const UserSchema: Schema = new Schema(
   {
+    username: { type: String, unique: true, sparse: true },
+    password: { type: String },
+    refId: { type: String, unique: true, sparse: true, index: true },
     name: { type: String, required: true },
     phone: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
@@ -48,6 +54,23 @@ const UserSchema: Schema = new Schema(
     timestamps: true,
   }
 );
+
+// Auto-generate 6-digit refId
+UserSchema.pre('save', async function() {
+  if (this.isNew && !this.refId) {
+    let unique = false;
+    let attempts = 0;
+    while (!unique && attempts < 10) {
+      const randomRef = Math.floor(100000 + Math.random() * 900000).toString();
+      const existing = await (this.constructor as mongoose.Model<IUser>).findOne({ refId: randomRef });
+      if (!existing) {
+        this.refId = randomRef;
+        unique = true;
+      }
+      attempts++;
+    }
+  }
+});
 
 // Virtual for totalBalance
 UserSchema.virtual('wallet.totalBalance').get(function(this: any) {

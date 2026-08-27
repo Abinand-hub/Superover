@@ -144,7 +144,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                       {match.format}
                     </span>
                     <span className="font-bold text-slate-200 truncate max-w-[140px] sm:max-w-[180px]">
-                      {match.series}
+                      {match.series && match.series.length > 30 ? match.title : match.series}
                     </span>
                   </div>
 
@@ -197,7 +197,7 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                       <span className="w-8 h-8 rounded-full bg-[#131A38] border border-[#1A223E] text-slate-400 text-xs font-black flex items-center justify-center shadow-md">
                         VS
                       </span>
-                      <span className="text-[10px] text-slate-400 font-medium mt-1">
+                      <span suppressHydrationWarning className="text-[10px] text-slate-400 font-medium mt-1">
                         {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>

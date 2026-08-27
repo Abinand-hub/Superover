@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Zap, 
   Wallet as WalletIcon, 
@@ -45,6 +45,19 @@ export const Header: React.FC<HeaderProps> = ({
   pendingSlipsCount,
   onSignOut
 }) => {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   return (
     <header className="sticky top-0 z-40 bg-[#050816]/95 backdrop-blur-md border-b border-[#1A223E] shadow-xl shadow-black/40">
       {/* Top micro-bar for compliance and quick info */}
@@ -185,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* User Account / KYC Profile Pill */}
-          <div className="relative">
+          <div className="relative" ref={profileRef}>
             {user.id === 'u_guest' ? (
               <button
                 onClick={openAuthModal}
@@ -195,37 +208,49 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>Login <span className="hidden sm:inline">/ Register</span></span>
               </button>
             ) : (
-              <div className="flex items-center bg-[#0D122B] rounded-xl border border-[#1A223E] overflow-hidden shadow-inner group">
+              <div className="relative">
                 <button
-                  onClick={openAuthModal}
-                  className="flex items-center gap-1 sm:gap-2 p-1 sm:px-2.5 sm:py-1 hover:bg-[#131A38] transition-all text-left"
-                  id="btn-user-profile"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center bg-[#0D122B] rounded-xl border border-[#1A223E] overflow-hidden shadow-inner p-1 sm:p-1.5 hover:bg-[#131A38] transition-all"
                 >
                   <img
                     src={user.avatar}
                     alt={user.name}
-                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover ring-1 ring-[#FF6B00]/40"
                   />
-                  <div className="hidden lg:flex flex-col pr-2 border-r border-[#1A223E]">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-bold text-slate-200 truncate max-w-[90px]">{user.name}</span>
-                      {user.kycStatus === 'VERIFIED' ? (
-                        <span className="text-[#4ADE80] text-[10px]" title="KYC Verified">✓</span>
-                      ) : (
-                        <span className="text-[#FFAA00] text-[10px]" title="KYC Pending">⚠️</span>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-[#0D122B] border border-[#1A223E] rounded-xl shadow-2xl py-2 z-50 animate-in fade-in zoom-in duration-200">
+                    <div className="px-4 py-2 border-b border-[#1A223E]">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-white truncate">{user.name}</span>
+                        {user.kycStatus === 'VERIFIED' ? (
+                          <span className="text-[#4ADE80] text-xs" title="KYC Verified">✓</span>
+                        ) : (
+                          <span className="text-[#FFAA00] text-xs" title="KYC Pending">⚠️</span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">{user.phone}</div>
+                      {user.refId && (
+                        <div className="text-[10px] text-[#FF6B00] font-bold mt-1">Ref ID: {user.refId}</div>
                       )}
                     </div>
-                    <span className="text-[10px] text-slate-400">{user.phone}</span>
+                    <button
+                      onClick={() => { setIsProfileOpen(false); openKycModal(); }}
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#131A38] hover:text-white transition-colors flex items-center gap-2"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" /> Complete KYC
+                    </button>
+                    <button
+                      onClick={() => { setIsProfileOpen(false); onSignOut(); }}
+                      className="w-full text-left px-4 py-2 text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Sign Out
+                    </button>
                   </div>
-                </button>
-                <button
-                  onClick={onSignOut}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 transition-colors"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Sign Out</span>
-                </button>
+                )}
               </div>
             )}
           </div>

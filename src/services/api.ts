@@ -47,6 +47,11 @@ async function fetchWithMockFallback<T>(endpoint: string, options?: RequestInit,
 }
 
 export const api = {
+  // Auth
+  login: (payload: any) => fetch('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+  register: (payload: any) => fetch('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+  resetPassword: (payload: any) => fetch('/api/auth/reset-password', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+
   // Matches
   getMatches: async () => {
     let rawMatches = [];

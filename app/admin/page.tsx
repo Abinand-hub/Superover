@@ -152,6 +152,7 @@ export default function AdminPage() {
           onApproveJackpot={() => {}}
           onRejectJackpot={() => {}}
           onCloseAdmin={() => {}}
+          onReloadData={loadAdminData}
         />
       </main>
     </div>

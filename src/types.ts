@@ -75,6 +75,7 @@ export interface CricketMatch {
   totalPool: number;
   totalEntries: number;
   entryFees: number[]; // [25, 50, 100]
+  maxEntriesPerUser?: number;
   squadTeam1: Player[];
   squadTeam2: Player[];
   questions: QuestionDefinition[];
@@ -147,14 +148,18 @@ export interface WalletTransaction {
 
 export interface UserAccount {
   id: string;
+  refId?: string;
+  username?: string;
   name: string;
-  email: string;
   phone: string;
+  email?: string;
   role: 'USER' | 'ADMIN';
   avatar: string;
   wallet: Wallet;
   isBlocked: boolean;
-  kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  kycStatus: 'UNVERIFIED' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+  panNumber?: string;
+  upiId?: string;
   joinedDate: string;
   dailyDepositLimit: number;
   totalContestsJoined: number;

@@ -76,6 +76,7 @@ interface AdminPanelProps {
   onApproveJackpot: (slipId: string) => void;
   onRejectJackpot: (slipId: string) => void;
   onCloseAdmin: () => void;
+  onReloadData?: () => void;
 }
 
 // Preset Library of Star Players for quick addition to any squad
@@ -229,6 +230,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onApproveJackpot,
   onRejectJackpot,
   onCloseAdmin,
+  onReloadData,
 }) => {
   const [adminTab, setAdminTab] = useState<'overview' | 'publishing' | 'questionBank' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials' | 'market' | 'settings'>('overview');
   
@@ -1546,7 +1548,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {publishingView === 'list' && (
             <MatchSelectionManager 
               allMatches={matches}
-              onMatchesDrafted={() => {}} // Could reload data if necessary
+              onMatchesDrafted={() => onReloadData && onReloadData()}
               onGoToDrafts={(matchId: string) => { setConfiguringMatchId(matchId); setPublishingView('config'); }}
             />
           )}

@@ -46,6 +46,8 @@ export const QuestionBankManager: React.FC = () => {
     }
   };
 
+
+
   const handleAddOption = () => {
     if (optionInput.trim()) {
       setOptions([...options, optionInput.trim()]);
@@ -120,7 +122,7 @@ export const QuestionBankManager: React.FC = () => {
           </h2>
           <p className="text-sm text-slate-400">Manage standard questions to attach to matches.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button onClick={loadBank} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-slate-300">
             <RefreshCw className="w-5 h-5" />
           </button>

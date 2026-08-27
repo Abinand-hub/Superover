@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const { email, action } = body;
 
     if (!email || !action) {
-      return NextResponse.json({ error: 'Email and action (login/register) are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email and action (register/reset-password) are required' }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -20,9 +20,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Email is already registered. Please login.' }, { status: 409 });
       }
     } else {
-      if (action === 'login') {
+      if (action === 'reset-password') {
         return NextResponse.json({ error: 'User not found. Please register first.' }, { status: 404 });
       }
+    }
+
+    if (action !== 'register' && action !== 'reset-password') {
+      return NextResponse.json({ error: 'Invalid action for OTP' }, { status: 400 });
     }
 
     // Generate random 6-digit OTP
@@ -55,6 +59,10 @@ export async function POST(req: Request) {
             pass: process.env.EMAIL_APP_PASSWORD,
           },
         });
+
+        console.log(`\n================================`);
+        console.log(`🔐 OTP for ${email}: ${otp}`);
+        console.log(`================================\n`);
 
         await transporter.sendMail({
           from: `"SuperOver" <${process.env.EMAIL_USER}>`,

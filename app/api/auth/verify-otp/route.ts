@@ -35,72 +35,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 401 });
     }
 
-    // Mark OTP as used (or delete it)
-    if (validOtp) {
-      try {
-        await Otp.deleteOne({ _id: validOtp._id });
-      } catch (e) {}
-    }
-
-    // Find or create user
-    let user = await User.findOne({ email });
-
-    if (action === 'register') {
-      if (user) {
-        console.log(`[Verify-OTP] User ${email} already exists, logging them in and updating details`);
-        if (name) user.name = name;
-        if (phone) user.phone = phone;
-        await user.save();
-      } else {
-        if (!name || !phone) {
-          return NextResponse.json({ error: 'Name and phone are required for registration.' }, { status: 400 });
-        }
-
-        console.log(`[Verify-OTP] Registering new user ${email}`);
-        user = await User.create({
-          name,
-          phone,
-          email,
-          role: 'FAN',
-          wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 100 }, // Give 50 bonus for joining
-        });
-      }
-    } else if (action === 'login') {
-      if (!user) {
-        return NextResponse.json({ error: 'User not found. Please register.' }, { status: 404 });
-      }
-    } else {
+    if (action !== 'register' && action !== 'reset-password') {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id, role: user.role, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Set cookie
-    const response = NextResponse.json({ 
-      message: 'Login successful',
-      user: {
-        id: user._id,
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
-        wallet: user.wallet
-      }
+    // Do NOT delete the OTP here. Let the final register/reset-password endpoint delete it.
+    
+    return NextResponse.json({ 
+      success: true,
+      message: 'OTP verified successfully'
     });
-
-    response.cookies.set('auth_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/'
-    });
-
-    return response;
 
   } catch (error) {
     console.error('Verify OTP Error:', error);
