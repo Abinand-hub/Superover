@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Phone, Lock, User as UserIcon, Mail, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 
 interface AuthModalProps {
-  onClose: () => void;
+  onClose?: () => void;
   onLoginSuccess: (user: any) => void;
 }
 
@@ -100,16 +100,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess })
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white">SuperOver</h2>
-              <p className="text-xs text-slate-400">Secure Authentication</p>
+              <h2 className="text-xl font-black text-white font-display">SuperOver</h2>
+              <p className="text-xs text-slate-400 font-medium">Secure Authentication</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#131A38] hover:bg-[#1A223E] text-slate-400 flex items-center justify-center transition-colors border border-[#1A223E]"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-800/50 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Segmented Control */}

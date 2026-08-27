@@ -83,7 +83,6 @@ export const api = {
     });
   },
   
-  // Admin Match Management
   getAdminMatches: async () => {
     try {
       const res = await fetch('/api/admin/matches', { method: 'GET' });
@@ -100,6 +99,18 @@ export const api = {
       console.warn('Failed to fetch admin matches:', e);
     }
     return [];
+  },
+
+  getAdminDashboard: async () => {
+    try {
+      const res = await fetch('/api/admin/dashboard', { method: 'GET' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn('Failed to fetch admin dashboard:', e);
+    }
+    return null;
   },
   updateMatchAdmin: (id: string, payload: any) => fetch(`/api/admin/matches/${id}`, { method: 'PUT', body: JSON.stringify(payload) }).then(r => r.json()),
   
@@ -150,4 +161,8 @@ export const api = {
 
   // Platform
   getMetrics: () => fetchWithMockFallback<PlatformMetrics>('/metrics', { method: 'GET' }, INITIAL_PLATFORM_METRICS),
+
+  // Settings
+  getSettings: () => fetch('/api/admin/settings', { method: 'GET' }).then(r => r.json()),
+  updateSettings: (payload: any) => fetch('/api/admin/settings', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
 };

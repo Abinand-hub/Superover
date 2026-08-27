@@ -21,8 +21,7 @@ export async function POST(req: Request) {
       }
     } else {
       if (action === 'login') {
-        // In mock mode, if action is login, we just proceed.
-        // If DB was up, we'd block them, but since it's down, we let them try logging in anyway for the demo.
+        return NextResponse.json({ error: 'User not found. Please register first.' }, { status: 404 });
       }
     }
 

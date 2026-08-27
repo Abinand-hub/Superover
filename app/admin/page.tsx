@@ -39,30 +39,17 @@ export default function AdminPage() {
   async function loadAdminData() {
     setIsLoading(true);
     try {
-      const [matches, allUsers, slips, transactions] = await Promise.all([
-        api.getAdminMatches(),
-        api.getAllUsers(),
-        api.getSlips(),
-        api.getTransactions()
-      ]);
-
-      // Calculate dynamic metrics since api.getMetrics is deprecated
-      const metrics: PlatformMetrics = {
-        totalUsers: Array.isArray(allUsers) ? allUsers.length : 0,
-        totalPoolCollected: Array.isArray(slips) ? slips.reduce((sum: number, s: any) => sum + (s.entryFee || 0), 0) : 0,
-        totalPayoutsDisbursed: Array.isArray(transactions) ? transactions.filter((t: any) => t.type === 'CONTEST_PAYOUT' || t.type === 'PAYOUT').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) : 0,
-        activeMatches: Array.isArray(matches) ? matches.filter((m: any) => m.status === 'LIVE' || m.status === 'UPCOMING' || m.status === 'LOCKED').length : 0,
-        commissionRate: 0.15,
-        platformProfit: (Array.isArray(slips) ? slips.reduce((sum, slip) => sum + slip.entryFee, 0) : 0) - (Array.isArray(transactions) ? transactions.filter((t: any) => t.type === 'CONTEST_PAYOUT' || t.type === 'PAYOUT').reduce((sum: number, t: any) => sum + (t.amount || 0), 0) : 0)
-      };
-
-      setData({ 
-        matches, 
-        allUsers, 
-        slips, 
-        transactions, 
-        metrics
-      });
+      const dashboardData = await api.getAdminDashboard();
+      
+      if (dashboardData) {
+        setData({ 
+          matches: dashboardData.matches, 
+          allUsers: [], // Load users lazily in the users tab
+          slips: dashboardData.slips, 
+          transactions: dashboardData.transactions, 
+          metrics: dashboardData.metrics
+        });
+      }
     } catch (e) {
       console.error("Failed to load admin data:", e);
     } finally {
@@ -77,8 +64,10 @@ export default function AdminPage() {
 
   if (isLoading && !data) {
     return (
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#050816] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-purple-400 font-medium text-sm animate-pulse">Initializing Admin Dashboard...</p>
+        <p className="text-slate-500 text-xs mt-2">This may take a few seconds.</p>
       </div>
     );
   }

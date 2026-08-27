@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Zap } from 'lucide-react';
+import { api } from '../services/api';
 
 interface WheelOfFortuneProps {
   onComplete: (multiplier: number) => void;
@@ -10,8 +11,26 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   const [rotation, setRotation] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedMultiplier, setSelectedMultiplier] = useState<number | null>(null);
+  
+  const [wheelConfig, setWheelConfig] = useState([
+    { multiplier: 75, probability: 40 },
+    { multiplier: 100, probability: 30 },
+    { multiplier: 120, probability: 15 },
+    { multiplier: 150, probability: 10 },
+    { multiplier: 200, probability: 4 },
+    { multiplier: 500, probability: 1 },
+  ]);
 
-  const segments = [75, 100, 120, 150, 200, 500];
+  useEffect(() => {
+    // Fetch dynamic probabilities from settings
+    api.getSettings().then(settings => {
+      if (settings && settings.wheelProbabilities && settings.wheelProbabilities.length === 6) {
+        setWheelConfig(settings.wheelProbabilities);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const segments = wheelConfig.map(c => c.multiplier);
   const segmentAngle = 360 / segments.length;
 
   const spinWheel = () => {
@@ -19,16 +38,18 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
     
     setIsSpinning(true);
     
-    // Weighted probability selection
-    // 75X: 40%, 100X: 30%, 120X: 15%, 150X: 10%, 200X: 4%, 500X: 1%
+    // Dynamic Weighted probability selection
     const rand = Math.random() * 100;
     let winningIndex = 0;
-    if (rand < 40) winningIndex = 0; // 75
-    else if (rand < 70) winningIndex = 1; // 100
-    else if (rand < 85) winningIndex = 2; // 120
-    else if (rand < 95) winningIndex = 3; // 150
-    else if (rand < 99) winningIndex = 4; // 200
-    else winningIndex = 5; // 500
+    let cumulativeProb = 0;
+    
+    for (let i = 0; i < wheelConfig.length; i++) {
+      cumulativeProb += wheelConfig[i].probability;
+      if (rand < cumulativeProb) {
+        winningIndex = i;
+        break;
+      }
+    }
 
     const winningMultiplier = segments[winningIndex];
     

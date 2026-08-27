@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   Trophy, 
@@ -53,6 +53,11 @@ import { LiveMarketAnalysis } from './admin/LiveMarketAnalysis';
 import { QuestionBankManager } from './admin/QuestionBankManager';
 import { MatchSelectionManager } from './admin/MatchSelectionManager';
 import { MatchConfigurator } from './admin/MatchConfigurator';
+import { ClientDetailView } from './admin/ClientDetailView';
+import { LiveMatchDashboard } from './admin/LiveMatchDashboard';
+import { MatchHistory } from './admin/MatchHistory';
+import { SettingsManager } from './admin/SettingsManager';
+import { ReportsManager } from './admin/ReportsManager';
 
 interface AdminPanelProps {
   metrics: PlatformMetrics;
@@ -225,8 +230,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onRejectJackpot,
   onCloseAdmin,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'publishing' | 'questionBank' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials' | 'market'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'publishing' | 'questionBank' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials' | 'market' | 'settings'>('overview');
   
+  const [loadedUsers, setLoadedUsers] = useState<UserAccount[]>(allUsers);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (adminTab === 'users' && loadedUsers.length === 0) {
+      setIsLoadingUsers(true);
+      import('../services/api').then(({ api }) => {
+        api.getAllUsers().then((res: any) => {
+          setLoadedUsers(res);
+          setIsLoadingUsers(false);
+        });
+      });
+    }
+  }, [adminTab, loadedUsers.length]);
+
   // Publishing State
   const [publishingView, setPublishingView] = useState<'list' | 'config'>('list');
   const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
@@ -234,6 +254,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Match Management State
   const [selectedMatchForSquad, setSelectedMatchForSquad] = useState<string>(matches[0]?.id || '');
   const [selectedTeamForSquad, setSelectedTeamForSquad] = useState<'team1' | 'team2'>('team1');
+  const [matchesView, setMatchesView] = useState<'LIFECYCLE' | 'LIVE_DASHBOARD' | 'HISTORY'>('LIFECYCLE');
 
   // Add Player Modal State
   const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
@@ -263,6 +284,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [inspectedUser, setInspectedUser] = useState<UserAccount | null>(null);
   const [bonusCreditAmount, setBonusCreditAmount] = useState<number>(50);
   const [bonusCreditNote, setBonusCreditNote] = useState<string>('Promotional Skill Reward');
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   // Create Match Modal State
   const [showCreateMatchModal, setShowCreateMatchModal] = useState<boolean>(false);
@@ -416,7 +438,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     document.body.removeChild(link);
   };
 
-  const filteredUsers = allUsers.filter((u) => {
+  const filteredUsers = loadedUsers.filter((u) => {
     if (!userSearch.trim()) return true;
     const q = userSearch.toLowerCase();
     return u.name.toLowerCase().includes(q) || u.phone.includes(q) || u.email?.toLowerCase().includes(q);
@@ -462,10 +484,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           { id: 'squads', label: 'Match Squad Viewer', icon: UserPlus },
           { id: 'settlement', label: 'Result Settlement & Payouts', icon: Sparkles },
           { id: 'jackpots', label: 'Jackpot Approvals', icon: Gift },
-          { id: 'users', label: `User Inspector (${allUsers.length})`, icon: Users },
+          { id: 'users', label: `User Inspector (${metrics.totalUsers})`, icon: Users },
           { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL' && t.status === 'PENDING').length})`, icon: ArrowUpRight },
           { id: 'financials', label: 'Audit CSV & Rake', icon: FileSpreadsheet },
           { id: 'market', label: 'Live Market Analysis', icon: TrendingUp },
+          { id: 'settings', label: 'Platform Settings', icon: Settings },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -517,7 +540,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Registered Players</span>
               <span className="text-2xl sm:text-3xl font-black text-white font-display mt-1 block">
-                {allUsers.length} Users
+                {metrics.totalUsers} Users
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">{allSlips.length} Total Slips Placed</span>
             </div>
@@ -575,13 +598,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB CONTENT 2: MATCH LIFECYCLE (START / END / LOCK) */}
+      {/* TAB CONTENT 2: MATCH CENTER */}
       {adminTab === 'matches' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-black text-white">Match Lifecycle Management</h2>
-              <p className="text-xs text-slate-400">Start live matches, end/conclude fixtures, lock submissions, or edit match details.</p>
+              <h2 className="text-lg font-black text-white">Match Center</h2>
+              <p className="text-xs text-slate-400">Manage match lifecycle, monitor live game stats, and view history.</p>
             </div>
 
             <button
@@ -594,106 +617,143 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </button>
           </div>
 
-          <div className="space-y-3">
-            {matches.map((match) => (
-              <div
-                key={match.id}
-                className="p-4 sm:p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {[
+              { id: 'LIFECYCLE', label: 'Lifecycle (Start/End)' },
+              { id: 'LIVE_DASHBOARD', label: 'Live Dashboard' },
+              { id: 'HISTORY', label: 'Match History' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setMatchesView(tab.id as any)}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                  matchesView === tab.id 
+                    ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/25' 
+                    : 'bg-[#131A38] text-slate-400 hover:text-white border border-[#1A223E]'
+                }`}
               >
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded bg-[#131A38] text-[#FFAA00] text-[10px] font-black uppercase border border-[#1A223E]">
-                      {match.format}
-                    </span>
-                    <span className="text-xs text-slate-300 font-bold">{match.series}</span>
-                    <span className="text-xs font-bold text-slate-600">•</span>
-                    <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                      match.status === 'LIVE' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse' :
-                      match.status === 'COMPLETED' ? 'bg-[#4ADE80]/20 text-[#4ADE80] border border-[#4ADE80]/30' :
-                      match.status === 'LOCKED' ? 'bg-[#FFAA00]/20 text-[#FFAA00] border border-[#FFAA00]/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                    }`}>
-                      {match.status === 'LIVE' ? '🔴 LIVE IN PLAY' : match.status}
-                    </span>
-                  </div>
-
-                  <h3 className="text-base font-extrabold text-white">{match.title}</h3>
-                  {match.status === 'LIVE' && match.liveScore && (
-                    <div className="text-sm font-black text-[#FF6B00] bg-[#FF6B00]/10 px-3 py-1 rounded-lg border border-[#FF6B00]/20 inline-block mt-1 animate-pulse">
-                      🔴 LIVE: {match.liveScore}
-                    </div>
-                  )}
-                  <div className="text-xs text-slate-400 mt-1">
-                    Venue: {match.venue} • Prize Pool: <span className="text-[#FFAA00] font-bold">
-                      {formatINR(allSlips.filter(s => s.matchId === match.id).reduce((sum, slip) => sum + slip.entryFee, 0))}
-                    </span> • {allSlips.filter(s => s.matchId === match.id).length} Entries Placed
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Squads: {match.team1.code} ({match.squadTeam1.length} players) vs {match.team2.code} ({match.squadTeam2.length} players)
-                  </div>
-                </div>
-
-                {/* Match Action Buttons */}
-                <div className="flex items-center gap-2 flex-wrap pt-2 lg:pt-0 border-t lg:border-t-0 border-[#1A223E]">
-                  {/* START MATCH BUTTON */}
-                  {match.status !== 'LIVE' && match.status !== 'COMPLETED' && (
-                    <button
-                      onClick={() => handleStartMatch(match)}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-rose-600/30"
-                      id={`btn-start-match-${match.id}`}
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Start Match (Go LIVE)</span>
-                    </button>
-                  )}
-
-                  {/* END & SETTLE BUTTON */}
-                  {match.status === 'LIVE' && (
-                    <button
-                      onClick={() => handleEndMatch(match)}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-purple-600/30"
-                      id={`btn-end-settle-match-${match.id}`}
-                    >
-                      <Square className="w-3.5 h-3.5 fill-current" />
-                      <span>End & Settle Payouts</span>
-                    </button>
-                  )}
-
-                  {/* LOCK / UNLOCK BUTTON */}
-                  {match.status === 'UPCOMING' && (
-                    <button
-                      onClick={() => handleToggleLock(match)}
-                      className="px-3 py-2 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 text-xs font-bold border border-[#1A223E] flex items-center gap-1"
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Lock</span>
-                    </button>
-                  )}
-
-                  {match.status === 'LOCKED' && (
-                    <button
-                      onClick={() => handleToggleLock(match)}
-                      className="px-3 py-2 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 text-xs font-bold border border-[#1A223E] flex items-center gap-1"
-                    >
-                      <Unlock className="w-3.5 h-3.5" />
-                      <span>Unlock</span>
-                    </button>
-                  )}
-
-                  {/* SQUAD EDIT SHORTCUT */}
-                  <button
-                    onClick={() => {
-                      setSelectedMatchForSquad(match.id);
-                      setAdminTab('squads');
-                    }}
-                    className="px-3 py-2 rounded-xl bg-[#080C1D] hover:bg-[#131A38] text-[#FF8800] text-xs font-bold border border-[#FF6B00]/40 flex items-center gap-1"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>Squad Players</span>
-                  </button>
-                </div>
-              </div>
+                {tab.label}
+              </button>
             ))}
           </div>
+
+          {matchesView === 'LIFECYCLE' && (
+            <div className="space-y-3">
+              {matches.map((match) => (
+                <div
+                  key={match.id}
+                  className="p-4 sm:p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded bg-[#131A38] text-[#FFAA00] text-[10px] font-black uppercase border border-[#1A223E]">
+                        {match.format}
+                      </span>
+                      <span className="text-xs text-slate-300 font-bold">{match.series}</span>
+                      <span className="text-xs font-bold text-slate-600">•</span>
+                      <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                        match.status === 'LIVE' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse' :
+                        match.status === 'COMPLETED' ? 'bg-[#4ADE80]/20 text-[#4ADE80] border border-[#4ADE80]/30' :
+                        match.status === 'LOCKED' ? 'bg-[#FFAA00]/20 text-[#FFAA00] border border-[#FFAA00]/30' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                      }`}>
+                        {match.status === 'LIVE' ? '🔴 LIVE IN PLAY' : match.status}
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-extrabold text-white">{match.title}</h3>
+                    {match.status === 'LIVE' && match.liveScore && (
+                      <div className="text-sm font-black text-[#FF6B00] bg-[#FF6B00]/10 px-3 py-1 rounded-lg border border-[#FF6B00]/20 inline-block mt-1 animate-pulse">
+                        🔴 LIVE: {match.liveScore}
+                      </div>
+                    )}
+                    <div className="text-xs text-slate-400 mt-1">
+                      Venue: {match.venue} • Prize Pool: <span className="text-[#FFAA00] font-bold">
+                        {formatINR(allSlips.filter(s => s.matchId === match.id).reduce((sum, slip) => sum + slip.entryFee, 0))}
+                      </span> • {allSlips.filter(s => s.matchId === match.id).length} Entries Placed
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Squads: {match.team1.code} ({match.squadTeam1.length} players) vs {match.team2.code} ({match.squadTeam2.length} players)
+                    </div>
+                  </div>
+
+                  {/* Match Action Buttons */}
+                  <div className="flex items-center gap-2 flex-wrap pt-2 lg:pt-0 border-t lg:border-t-0 border-[#1A223E]">
+                    {/* START MATCH BUTTON */}
+                    {match.status !== 'LIVE' && match.status !== 'COMPLETED' && (
+                      <button
+                        onClick={() => handleStartMatch(match)}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                        id={`btn-start-match-${match.id}`}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Start Match (Go LIVE)</span>
+                      </button>
+                    )}
+
+                    {/* END & SETTLE BUTTON */}
+                    {match.status === 'LIVE' && (
+                      <button
+                        onClick={() => handleEndMatch(match)}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-purple-600/30"
+                        id={`btn-end-settle-match-${match.id}`}
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>End & Settle Payouts</span>
+                      </button>
+                    )}
+
+                    {/* LOCK / UNLOCK BUTTON */}
+                    {match.status === 'UPCOMING' && (
+                      <button
+                        onClick={() => handleToggleLock(match)}
+                        className="px-3 py-2 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 text-xs font-bold border border-[#1A223E] flex items-center gap-1"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Lock</span>
+                      </button>
+                    )}
+
+                    {match.status === 'LOCKED' && (
+                      <button
+                        onClick={() => handleToggleLock(match)}
+                        className="px-3 py-2 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 text-xs font-bold border border-[#1A223E] flex items-center gap-1"
+                      >
+                        <Unlock className="w-3.5 h-3.5" />
+                        <span>Unlock</span>
+                      </button>
+                    )}
+
+                    {/* SQUAD EDIT SHORTCUT */}
+                    <button
+                      onClick={() => {
+                        setSelectedMatchForSquad(match.id);
+                        setAdminTab('squads');
+                      }}
+                      className="px-3 py-2 rounded-xl bg-[#080C1D] hover:bg-[#131A38] text-[#FF8800] text-xs font-bold border border-[#FF6B00]/40 flex items-center gap-1"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Squad Players</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {matchesView === 'LIVE_DASHBOARD' && (
+            <LiveMatchDashboard 
+              liveMatches={matches.filter(m => m.status === 'LIVE')} 
+              allSlips={allSlips}
+              onViewEntries={(id) => {
+                // Future integration to view entries in a modal
+                alert(`Viewing all entries for match ${id}`);
+              }}
+            />
+          )}
+
+          {matchesView === 'HISTORY' && (
+            <MatchHistory completedMatches={matches.filter(m => m.status === 'COMPLETED')} />
+          )}
         </div>
       )}
 
@@ -1009,252 +1069,103 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* TAB CONTENT 5: USER INSPECTOR */}
+      {/* TAB CONTENT 5: CLIENTS LIST */}
       {adminTab === 'users' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-black text-white">Registered Users & KYC Intelligence</h2>
-              <p className="text-xs text-slate-400">Click any user to inspect their predictions played, money added, withdrawals, and balances.</p>
-            </div>
-
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                placeholder="Search user name or phone..."
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {filteredUsers.map((u) => {
-              const userSlipsCount = allSlips.filter((s) => s.userId === u.id).length;
-              const userDepositsCount = allTransactions.filter((t) => t.userId === u.id && t.type === 'DEPOSIT').length;
-
-              return (
-                <div
-                  key={u.id}
-                  className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-purple-500/40 transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={u.avatar} alt={u.name} className="w-11 h-11 rounded-xl object-cover ring-1 ring-[#1A223E]" />
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black text-white">{u.name}</span>
-                        <span className={`px-2 py-0.2 rounded text-[10px] font-bold ${
-                          u.kycStatus === 'VERIFIED' ? 'bg-[#4ADE80]/20 text-[#4ADE80]' : 'bg-[#FFAA00]/20 text-[#FFAA00]'
-                        }`}>
-                          KYC: {u.kycStatus}
-                        </span>
-                        {u.isBlocked && (
-                          <span className="px-2 py-0.2 rounded bg-rose-500/20 text-rose-400 text-[10px] font-bold">
-                            BLOCKED
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {u.phone} • Joined {u.joinedDate} • {userSlipsCount} Slips • {userDepositsCount} Deposits
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => setInspectedUser(u)}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-purple-600/30"
-                      id={`btn-inspect-user-${u.id}`}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Inspect Activity</span>
-                    </button>
-
-                    <button
-                      onClick={() => onAddBonusCash(u.id, 50, 'Admin Promotional Reward')}
-                      className="px-2.5 py-1.5 rounded-xl bg-[#FF6B00]/20 hover:bg-[#FF6B00]/30 text-[#FF8800] text-xs font-bold border border-[#FF6B00]/30"
-                    >
-                      +₹50 Bonus
-                    </button>
-
-                    <button
-                      onClick={() => onUpdateUser({ ...u, isBlocked: !u.isBlocked })}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border ${
-                        u.isBlocked
-                          ? 'bg-[#4ADE80]/20 text-[#4ADE80] border-[#4ADE80]/30'
-                          : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                      }`}
-                    >
-                      {u.isBlocked ? 'Unblock' : 'Block'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* USER INSPECTION MODAL / DRAWER */}
-      {inspectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-[#050816]/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-3xl bg-[#0D122B] border border-purple-500/40 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-auto p-5 sm:p-6 space-y-5 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1A223E] flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <img src={inspectedUser.avatar} alt={inspectedUser.name} className="w-10 h-10 rounded-xl object-cover ring-2 ring-purple-500" />
+          {selectedClientId ? (
+            <ClientDetailView 
+              userId={selectedClientId} 
+              onBack={() => setSelectedClientId(null)} 
+            />
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-black text-white font-display flex items-center gap-2">
-                    {inspectedUser.name}
-                    <span className="text-xs text-slate-400">({inspectedUser.phone})</span>
-                  </h3>
-                  <p className="text-xs text-slate-400">UPI: {inspectedUser.upiId || 'Not specified'} • KYC: {inspectedUser.kycStatus}</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setInspectedUser(null)}
-                className="w-8 h-8 rounded-lg bg-[#131A38] text-slate-400 hover:text-white flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="overflow-y-auto space-y-4 pr-1">
-              {/* Quick User Admin Actions */}
-              <div className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-bold">KYC Action:</span>
-                  <button
-                    onClick={() => {
-                      const next = inspectedUser.kycStatus === 'VERIFIED' ? 'UNVERIFIED' : 'VERIFIED';
-                      const updated = { ...inspectedUser, kycStatus: next as any };
-                      onUpdateUser(updated);
-                      setInspectedUser(updated);
-                    }}
-                    className="px-3 py-1 rounded-lg bg-[#4ADE80]/20 text-[#4ADE80] font-bold text-xs border border-[#4ADE80]/30"
-                  >
-                    {inspectedUser.kycStatus === 'VERIFIED' ? 'Revoke KYC' : 'Verify KYC ✓'}
-                  </button>
+                  <h2 className="text-lg font-black text-white">Clients List</h2>
+                  <p className="text-xs text-slate-400">View and manage all registered clients.</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
-                    type="number"
-                    value={bonusCreditAmount}
-                    onChange={(e) => setBonusCreditAmount(Number(e.target.value))}
-                    className="w-20 px-2 py-1 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs font-mono text-center"
-                    placeholder="Amount"
+                    type="text"
+                    placeholder="Search by mobile or name..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="pl-9 pr-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-purple-400"
                   />
-                  <button
-                    onClick={() => {
-                      onAddBonusCash(inspectedUser.id, bonusCreditAmount, bonusCreditNote);
-                    }}
-                    className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1"
-                  >
-                    <Gift className="w-3.5 h-3.5" />
-                    <span>Credit ₹{bonusCreditAmount} Bonus</span>
-                  </button>
                 </div>
               </div>
 
-              {/* What User Played (Prediction Slips) */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <Trophy className="w-3.5 h-3.5 text-[#FFAA00]" />
-                  Contests & Slips Played ({allSlips.filter(s => s.userId === inspectedUser.id).length})
-                </h4>
-                {allSlips.filter(s => s.userId === inspectedUser.id).length === 0 ? (
-                  <div className="p-4 rounded-xl bg-[#080C1D] text-slate-400 text-xs text-center">
-                    User has not placed any prediction slips yet.
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {allSlips.filter(s => s.userId === inspectedUser.id).map(slip => (
-                      <div key={slip.id} className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-bold text-white">{slip.matchTitle}</div>
-                          <div className="text-[11px] text-slate-400">Entry: {formatINR(slip.entryFee)} • Submitted: {new Date(slip.submittedAt).toLocaleDateString()}</div>
-                        </div>
-                        <div className="text-right">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                            slip.status === 'WON' ? 'bg-[#4ADE80]/20 text-[#4ADE80]' :
-                            slip.status === 'PENDING' ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-800 text-slate-400'
-                          }`}>
-                            {slip.status} {slip.multiplierWon ? `(${slip.multiplierWon}X)` : ''}
-                          </span>
-                          {slip.payoutAmount ? (
-                            <span className="block text-[#4ADE80] font-black text-xs">+{formatINR(slip.payoutAmount)}</span>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* User Money Added (Deposits) */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <ArrowDownLeft className="w-3.5 h-3.5 text-[#4ADE80]" />
-                  Money Added (Deposits) ({allTransactions.filter(t => t.userId === inspectedUser.id && t.type === 'DEPOSIT').length})
-                </h4>
-                <div className="space-y-1.5">
-                  {allTransactions.filter(t => t.userId === inspectedUser.id && t.type === 'DEPOSIT').map(tx => (
-                    <div key={tx.id} className="p-2.5 rounded-lg bg-[#080C1D] border border-[#1A223E] flex items-center justify-between text-xs">
-                      <div>
-                        <span className="text-white font-bold">{tx.description}</span>
-                        <span className="text-slate-500 text-[10px] block">{new Date(tx.timestamp).toLocaleString()} • Ref: {tx.referenceId}</span>
-                      </div>
-                      <span className="text-[#4ADE80] font-black">+{formatINR(tx.amount)}</span>
-                    </div>
-                  ))}
+              {isLoadingUsers ? (
+                <div className="p-8 text-center bg-[#0D122B] border border-[#1A223E] rounded-2xl text-slate-400 text-sm">
+                  Loading clients list...
                 </div>
-              </div>
-
-              {/* User Withdrawals */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <ArrowUpRight className="w-3.5 h-3.5 text-sky-400" />
-                  Withdrawal Requests ({allTransactions.filter(t => t.userId === inspectedUser.id && t.type === 'WITHDRAWAL').length})
-                </h4>
-                <div className="space-y-1.5">
-                  {allTransactions.filter(t => t.userId === inspectedUser.id && t.type === 'WITHDRAWAL').map(tx => (
-                    <div key={tx.id} className="p-2.5 rounded-lg bg-[#080C1D] border border-[#1A223E] flex items-center justify-between text-xs">
-                      <div>
-                        <span className="text-white font-bold">{tx.description}</span>
-                        <span className="text-slate-500 text-[10px] block">{new Date(tx.timestamp).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-black">{formatINR(tx.amount)}</span>
-                        {tx.status === 'PENDING' ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => onApproveWithdrawal(tx.id)}
-                              className="px-2 py-0.5 rounded bg-[#4ADE80] text-slate-950 font-black text-[10px]"
+              ) : (
+                <div className="bg-[#0D122B] rounded-2xl border border-[#1A223E] overflow-hidden">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-[#080C1D] text-slate-400 border-b border-[#1A223E]">
+                      <tr>
+                        <th className="p-4 font-semibold">Client</th>
+                        <th className="p-4 font-semibold">Date Joined</th>
+                        <th className="p-4 font-semibold">Total Deposits</th>
+                        <th className="p-4 font-semibold">Total Withdrawals</th>
+                        <th className="p-4 font-semibold">Contests Played</th>
+                        <th className="p-4 font-semibold">Current Balance</th>
+                        <th className="p-4 font-semibold">Net P/L</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1A223E]">
+                      {loadedUsers
+                        .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
+                        .map(u => {
+                          const netPnL = (u.totalWithdrawals || 0) + (u.currentBalance || 0) - (u.totalDeposits || 0);
+                          const isPlatformProfit = netPnL < 0; // If user loss, platform profit
+                          
+                          return (
+                            <tr 
+                              key={u.id} 
+                              onClick={() => setSelectedClientId(u.id)}
+                              className="text-slate-300 hover:bg-[#131A38] cursor-pointer transition-colors"
                             >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => onRejectWithdrawal(tx.id)}
-                              className="px-2 py-0.5 rounded bg-rose-500 text-white font-bold text-[10px]"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#131A38] text-slate-300">
-                            {tx.status}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full bg-[#1A223E]" />
+                                  <div>
+                                    <div className="font-bold text-white flex items-center gap-2">
+                                      {u.name} 
+                                      {u.isBlocked && <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">BLOCKED</span>}
+                                    </div>
+                                    <div className="text-xs text-slate-500">{u.phone}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4">{new Date(u.joinedDate).toLocaleDateString()}</td>
+                              <td className="p-4 font-mono">{formatINR(u.totalDeposits || 0)}</td>
+                              <td className="p-4 font-mono">{formatINR(u.totalWithdrawals || 0)}</td>
+                              <td className="p-4 text-center">{u.totalContestsPlayed || 0}</td>
+                              <td className="p-4 font-mono font-bold text-white">{formatINR(u.currentBalance || 0)}</td>
+                              <td className="p-4">
+                                <span className={`font-mono font-bold px-2 py-1 rounded text-xs ${
+                                  isPlatformProfit ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                }`}>
+                                  {isPlatformProfit ? '+' : ''}{formatINR(Math.abs(netPnL))}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                      })}
+                      {loadedUsers.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-slate-500">No clients found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -1653,8 +1564,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <QuestionBankManager />
       )}
 
+      {adminTab === 'financials' && (
+        <ReportsManager 
+          allUsers={allUsers}
+          allMatches={matches}
+          allSlips={allSlips}
+          allTransactions={allTransactions}
+        />
+      )}
+
       {adminTab === 'market' && (
         <LiveMarketAnalysis matches={matches} slips={allSlips} />
+      )}
+
+      {adminTab === 'settings' && (
+        <SettingsManager />
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Target, Award, Crosshair, ShieldCheck, Zap, Flame } from 'lucide-react';
@@ -25,7 +26,6 @@ import {
 } from './types';
 
 import { 
-  INITIAL_ALL_USERS, 
   INITIAL_FAQS, 
   INITIAL_MATCHES, 
   INITIAL_PLATFORM_METRICS, 
@@ -38,13 +38,17 @@ import {
 import { settlePredictionSlip } from './utils/payoutCalculator';
 import { api } from './services/api';
 
-export default function App() {
-  const [isInitializing, setIsInitializing] = useState(true);
+interface AppProps {
+  initialMatches?: CricketMatch[];
+}
+
+export default function App({ initialMatches = [] }: AppProps) {
+  // If we have initialMatches (from SSR), we don't need to block rendering
+  const [isInitializing, setIsInitializing] = useState(initialMatches.length === 0);
 
   // Core Application State
-  const [matches, setMatches] = useState<CricketMatch[]>([]);
+  const [matches, setMatches] = useState<CricketMatch[]>(initialMatches.length > 0 ? initialMatches : []);
   const [currentUser, setCurrentUser] = useState<UserAccount>(INITIAL_USER);
-  const [allUsers, setAllUsers] = useState<UserAccount[]>(INITIAL_ALL_USERS);
   const [wallet, setWallet] = useState<Wallet>(INITIAL_WALLET);
   const [slips, setSlips] = useState<UserPredictionSlip[]>(INITIAL_SLIPS);
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
@@ -55,27 +59,29 @@ export default function App() {
   useEffect(() => {
     async function loadInitialData() {
       try {
+        // Only fetch matches client-side if we didn't get them from SSR
+        const matchesPromise = initialMatches.length === 0 ? api.getMatches() : Promise.resolve(initialMatches);
+
         const [
           fetchedMatches,
           fetchedUser,
-          fetchedAllUsers,
           fetchedWallet,
           fetchedSlips,
           fetchedTransactions,
           fetchedMetrics
         ] = await Promise.all([
-          api.getMatches(),
+          matchesPromise,
           api.getCurrentUser(),
-          api.getAllUsers(),
           api.getWallet(),
           api.getSlips(),
           api.getTransactions(),
           api.getMetrics()
         ]);
 
-        setMatches(fetchedMatches);
+        if (initialMatches.length === 0) {
+          setMatches(fetchedMatches);
+        }
         setCurrentUser(fetchedUser.error ? INITIAL_USER : fetchedUser);
-        setAllUsers(fetchedAllUsers.error ? INITIAL_ALL_USERS : fetchedAllUsers);
         setWallet(fetchedWallet.error ? INITIAL_WALLET : fetchedWallet);
         setSlips(fetchedSlips);
         setTransactions(fetchedTransactions);
@@ -87,7 +93,7 @@ export default function App() {
       }
     }
     loadInitialData();
-  }, []);
+  }, [initialMatches]);
 
   // Modals
   const [selectedMatchForPlay, setSelectedMatchForPlay] = useState<{ match: CricketMatch; fee: number } | null>(null);
@@ -549,9 +555,9 @@ export default function App() {
         )}
 
         {/* MODAL 4: User Authentication & Switcher */}
-        {isAuthModalOpen && (
+        {(isAuthModalOpen || (!isInitializing && currentUser.id === 'u_guest')) && (
           <AuthModal
-            onClose={() => setIsAuthModalOpen(false)}
+            onClose={currentUser.id === 'u_guest' ? undefined : () => setIsAuthModalOpen(false)}
             onLoginSuccess={(user) => {
               const enrichedUser = {
                 ...user,
@@ -566,13 +572,7 @@ export default function App() {
               };
               setCurrentUser(enrichedUser);
               setWallet(user.wallet);
-              // Update allUsers so they show up in Admin panel (Mock Mode)
-              setAllUsers(prev => {
-                if (!prev.find(u => u.id === enrichedUser.id)) {
-                  return [enrichedUser, ...prev];
-                }
-                return prev;
-              });
+              // We no longer manage allUsers here
               setIsAuthModalOpen(false);
             }}
           />
@@ -591,7 +591,6 @@ export default function App() {
               };
               setCurrentUser(updated);
               setWallet((prev) => ({ ...prev, kycVerified: true }));
-              setAllUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
             }}
           />
         )}

@@ -147,18 +147,24 @@ export interface WalletTransaction {
 
 export interface UserAccount {
   id: string;
-  phone: string;
   name: string;
-  email?: string;
+  email: string;
+  phone: string;
+  role: 'USER' | 'ADMIN';
   avatar: string;
-  kycStatus: 'UNVERIFIED' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
-  panNumber?: string;
-  upiId?: string;
+  wallet: Wallet;
   isBlocked: boolean;
+  kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
   joinedDate: string;
   dailyDepositLimit: number;
   totalContestsJoined: number;
   totalWon: number;
+  
+  // Aggregated Admin Stats
+  totalDeposits?: number;
+  totalWithdrawals?: number;
+  totalContestsPlayed?: number;
+  currentBalance?: number;
 }
 
 export interface PlatformMetrics {
