@@ -1152,17 +1152,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             >
                               <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                  <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full bg-[#1A223E]" />
+                                  <img 
+                                    src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+                                    alt={u.name} 
+                                    className="w-9 h-9 rounded-xl object-cover bg-[#1A223E] border border-[#1A223E] shadow-sm" 
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+                                    }}
+                                  />
                                   <div>
                                     <div className="font-bold text-white flex items-center gap-2">
                                       {u.name} 
-                                      {u.isBlocked && <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">BLOCKED</span>}
+                                      {u.role === 'ADMIN' && <span className="text-[9px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.5 rounded">ADMIN</span>}
+                                      {u.isBlocked && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">BLOCKED</span>}
                                     </div>
                                     <div className="text-xs text-slate-500">{u.phone}</div>
                                   </div>
                                 </div>
                               </td>
-                              <td className="p-4">{new Date(u.joinedDate).toLocaleDateString()}</td>
+                              <td className="p-4 text-xs font-medium text-slate-300">
+                                {(() => {
+                                  const dateVal = u.joinedDate || u.dateJoined || (u as any).createdAt;
+                                  if (!dateVal) return 'Recent';
+                                  const d = new Date(dateVal);
+                                  return isNaN(d.getTime()) ? 'Recent' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                                })()}
+                              </td>
                               <td className="p-4 font-mono">{formatINR(u.totalDeposits || 0)}</td>
                               <td className="p-4 font-mono">{formatINR(u.totalWithdrawals || 0)}</td>
                               <td className="p-4 text-center">{u.totalContestsPlayed || 0}</td>

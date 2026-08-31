@@ -122,12 +122,27 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
       {/* KYC & Identity Card */}
       <div className="bg-[#131A38] rounded-2xl border border-[#1A223E] overflow-hidden">
         <div className="p-6 flex flex-col md:flex-row gap-6 md:items-center">
-          <img src={user.avatar} alt={user.name} className="w-24 h-24 rounded-full border-4 border-[#0D122B]" />
+          <img 
+            src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+            alt={user.name} 
+            className="w-24 h-24 rounded-2xl border-4 border-[#0D122B] object-cover bg-[#0D122B]" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+            }}
+          />
           <div className="flex-1 space-y-2">
             <h2 className="text-2xl font-black text-white">{user.name}</h2>
             <div className="flex flex-wrap gap-4 text-sm text-slate-400">
               <span className="flex items-center gap-1.5"><UserIcon className="w-4 h-4" /> ID: {user.id}</span>
               <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> Mobile: +91 {user.phone}</span>
+              <span className="text-xs text-slate-400">
+                Joined: {(() => {
+                  const dVal = (user as any).joinedDate || (user as any).dateJoined || (user as any).createdAt;
+                  if (!dVal) return 'Recent';
+                  const d = new Date(dVal);
+                  return isNaN(d.getTime()) ? 'Recent' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                })()}
+              </span>
               <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded text-xs font-bold border border-emerald-400/20">
                 KYC {user.kycStatus}
               </span>

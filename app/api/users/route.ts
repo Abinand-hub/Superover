@@ -59,8 +59,27 @@ export async function GET() {
             }
           },
           totalContestsPlayed: { $size: '$slips' },
-          dateJoined: '$createdAt',
-          currentBalance: '$wallet.balance'
+          joinedDate: { $ifNull: ['$joinedDate', '$createdAt'] },
+          dateJoined: { $ifNull: ['$createdAt', '$joinedDate'] },
+          avatar: {
+            $ifNull: [
+              '$avatar',
+              {
+                $concat: [
+                  'https://ui-avatars.com/api/?name=',
+                  '$name',
+                  '&background=FF6B00&color=fff&bold=true'
+                ]
+              }
+            ]
+          },
+          currentBalance: {
+            $add: [
+              { $ifNull: ['$wallet.depositBalance', 0] },
+              { $ifNull: ['$wallet.winningsBalance', 0] },
+              { $ifNull: ['$wallet.bonusBalance', 0] }
+            ]
+          }
         }
       },
       {
@@ -77,6 +96,9 @@ export async function GET() {
     const mappedUsers = users.map((u: any) => ({
       ...u,
       id: u._id.toString(),
+      joinedDate: u.joinedDate || u.createdAt,
+      dateJoined: u.dateJoined || u.createdAt,
+      avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`
     }));
 
     return NextResponse.json(mappedUsers);
