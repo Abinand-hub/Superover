@@ -27,34 +27,36 @@ export async function syncMatchesFromCricAPI() {
 
     const matches = allMatches;
 
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const fourteenDaysFromNow = new Date();
+    fourteenDaysFromNow.setDate(fourteenDaysFromNow.getDate() + 14);
 
     for (const match of matches) {
       const matchDate = new Date(match.dateTimeGMT);
       
-      // ONLY fetch UPCOMING matches (matchStarted === false) that are within the next 7 days
-      if (match.matchStarted === false && matchDate <= sevenDaysFromNow) {
+      // Fetch UPCOMING matches that are within the next 14 days
+      if (match.matchStarted === false && matchDate <= fourteenDaysFromNow) {
         
         const existingMatch = await Match.findOne({ apiId: match.id });
-        if (!existingMatch) {
-          
-          // Try to safely extract team info if available
-          const t1Info = match.teamInfo && match.teamInfo[0] ? match.teamInfo[0] : null;
-          const t2Info = match.teamInfo && match.teamInfo[1] ? match.teamInfo[1] : null;
-          
-          const team1Code = t1Info?.shortname || match.teams[0].substring(0, 3).toUpperCase();
-          const team2Code = t2Info?.shortname || match.teams[1].substring(0, 3).toUpperCase();
-          
-          const team1Logo = t1Info?.img || '';
-          const team2Logo = t2Info?.img || '';
+        
+        // Try to safely extract team info if available
+        const t1Info = match.teamInfo && match.teamInfo[0] ? match.teamInfo[0] : null;
+        const t2Info = match.teamInfo && match.teamInfo[1] ? match.teamInfo[1] : null;
+        
+        const team1Code = t1Info?.shortname || match.teams[0].substring(0, 3).toUpperCase();
+        const team2Code = t2Info?.shortname || match.teams[1].substring(0, 3).toUpperCase();
+        
+        const team1Logo = t1Info?.img || '';
+        const team2Logo = t2Info?.img || '';
 
-          // Fetch Squads
-          let squadTeam1 = [];
-          let squadTeam2 = [];
+        // Fetch Squads if match hasSquad or if existingMatch is missing real squad
+        let squadTeam1: any[] = [];
+        let squadTeam2: any[] = [];
+        
+        const needsSquad = !existingMatch || !existingMatch.squadTeam1 || existingMatch.squadTeam1.length === 0 || existingMatch.squadTeam1[0]?.name?.includes('Player');
+
+        if (needsSquad && match.hasSquad) {
           try {
-            // Avoid rate limit / SSL reset from hitting cricapi too fast
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise(resolve => setTimeout(resolve, 400)); // avoid rate limit
             
             const squadRes = await fetch(`${CRICAPI_BASE_URL}/match_squad?apikey=${CRICAPI_KEY}&id=${match.id}`);
             const squadData = await squadRes.json();
@@ -64,7 +66,7 @@ export async function syncMatchesFromCricAPI() {
                 return (teamSquad.players || []).map((p: any) => ({
                   id: p.id,
                   name: p.name,
-                  shortName: p.name.split(' ').slice(-1)[0], // Last name usually
+                  shortName: p.name.split(' ').slice(-1)[0] || p.name,
                   team: teamCode,
                   teamName: teamName,
                   role: (p.role || '').toLowerCase().includes('wicket') ? 'WK' : 
@@ -77,8 +79,8 @@ export async function syncMatchesFromCricAPI() {
                 }));
               };
               
-              const t1squad = squadData.data.find((s:any) => s.teamName === match.teams[0]);
-              const t2squad = squadData.data.find((s:any) => s.teamName === match.teams[1]);
+              const t1squad = squadData.data.find((s: any) => s.teamName === match.teams[0]);
+              const t2squad = squadData.data.find((s: any) => s.teamName === match.teams[1]);
               
               if (t1squad) squadTeam1 = mapSquad(t1squad, team1Code, match.teams[0]);
               if (t2squad) squadTeam2 = mapSquad(t2squad, team2Code, match.teams[1]);
@@ -86,22 +88,29 @@ export async function syncMatchesFromCricAPI() {
           } catch(e) {
             console.log('Failed to fetch squad for match', match.id, e);
           }
+        }
 
+        if (!existingMatch) {
           // Create new match
           await Match.create({
             apiId: match.id,
             title: `${match.teams[0]} vs ${match.teams[1]}`,
-            series: match.series_id || match.name,
-            format: match.matchType.toUpperCase(),
+            series: match.name || match.series_id || 'Cricket Series',
+            format: (match.matchType || 'T20').toUpperCase(),
             team1: { name: match.teams[0], code: team1Code, logoUrl: team1Logo },
             team2: { name: match.teams[1], code: team2Code, logoUrl: team2Logo },
             matchStartTime: match.dateTimeGMT,
             status: match.matchStarted ? 'LIVE' : 'FETCHED',
-            questions: [], // Admin will attach 6 questions from Question Bank
+            questions: [],
             entryFees: [25, 50, 100],
             squadTeam1,
             squadTeam2,
           });
+        } else if (squadTeam1.length > 0 && squadTeam2.length > 0) {
+          // Update existing match with real squad data if it was previously empty/mock
+          existingMatch.squadTeam1 = squadTeam1;
+          existingMatch.squadTeam2 = squadTeam2;
+          await existingMatch.save();
         }
       }
     }
