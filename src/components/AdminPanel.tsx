@@ -550,26 +550,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-[#FF6B00]" />
-                Live & Upcoming Matches Status
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-[#FF6B00]" />
+                  Live & Upcoming Matches Status
+                </h3>
+                <span className="text-[11px] text-slate-400 font-bold">Upcoming 7 Days</span>
+              </div>
               <div className="space-y-2.5">
-                {matches.map((m) => (
-                  <div key={m.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-white text-xs">{m.title}</div>
-                      <div className="text-[11px] text-slate-400">Prize Pool: <span className="text-[#FFAA00] font-bold">{formatINR(allSlips.filter(s => s.matchId === m.id).reduce((sum, slip) => sum + slip.entryFee, 0))}</span> • {allSlips.filter(s => s.matchId === m.id).length} Entries</div>
+                {(() => {
+                  const nowMs = Date.now();
+                  const upcomingAndLive = matches.filter(
+                    (m) => m.status === 'LIVE' || new Date(m.startTime).getTime() > nowMs
+                  );
+
+                  if (upcomingAndLive.length === 0) {
+                    return (
+                      <div className="p-6 text-center text-xs text-slate-500 bg-[#080C1D] rounded-xl border border-[#1A223E]">
+                        No active live or upcoming matches scheduled for the next 7 days.
+                      </div>
+                    );
+                  }
+
+                  return upcomingAndLive.slice(0, 5).map((m) => (
+                    <div key={m.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-white text-xs">{m.title}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {new Date(m.startTime).toLocaleDateString()} {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Prize Pool: <span className="text-[#FFAA00] font-bold">{formatINR(allSlips.filter(s => s.matchId === m.id).reduce((sum, slip) => sum + slip.entryFee, 0))}</span>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                        m.status === 'LIVE' ? 'bg-rose-500/20 text-rose-400 animate-pulse' :
+                        m.status === 'COMPLETED' ? 'bg-[#4ADE80]/20 text-[#4ADE80]' :
+                        m.status === 'LOCKED' ? 'bg-[#FFAA00]/20 text-[#FFAA00]' : 'bg-sky-500/20 text-sky-300'
+                      }`}>
+                        {m.status === 'LIVE' ? '🔴 LIVE' : m.status}
+                      </span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                      m.status === 'LIVE' ? 'bg-rose-500/20 text-rose-400 animate-pulse' :
-                      m.status === 'COMPLETED' ? 'bg-[#4ADE80]/20 text-[#4ADE80]' :
-                      m.status === 'LOCKED' ? 'bg-[#FFAA00]/20 text-[#FFAA00]' : 'bg-sky-500/20 text-sky-300'
-                    }`}>
-                      {m.status}
-                    </span>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             </div>
 

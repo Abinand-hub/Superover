@@ -6,21 +6,38 @@ import Transaction from '@/models/Transaction';
 import User from '@/models/User';
 import { CricketMatch } from '@/src/types';
 
+import { autoLockMatches } from '@/lib/cricapi';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
+    await autoLockMatches();
     
     const now = new Date();
-    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const future = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Auto-remove any past raw unconfigured matches
+    try {
+      await Match.deleteMany({
+        status: 'FETCHED',
+        matchStartTime: { $lt: now.toISOString() }
+      });
+    } catch (e) {
+      console.warn('Failed to cleanup past fetched matches in dashboard route:', e);
+    }
 
     const matchQuery = {
-      matchStartTime: {
-        $gte: past.toISOString(),
-        $lte: future.toISOString()
-      }
+      $or: [
+        {
+          matchStartTime: {
+            $gte: now.toISOString(),
+            $lte: sevenDaysFromNow.toISOString()
+          }
+        },
+        { status: { $in: ['LIVE'] } }
+      ]
     };
     
     // Fetch all required data concurrently from DB
