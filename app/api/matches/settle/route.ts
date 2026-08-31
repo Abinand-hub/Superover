@@ -48,21 +48,37 @@ export async function POST(req: Request) {
     const slips = await Slip.find({ matchId: matchId });
 
     for (const slip of slips) {
-      // Evaluate slip
+      // Evaluate slip strictly in Q1 -> Q6 sequence (PRD V8 Streak Rule)
       let correctAnswers = 0;
-      let totalQuestions = 6;
+      let streakCount = 0;
+      let isStreakBroken = false;
       
-      // Calculate correctness based on 'picks' which maps questionId -> { answerId, answerText, statValue }
-      for (const [qId, ans] of Object.entries(slip.answers)) {
-         const officialPick = picks[qId];
-         if (officialPick && officialPick.answerId) {
-            // Note: Admin should input EXACT match. To make it more lenient, compare lower case.
-            const userAnsString = String(ans).trim().toLowerCase();
+      if (match.questions && Array.isArray(match.questions)) {
+        for (const q of match.questions) {
+          const qId = q.id;
+          let userAns: any = '';
+          if (slip.answers instanceof Map) {
+            userAns = slip.answers.get(qId);
+          } else if (typeof slip.answers === 'object' && slip.answers !== null) {
+            userAns = (slip.answers as any)[qId];
+          }
+
+          const officialPick = picks[qId];
+          if (officialPick && officialPick.answerId && userAns) {
+            const userAnsString = String(userAns).trim().toLowerCase();
             const officialAnsString = String(officialPick.answerId).trim().toLowerCase();
             if (userAnsString === officialAnsString) {
-               correctAnswers++;
+              correctAnswers++;
+              if (!isStreakBroken) {
+                streakCount++;
+              }
+            } else {
+              isStreakBroken = true;
             }
-         }
+          } else {
+            isStreakBroken = true;
+          }
+        }
       }
 
       const user = await User.findById(slip.userId);
@@ -70,44 +86,58 @@ export async function POST(req: Request) {
 
       let wonAmount = 0;
       let slipStatus = 'LOST';
+      let multiplierWon = 0;
       
       const entryFee = slip.entryFee || 50;
+      const wheelMult = slip.wheelMultiplier || 50;
 
-      if (correctAnswers === 6) {
-         slipStatus = 'PENDING_APPROVAL'; // 100x payout needs admin approval
-         wonAmount = entryFee * 100;
-         slip.multiplierWon = 100;
-      } else if (correctAnswers === 5) {
-         slipStatus = 'WON';
-         wonAmount = entryFee * 10;
-         slip.multiplierWon = 10;
-      } else if (correctAnswers === 4) {
-         slipStatus = 'WON';
-         wonAmount = entryFee * 3; // 3x payout
-         slip.multiplierWon = 3;
-      } else if (correctAnswers === 3) {
-         slipStatus = 'WON';
-         wonAmount = entryFee * 0.5; // 0.5x payout
-         slip.multiplierWon = 0.5;
+      // PRD V8 Multiplier Matrix:
+      // Q1Q2Q3 = 0.5X
+      // Q1Q2Q3Q4 = 3X
+      // Q1Q2Q3Q4Q5 = 10X
+      // Q1Q2Q3Q4Q5Q6 = 50X OR WHEEL SPIN
+      // Streak < 3 = 0X
+      if (streakCount >= 6) {
+        multiplierWon = slip.freeHit ? wheelMult : 50;
+        slipStatus = 'PENDING_APPROVAL'; // 6/6 jackpot needs admin approval
+        wonAmount = entryFee * multiplierWon;
+      } else if (streakCount === 5) {
+        multiplierWon = 10;
+        slipStatus = 'WON';
+        wonAmount = entryFee * multiplierWon;
+      } else if (streakCount === 4) {
+        multiplierWon = 3;
+        slipStatus = 'WON';
+        wonAmount = entryFee * multiplierWon;
+      } else if (streakCount === 3) {
+        multiplierWon = 0.5;
+        slipStatus = 'WON';
+        wonAmount = entryFee * multiplierWon;
+      } else {
+        multiplierWon = 0;
+        slipStatus = 'LOST';
+        wonAmount = 0;
       }
 
       slip.status = slipStatus as any;
       slip.payoutAmount = wonAmount;
       slip.correctCount = correctAnswers;
+      slip.streakCount = streakCount;
+      slip.multiplierWon = multiplierWon;
       await slip.save();
 
-      if ((correctAnswers === 3 || correctAnswers === 4 || correctAnswers === 5) && wonAmount > 0) {
-         user.wallet.winningsBalance += wonAmount;
-         await user.save();
+      if (slipStatus === 'WON' && wonAmount > 0) {
+        user.wallet.winningsBalance += wonAmount;
+        await user.save();
 
-         // Create Transaction
-         await Transaction.create({
-           userId: user._id,
-           type: 'PAYOUT',
-           amount: wonAmount,
-           status: 'SUCCESS',
-           referenceId: slip._id.toString(),
-         });
+        // Create Transaction
+        await Transaction.create({
+          userId: user._id,
+          type: 'PAYOUT',
+          amount: wonAmount,
+          status: 'SUCCESS',
+          referenceId: slip._id.toString(),
+        });
       }
     }
 

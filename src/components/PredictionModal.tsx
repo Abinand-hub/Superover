@@ -315,11 +315,11 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
                   </button>
                 )}
 
-                {(q.type === 'TEAM' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE') && (q.options || q.type === 'TEAM') && (
+                {(q.type === 'TEAM' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE') && (
                   <div className="flex flex-wrap gap-2">
-                    {(q.options || [match.team1.code, match.team2.code]).map(opt => {
+                    {(q.options && q.options.length > 0 ? q.options : [match.team1.code, match.team2.code]).map(opt => {
                       const displayLabel = q.type === 'TEAM' 
-                        ? (opt === match.team1.code ? match.team1.shortName : opt === match.team2.code ? match.team2.shortName : opt)
+                        ? (opt === match.team1.code ? match.team1.shortName || match.team1.name : opt === match.team2.code ? match.team2.shortName || match.team2.name : opt)
                         : opt;
                       return (
                         <button
