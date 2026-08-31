@@ -27,14 +27,24 @@ export async function syncMatchesFromCricAPI() {
 
     const matches = allMatches;
 
-    const fourteenDaysFromNow = new Date();
-    fourteenDaysFromNow.setDate(fourteenDaysFromNow.getDate() + 14);
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Automatically remove expired unconfigured (FETCHED) matches from past days
+    try {
+      await Match.deleteMany({
+        status: 'FETCHED',
+        matchStartTime: { $lt: now.toISOString() }
+      });
+    } catch (e) {
+      console.warn('Failed to cleanup past fetched matches:', e);
+    }
 
     for (const match of matches) {
       const matchDate = new Date(match.dateTimeGMT);
       
-      // Fetch UPCOMING matches that are within the next 14 days
-      if (match.matchStarted === false && matchDate <= fourteenDaysFromNow) {
+      // ONLY fetch upcoming matches strictly within the next 7 days window (now to 7 days)
+      if (match.matchStarted === false && matchDate >= now && matchDate <= sevenDaysFromNow) {
         
         const existingMatch = await Match.findOne({ apiId: match.id });
         

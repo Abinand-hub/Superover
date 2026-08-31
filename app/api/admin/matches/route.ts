@@ -9,16 +9,31 @@ export async function GET(req: Request) {
     await connectToDatabase();
     await autoLockMatches();
     
-    // Admins get ALL matches, including FETCHED and DRAFT, from the last 7 days to next 14 days
+    // Admins get upcoming matches for the next 7 days (rolling window)
     const now = new Date();
-    const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const future = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+    // Auto-remove any past raw unconfigured matches
+    try {
+      await Match.deleteMany({
+        status: 'FETCHED',
+        matchStartTime: { $lt: now.toISOString() }
+      });
+    } catch (e) {
+      console.warn('Failed to cleanup past fetched matches in admin route:', e);
+    }
+
+    // Return matches strictly within the next 7 days, or active LIVE/LOCKED matches
     const query = {
-      matchStartTime: {
-        $gte: past.toISOString(),
-        $lte: future.toISOString()
-      }
+      $or: [
+        {
+          matchStartTime: {
+            $gte: now.toISOString(),
+            $lte: sevenDaysFromNow.toISOString()
+          }
+        },
+        { status: { $in: ['LIVE', 'LOCKED'] } }
+      ]
     };
     
     let matches = await Match.find(query).sort({ matchStartTime: 1 }).lean();
