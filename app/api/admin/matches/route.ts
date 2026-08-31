@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Match from '@/models/Match';
+import { autoLockMatches } from '@/lib/cricapi';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
+    await autoLockMatches();
     
     // Admins get ALL matches, including FETCHED and DRAFT, from the last 7 days to next 14 days
     const now = new Date();

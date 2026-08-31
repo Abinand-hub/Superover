@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Match from '@/models/Match';
-import { syncMatchesFromCricAPI } from '@/lib/cricapi';
+import { syncMatchesFromCricAPI, autoLockMatches } from '@/lib/cricapi';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
+    await autoLockMatches();
     
     const now = new Date();
     // Allow up to 48 hours in the past so admins have time to settle results

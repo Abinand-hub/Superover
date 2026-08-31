@@ -46,6 +46,15 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
     // For UPCOMING, IPL, INTL - only show matches you can actually play!
     if (m.status !== 'UPCOMING') return false;
 
+    // RULE: If the match has already started or its lock time has passed, REMOVE from user lobby!
+    const currentTime = now.getTime();
+    const startTimeMs = new Date(m.startTime).getTime();
+    const lockTimeMs = m.lockTime ? new Date(m.lockTime).getTime() : startTimeMs;
+    
+    if (startTimeMs <= currentTime || lockTimeMs <= currentTime) {
+      return false;
+    }
+
     // RULE: A user can only predict once per match.
     // If they have already predicted this match, hide it from the lobby.
     // They can track it in the 'My Selections' tab instead.
