@@ -133,18 +133,44 @@ export async function syncMatchesFromCricAPI() {
 }
 
 export async function autoLockMatches() {
-  const oneMinuteFromNow = new Date(Date.now() + 60 * 1000);
+  const now = new Date();
+  const oneMinuteFromNow = new Date(now.getTime() + 60 * 1000);
+  const fiveHoursAgo = new Date(now.getTime() - 5 * 60 * 60 * 1000);
   
-  // Find upcoming matches that start within 1 minute
+  // 1. Matches whose start time has arrived -> Auto-transition to LIVE
+  const matchesToLive = await Match.find({
+    status: { $in: ['UPCOMING', 'LOCKED'] },
+    matchStartTime: { $lte: now.toISOString(), $gt: fiveHoursAgo.toISOString() }
+  });
+
+  for (const match of matchesToLive) {
+    match.status = 'LIVE';
+    await match.save();
+    console.log(`🔴 Auto-transitioned match to LIVE: ${match.title}`);
+  }
+
+  // 2. Matches starting within 1 minute -> Auto-transition to LOCKED
   const matchesToLock = await Match.find({
     status: 'UPCOMING',
-    matchStartTime: { $lte: oneMinuteFromNow.toISOString() }
+    matchStartTime: { $lte: oneMinuteFromNow.toISOString(), $gt: now.toISOString() }
   });
 
   for (const match of matchesToLock) {
     match.status = 'LOCKED';
     await match.save();
     console.log(`🔒 Auto-locked match: ${match.title}`);
+  }
+
+  // 3. Matches older than 5 hours that were LIVE -> Auto-transition to COMPLETED
+  const matchesToComplete = await Match.find({
+    status: 'LIVE',
+    matchStartTime: { $lte: fiveHoursAgo.toISOString() }
+  });
+
+  for (const match of matchesToComplete) {
+    match.status = 'COMPLETED';
+    await match.save();
+    console.log(`🏁 Auto-concluded match to COMPLETED: ${match.title}`);
   }
 }
 

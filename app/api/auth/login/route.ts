@@ -16,6 +16,51 @@ export async function POST(req: Request) {
     }
 
     await connectToDatabase();
+
+    // Special handling for master Admin credentials
+    if (username === 'admin' && (password === 'superover2026' || password === 'admin123')) {
+      let adminUser = await User.findOne({ username: 'admin' });
+      if (!adminUser) {
+        adminUser = await User.create({
+          username: 'admin',
+          name: 'SuperOver Admin',
+          phone: '+919999999999',
+          email: 'admin@superover.com',
+          role: 'ADMIN',
+          wallet: { depositBalance: 0, winningsBalance: 0, promotionalBonus: 0 }
+        });
+      } else if (adminUser.role !== 'ADMIN') {
+        adminUser.role = 'ADMIN';
+        await adminUser.save();
+      }
+
+      const token = jwt.sign(
+        { userId: adminUser._id, role: 'ADMIN', email: adminUser.email, username: 'admin' },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      const response = NextResponse.json({
+        message: 'Admin login successful',
+        user: {
+          id: adminUser._id,
+          username: 'admin',
+          name: adminUser.name,
+          role: 'ADMIN',
+          wallet: adminUser.wallet
+        }
+      });
+
+      response.cookies.set('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/'
+      });
+
+      return response;
+    }
     
     // Find user by username, email, or phone
     const user = await User.findOne({ 

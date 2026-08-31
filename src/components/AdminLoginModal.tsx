@@ -12,21 +12,29 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ onClose, onLog
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Mock network request delay
-    setTimeout(() => {
-      // Basic static admin credentials for demo
-      if (username === 'admin' && password === 'superover2026') {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
         onLoginSuccess();
       } else {
-        setError('Invalid admin credentials. Please try again.');
-        setIsLoading(false);
+        setError(data.error || 'Invalid admin credentials. Please try again.');
       }
-    }, 800);
+    } catch (err: any) {
+      setError(err.message || 'Login request failed. Please check network.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
