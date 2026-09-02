@@ -108,7 +108,8 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
         </button>
       </div>
 
-      <div className="bg-[#11172D] rounded-xl border border-slate-800 overflow-hidden">
+      {/* DESKTOP TABLE VIEW (md and up) */}
+      <div className="hidden md:block bg-[#11172D] rounded-xl border border-slate-800 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider">
@@ -180,6 +181,81 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* MOBILE RESPONSIVE CARD VIEW (visible on small/mobile screens) */}
+      <div className="block md:hidden space-y-3">
+        {availableMatches.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 bg-[#11172D] rounded-2xl border border-slate-800 text-sm">
+            No upcoming matches available from the feed.
+          </div>
+        ) : (
+          availableMatches.map((m) => (
+            <div 
+              key={m.id}
+              className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-sm space-y-3"
+            >
+              {/* Line 1: Match Logos & Match Title in ONE clean line */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {/* Team 1 Logo */}
+                  <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center p-0.5 flex-shrink-0">
+                    {m.team1.logoUrl ? (
+                      <img src={m.team1.logoUrl} alt={m.team1.code} className="w-full h-full object-contain rounded-lg" />
+                    ) : (
+                      <span className="text-[10px] font-black text-amber-400">{m.team1.code}</span>
+                    )}
+                  </div>
+
+                  <span className="text-xs font-black text-slate-400">vs</span>
+
+                  {/* Team 2 Logo */}
+                  <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center p-0.5 flex-shrink-0">
+                    {m.team2.logoUrl ? (
+                      <img src={m.team2.logoUrl} alt={m.team2.code} className="w-full h-full object-contain rounded-lg" />
+                    ) : (
+                      <span className="text-[10px] font-black text-sky-400">{m.team2.code}</span>
+                    )}
+                  </div>
+
+                  {/* Teams Name */}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-xs font-black text-white truncate leading-snug">
+                      {m.team1.name || m.team1.code} vs {m.team2.name || m.team2.code}
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Format Badge */}
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 flex-shrink-0">
+                  {m.format}
+                </span>
+              </div>
+
+              {/* Line 2: Tournament & Start Time in next line */}
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#1A223E] text-[11px] text-slate-400">
+                <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span className="truncate text-slate-300">{m.series}</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-shrink-0 text-slate-300 font-medium">
+                  <Clock className="w-3 h-3 text-indigo-400" />
+                  <span>{new Date(m.startTime).toLocaleDateString([], { day: 'numeric', month: 'short' })} • {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              </div>
+
+              {/* Line 3: Prominent Create Contest Button */}
+              <button
+                onClick={() => onGoToDrafts(m.id)}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:scale-[0.98] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-indigo-600/25 transition-all"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Create Contest</span>
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

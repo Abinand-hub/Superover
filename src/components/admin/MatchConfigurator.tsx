@@ -128,38 +128,41 @@ export const MatchConfigurator: React.FC<MatchConfiguratorProps> = ({ matchId, o
   const previewItem = bank.find(q => q._id === previewBankId || q.title === previewBankId);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4 border-b border-slate-800 pb-6">
-        <button onClick={onBack} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-slate-300">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            Configure Match Questions
-          </h2>
-          <p className="text-sm text-slate-400">
-            {match.title} • {match.series}
-          </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2.5 bg-slate-800 rounded-xl hover:bg-slate-700 text-slate-300 flex-shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-black text-white truncate">
+              Configure Questions
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 truncate">
+              {match.title} • {match.series}
+            </p>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-700 px-3 py-1.5 rounded-lg">
-            <label className="text-xs font-bold text-slate-400 uppercase">Max Entries/User:</label>
+
+        <div className="flex items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
+          <div className="flex items-center gap-2 bg-slate-900/80 border border-slate-700 px-3 py-2 rounded-xl text-xs">
+            <label className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase">Max Entries:</label>
             <input 
               type="number" 
               min={1}
               value={maxEntriesPerUser}
               onChange={(e) => setMaxEntriesPerUser(parseInt(e.target.value) || 1)}
-              className="w-16 bg-transparent text-white font-bold text-center focus:outline-none"
+              className="w-12 bg-transparent text-white font-black text-center focus:outline-none"
             />
           </div>
           <button 
             onClick={handlePublish}
             disabled={!allFilled || isPublishing}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-bold transition-all shadow-lg ${allFilled ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-900/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all shadow-lg ${allFilled ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
           >
             <Send className="w-4 h-4" />
-            {isPublishing ? 'Publishing...' : 'Publish Match'}
+            <span>{isPublishing ? 'Publishing...' : 'Publish Match'}</span>
           </button>
         </div>
       </div>
