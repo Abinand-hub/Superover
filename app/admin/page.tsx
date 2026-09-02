@@ -96,22 +96,22 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#050816]">
-      {/* Isolated Header just for admin so they can return home or logout */}
-      <div className="bg-[#0D122B] border-b border-[#1A223E] px-6 py-4 flex items-center justify-between shadow-md">
+      {/* Admin Top Navigation */}
+      <div className="bg-[#080C1D] border-b border-[#1A223E] px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg">
-             <span className="text-white font-black text-xs">SO</span>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#FF8800] flex items-center justify-center shadow-lg shadow-[#FF6B00]/30">
+             <span className="text-slate-950 font-black text-xs">SO</span>
           </div>
-          <span className="text-lg font-black text-white tracking-tight">SuperOver <span className="text-purple-400">Admin</span></span>
+          <span className="text-lg font-black text-white tracking-tight">SuperOver <span className="text-[#FF8800]">Admin</span></span>
         </div>
         <button 
           onClick={() => {
             setIsAdminAuthenticated(false);
             window.location.href = '/';
           }}
-          className="text-sm font-bold text-slate-400 hover:text-white transition-colors"
+          className="px-3.5 py-1.5 rounded-xl bg-[#131A38] border border-[#1A223E] text-xs font-bold text-slate-300 hover:text-white transition-colors"
         >
-          Return to App
+          ← Return to Fan View
         </button>
       </div>
 

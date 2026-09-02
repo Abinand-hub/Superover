@@ -449,14 +449,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-purple-950/70 via-[#0D122B] to-indigo-950/70 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+      <div className="p-5 rounded-2xl bg-gradient-to-r from-[#FF6B00]/20 via-[#0D122B] to-[#FF8800]/10 border border-[#FF6B00]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-purple-600/30">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#FF8800] text-slate-950 flex items-center justify-center shadow-lg shadow-[#FF6B00]/30">
             <Settings className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-black text-[10px] uppercase border border-purple-500/30">
+              <span className="px-2 py-0.5 rounded bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] uppercase border border-[#FF6B00]/30">
                 Organizer Suite
               </span>
               <span className="text-xs text-slate-400">Match Lifecycle, Squads & User Intelligence</span>
@@ -499,7 +499,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               onClick={() => setAdminTab(tab.id as any)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                 adminTab === tab.id
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
+                  ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black shadow-md shadow-[#FF6B00]/30'
                   : 'bg-[#0D122B] text-slate-400 hover:text-white border border-[#1A223E]'
               }`}
               id={`admin-tab-${tab.id}`}
@@ -531,12 +531,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <span className="text-[11px] text-slate-400 mt-1 block">0.5X, 3X, 10X & 100X Winners</span>
             </div>
 
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-950/40 to-[#0D122B] border border-purple-500/30 shadow-md">
-              <span className="text-[10px] text-purple-300 font-bold uppercase tracking-wider block">Platform Net Rake</span>
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-[#FF6B00]/15 to-[#0D122B] border border-[#FF6B00]/30 shadow-md">
+              <span className="text-[10px] text-[#FF8800] font-bold uppercase tracking-wider block">Platform Net Rake</span>
               <span className="text-2xl sm:text-3xl font-black text-[#4ADE80] font-display mt-1 block">
                 {formatINR(allSlips.reduce((sum, slip) => sum + (slip.entryFee || 0), 0) * 0.15)}
               </span>
-              <span className="text-[11px] text-purple-400 mt-1 block">~15% House Commission</span>
+              <span className="text-[11px] text-[#FFAA00] mt-1 block">~15% House Commission</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">

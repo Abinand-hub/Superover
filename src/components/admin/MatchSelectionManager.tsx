@@ -78,10 +78,10 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/50 p-6 rounded-xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#080C1D] p-6 rounded-2xl border border-[#1A223E]">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-indigo-400" />
+            <Calendar className="w-6 h-6 text-[#FF8800]" />
             Create Match
           </h2>
           <p className="text-sm text-slate-400 mt-1">Select an upcoming match from the European or International feed to view players and configure contests.</p>
@@ -90,7 +90,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
         <button
           onClick={handleManualSync}
           disabled={isSyncing}
-          className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-purple-600/20 disabled:opacity-50"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-2 shadow-md shadow-[#FF6B00]/25 disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
           <span>{isSyncing ? 'Syncing Feeds...' : 'Sync Matches'}</span>
@@ -101,9 +101,9 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
       <div className="flex items-center gap-2">
         <button
           onClick={() => setFilterType('ALL')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
             filterType === 'ALL'
-              ? 'bg-indigo-600 text-white'
+              ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
               : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
@@ -111,9 +111,9 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
         </button>
         <button
           onClick={() => setFilterType('EUROPEAN')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
             filterType === 'EUROPEAN'
-              ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/30'
+              ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
               : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
@@ -122,9 +122,9 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
         </button>
         <button
           onClick={() => setFilterType('INTERNATIONAL')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
             filterType === 'INTERNATIONAL'
-              ? 'bg-sky-600 text-white'
+              ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
               : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
@@ -216,9 +216,9 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                           e.stopPropagation();
                           onGoToDrafts(m.id);
                         }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-indigo-900/20"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black rounded-xl transition-all shadow-md shadow-[#FF6B00]/25"
                       >
-                        <Play className="w-4 h-4" />
+                        <Play className="w-3.5 h-3.5 fill-slate-950" />
                         Create Contest
                       </button>
                     </td>
@@ -281,7 +281,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                   </div>
 
                   {/* Format Badge */}
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 flex-shrink-0">
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#FF6B00]/20 text-[#FF8800] border border-[#FF6B00]/30 flex-shrink-0">
                     {m.format}
                   </span>
                 </div>
@@ -294,13 +294,13 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0 text-slate-300 font-medium">
-                    <Clock className="w-3 h-3 text-indigo-400" />
+                    <Clock className="w-3 h-3 text-[#FF8800]" />
                     <span>{new Date(m.startTime).toLocaleDateString([], { day: 'numeric', month: 'short' })} • {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
 
                 {/* View Squad Indicator */}
-                <div className="text-[10px] text-center text-indigo-400 font-bold bg-indigo-500/10 py-1 rounded-lg border border-indigo-500/20">
+                <div className="text-[10px] text-center text-[#FF8800] font-bold bg-[#FF6B00]/10 py-1 rounded-lg border border-[#FF6B00]/20">
                   Tap to Inspect Full Playing Squad & Toss Details 👥
                 </div>
 
@@ -310,9 +310,9 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                     e.stopPropagation();
                     onGoToDrafts(m.id);
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:scale-[0.98] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-indigo-600/25 transition-all"
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 active:scale-[0.98] text-slate-950 text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-[#FF6B00]/25 transition-all"
                 >
-                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <Play className="w-3.5 h-3.5 fill-slate-950" />
                   <span>Create Contest</span>
                 </button>
               </div>
@@ -355,7 +355,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
             </div>
 
             {/* Coin Toss Banner */}
-            <div className="p-3 mx-4 mt-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-indigo-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm flex-shrink-0">
+            <div className="p-3 mx-4 mt-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm flex-shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
                   🪙
@@ -394,7 +394,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                   onClick={() => setSquadTeamTab('team2')}
                   className={`py-2 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${
                     squadTeamTab === 'team2'
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -419,14 +419,14 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                   </button>
                   <button 
                     onClick={() => setSquadPlayingFilter('PLAYING_XI')}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${squadPlayingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'text-emerald-400'}`}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${squadPlayingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950 font-black' : 'text-emerald-400'}`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                     Playing XI
                   </button>
                   <button 
                     onClick={() => setSquadPlayingFilter('BENCH')}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadPlayingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadPlayingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-400'}`}
                   >
                     Bench
                   </button>
@@ -434,7 +434,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
 
                 {/* Role Tabs */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-0.5 hide-scrollbar flex-1">
-                  <button onClick={() => setSquadRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadRoleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
+                  <button onClick={() => setSquadRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadRoleFilter === 'ALL' ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
                   <button onClick={() => setSquadRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadRoleFilter === 'BAT' ? 'bg-sky-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
                   <button onClick={() => setSquadRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadRoleFilter === 'BOWL' ? 'bg-rose-500 text-white font-black' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
                   <button onClick={() => setSquadRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${squadRoleFilter === 'AR' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
@@ -511,9 +511,9 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
                   setInspectingMatch(null);
                   onGoToDrafts(mId);
                 }}
-                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all"
+                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 active:scale-[0.98] text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B00]/30 transition-all"
               >
-                <Play className="w-4 h-4 fill-white" />
+                <Play className="w-4 h-4 fill-slate-950" />
                 <span>Create Contest For This Match</span>
               </button>
             </div>

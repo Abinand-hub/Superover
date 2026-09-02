@@ -214,7 +214,7 @@ export const MatchConfigurator: React.FC<MatchConfiguratorProps> = ({ matchId, o
               
               <button 
                 onClick={handleEnableQuestion}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition-colors shadow-lg shadow-indigo-900/20"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 rounded-xl font-black transition-all shadow-lg shadow-[#FF6B00]/25"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 Enable this question for this match
@@ -223,9 +223,9 @@ export const MatchConfigurator: React.FC<MatchConfiguratorProps> = ({ matchId, o
           )}
         </div>
       ) : (
-        <div className="bg-green-900/10 border border-green-500/20 rounded-xl p-6 text-center">
-          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <CheckCircle2 className="w-6 h-6 text-green-400" />
+        <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-6 text-center">
+          <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <CheckCircle2 className="w-6 h-6 text-emerald-400" />
           </div>
           <h3 className="text-lg font-bold text-white mb-2">All 6 Questions Added!</h3>
           <p className="text-sm text-slate-400">You have successfully configured this match. You can now publish it.</p>
@@ -237,7 +237,7 @@ export const MatchConfigurator: React.FC<MatchConfiguratorProps> = ({ matchId, o
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             Selected Questions
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${allFilled ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${allFilled ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
               {selectedQuestions.length} / 6
             </span>
           </h3>
@@ -255,11 +255,11 @@ export const MatchConfigurator: React.FC<MatchConfiguratorProps> = ({ matchId, o
               <div key={i} className="bg-[#11172D] border border-slate-800 rounded-xl p-5 relative group hover:border-slate-600 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-purple-600 text-white">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-[#FF6B00] text-slate-950">
                       {i + 1}
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">{q.shortTitle}</p>
+                      <p className="text-[10px] font-bold text-[#FF8800] uppercase tracking-wider">{q.shortTitle}</p>
                       <h3 className="font-bold text-slate-200 text-sm leading-tight mt-0.5">{q.title}</h3>
                     </div>
                   </div>
