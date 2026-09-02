@@ -1,4 +1,5 @@
 import Match from '@/models/Match';
+import { getPlayerImage } from './playerImageRegistry';
 
 // Authentic European Cricket Teams & Squad Rosters Database (ECS T10 / European Cricket League)
 export interface EuropeanTeamPreset {
@@ -267,7 +268,6 @@ export async function generateUpcomingEuropeanMatches() {
 
     const mapSquad = (team: EuropeanTeamPreset, teamIndex: number) => {
       return team.players.map((p, idx) => {
-        const portraitIndex = (teamIndex * 6 + idx) % ATHLETE_PORTRAITS.length;
         return {
           id: `p_${team.code.toLowerCase()}_${idx + 1}`,
           name: p.name,
@@ -275,7 +275,7 @@ export async function generateUpcomingEuropeanMatches() {
           team: team.code,
           teamName: team.name,
           role: p.role,
-          avatar: ATHLETE_PORTRAITS[portraitIndex],
+          avatar: getPlayerImage(p.name, team.code, idx),
           country: team.country,
           recentForm: ['45', '2/18', '31*'],
           careerStatHighlight: p.careerStatHighlight || 'European League Star'
