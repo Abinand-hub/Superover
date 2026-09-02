@@ -1,21 +1,55 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CricketMatch } from '../../types';
-import { Calendar, Clock, Trophy, Play } from 'lucide-react';
+import { Calendar, Clock, Trophy, Play, RefreshCw, Sparkles, Globe } from 'lucide-react';
 
 interface MatchSelectionManagerProps {
   allMatches: CricketMatch[];
-  onMatchesDrafted: () => void; // Kept for backwards compatibility if needed
+  onMatchesDrafted: () => void;
   onGoToDrafts: (matchId: string) => void;
+  onReloadData?: () => void;
 }
 
-export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ allMatches, onGoToDrafts }) => {
+export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ allMatches, onGoToDrafts, onReloadData }) => {
+  const [filterType, setFilterType] = useState<'ALL' | 'EUROPEAN' | 'INTERNATIONAL'>('ALL');
+  const [isSyncing, setIsSyncing] = useState(false);
+
   // Filter for matches that haven't been published yet and are in the future
   const availableMatches = useMemo(() => {
     const now = new Date().getTime();
     return allMatches
       .filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > now)
+      .filter(m => {
+        if (filterType === 'EUROPEAN') {
+          return m.series.toLowerCase().includes('ecs') || 
+                 m.series.toLowerCase().includes('ecl') || 
+                 m.series.toLowerCase().includes('european') ||
+                 m.format === 'T10';
+        }
+        if (filterType === 'INTERNATIONAL') {
+          return !m.series.toLowerCase().includes('ecs') && 
+                 !m.series.toLowerCase().includes('ecl') && 
+                 !m.series.toLowerCase().includes('european');
+        }
+        return true;
+      })
       .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  }, [allMatches]);
+  }, [allMatches, filterType]);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await fetch('/api/cron/sync-matches');
+      if (onReloadData) {
+        await onReloadData();
+      } else {
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -25,8 +59,53 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
             <Calendar className="w-6 h-6 text-indigo-400" />
             Create Match
           </h2>
-          <p className="text-sm text-slate-400 mt-1">Select an upcoming match from the API to configure and publish as a new contest.</p>
+          <p className="text-sm text-slate-400 mt-1">Select an upcoming match from the European or International feed to configure and publish as a new contest.</p>
         </div>
+
+        <button
+          onClick={handleManualSync}
+          disabled={isSyncing}
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-purple-600/20 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+          <span>{isSyncing ? 'Syncing Feeds...' : 'Sync Matches'}</span>
+        </button>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setFilterType('ALL')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            filterType === 'ALL'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          All Feeds ({allMatches.filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > Date.now()).length})
+        </button>
+        <button
+          onClick={() => setFilterType('EUROPEAN')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            filterType === 'EUROPEAN'
+              ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/30'
+              : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>European T10 / ECL</span>
+        </button>
+        <button
+          onClick={() => setFilterType('INTERNATIONAL')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            filterType === 'INTERNATIONAL'
+              ? 'bg-sky-600 text-white'
+              : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>International / Bilateral</span>
+        </button>
       </div>
 
       <div className="bg-[#11172D] rounded-xl border border-slate-800 overflow-hidden">

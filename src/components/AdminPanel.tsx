@@ -1585,6 +1585,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               allMatches={matches}
               onMatchesDrafted={() => onReloadData && onReloadData()}
               onGoToDrafts={(matchId: string) => { setConfiguringMatchId(matchId); setPublishingView('config'); }}
+              onReloadData={onReloadData}
             />
           )}
           {publishingView === 'config' && configuringMatchId && (

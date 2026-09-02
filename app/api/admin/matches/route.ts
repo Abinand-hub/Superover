@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Match from '@/models/Match';
 import { autoLockMatches } from '@/lib/cricapi';
+import { generateUpcomingEuropeanMatches } from '@/lib/europeanScraper';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
     await connectToDatabase();
     await autoLockMatches();
+    await generateUpcomingEuropeanMatches();
     
     // Admins get upcoming matches for the next 7 days (rolling window)
     const now = new Date();
