@@ -58,6 +58,7 @@ import { LiveMatchDashboard } from './admin/LiveMatchDashboard';
 import { MatchHistory } from './admin/MatchHistory';
 import { SettingsManager } from './admin/SettingsManager';
 import { ReportsManager } from './admin/ReportsManager';
+import { getTeamLogoUrl } from '../utils/teamLogoHelper';
 
 interface AdminPanelProps {
   metrics: PlatformMetrics;
@@ -254,9 +255,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
 
   // Match Management State
-  const [selectedMatchForSquad, setSelectedMatchForSquad] = useState<string>(matches[0]?.id || '');
+  const publishedMatches = matches.filter(m => m.status === 'UPCOMING' || m.status === 'LIVE' || m.status === 'LOCKED');
+  const defaultSquadMatchId = publishedMatches[0]?.id || matches[0]?.id || '';
+  const [selectedMatchForSquad, setSelectedMatchForSquad] = useState<string>(defaultSquadMatchId);
   const [selectedTeamForSquad, setSelectedTeamForSquad] = useState<'team1' | 'team2'>('team1');
   const [matchesView, setMatchesView] = useState<'LIFECYCLE' | 'LIVE_DASHBOARD' | 'HISTORY'>('LIFECYCLE');
+
+  // Squad Viewer Filter State
+  const [squadMatchFilter, setSquadMatchFilter] = useState<'PUBLISHED' | 'ALL'>(publishedMatches.length > 0 ? 'PUBLISHED' : 'ALL');
+  const [squadRoleFilter, setSquadRoleFilter] = useState<string>('ALL');
+  const [squadPlayingFilter, setSquadPlayingFilter] = useState<'ALL' | 'PLAYING_XI' | 'BENCH'>('ALL');
+  const [squadSearchQuery, setSquadSearchQuery] = useState<string>('');
 
   // Add Player Modal State
   const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
@@ -816,84 +825,322 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* TAB CONTENT 3: SQUAD VIEWER */}
       {adminTab === 'squads' && (
-        <div className="space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#080C1D] p-5 rounded-2xl border border-[#1A223E]">
             <div>
-              <h2 className="text-lg font-black text-white">Match Squad Viewer</h2>
-              <p className="text-xs text-emerald-400 font-bold flex items-center gap-1"><Sparkles className="w-3.5 h-3.5"/> Fully synchronized directly from CricAPI.</p>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] uppercase border border-[#FF6B00]/30">
+                  Squad & Lineup Intelligence
+                </span>
+                <span className="text-xs text-slate-400">Playing XI vs Bench & Official Toss</span>
+              </div>
+              <h2 className="text-xl font-black text-white mt-1">Match Squad Viewer</h2>
+            </div>
+
+            {/* Quick Match Scope Filter */}
+            <div className="flex items-center gap-1.5 bg-[#0D122B] p-1.5 rounded-xl border border-[#1A223E]">
+              <button
+                onClick={() => {
+                  setSquadMatchFilter('PUBLISHED');
+                  if (publishedMatches.length > 0) setSelectedMatchForSquad(publishedMatches[0].id);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                  squadMatchFilter === 'PUBLISHED'
+                    ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🚀 Published Contests</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-slate-950/40 text-[10px]">
+                  {publishedMatches.length}
+                </span>
+              </button>
+              <button
+                onClick={() => setSquadMatchFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                  squadMatchFilter === 'ALL'
+                    ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>🌐 All Match Feeds</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-slate-950/40 text-[10px]">
+                  {matches.length}
+                </span>
+              </button>
             </div>
           </div>
 
           {/* Match & Team Selector */}
-          <div className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Select Match:</label>
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                Select {squadMatchFilter === 'PUBLISHED' ? 'Published Contest' : 'Match Feed'}:
+              </label>
               <select
                 value={selectedMatchForSquad}
                 onChange={(e) => setSelectedMatchForSquad(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
               >
-                {matches.map((m) => (
-                  <option key={m.id} value={m.id}>{m.title} ({m.series})</option>
-                ))}
+                {(squadMatchFilter === 'PUBLISHED' ? publishedMatches : matches).map((m) => {
+                  const tag = m.status === 'UPCOMING' ? '🟢 [PUBLISHED]' : m.status === 'LIVE' ? '🔴 [LIVE]' : m.status === 'LOCKED' ? '🔒 [LOCKED]' : '📋 [DRAFT]';
+                  return (
+                    <option key={m.id} value={m.id}>
+                      {tag} {m.title} ({m.series})
+                    </option>
+                  );
+                })}
               </select>
+              {squadMatchFilter === 'PUBLISHED' && publishedMatches.length === 0 && (
+                <p className="text-xs text-amber-400 mt-2">No matches currently published. Switch to "All Match Feeds" or create a contest in Match Publishing.</p>
+              )}
             </div>
 
             <div>
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Select Squad Team:</label>
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                Select Team Squad:
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setSelectedTeamForSquad('team1')}
-                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                     selectedTeamForSquad === 'team1'
-                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white shadow-md'
-                      : 'bg-[#080C1D] text-slate-400 border border-[#1A223E]'
+                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
+                      : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
                   }`}
                 >
-                  {currentMatchForSquad?.team1.name} ({currentMatchForSquad?.team1.code})
+                  <img 
+                    src={getTeamLogoUrl(currentMatchForSquad?.team1.code, currentMatchForSquad?.team1.name, currentMatchForSquad?.team1.logoUrl)} 
+                    alt={currentMatchForSquad?.team1.code}
+                    className="w-4 h-4 object-contain rounded"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                  />
+                  <span className="truncate">{currentMatchForSquad?.team1.name || currentMatchForSquad?.team1.code} ({(currentMatchForSquad?.squadTeam1 || []).length})</span>
                 </button>
                 <button
                   onClick={() => setSelectedTeamForSquad('team2')}
-                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                     selectedTeamForSquad === 'team2'
-                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white shadow-md'
-                      : 'bg-[#080C1D] text-slate-400 border border-[#1A223E]'
+                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
+                      : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
                   }`}
                 >
-                  {currentMatchForSquad?.team2.name} ({currentMatchForSquad?.team2.code})
+                  <img 
+                    src={getTeamLogoUrl(currentMatchForSquad?.team2.code, currentMatchForSquad?.team2.name, currentMatchForSquad?.team2.logoUrl)} 
+                    alt={currentMatchForSquad?.team2.code}
+                    className="w-4 h-4 object-contain rounded"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                  />
+                  <span className="truncate">{currentMatchForSquad?.team2.name || currentMatchForSquad?.team2.code} ({(currentMatchForSquad?.squadTeam2 || []).length})</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Current Squad Player Cards */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider">
-              {selectedTeamForSquad === 'team1' ? currentMatchForSquad?.team1.name : currentMatchForSquad?.team2.name} Squad (
-              {(selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2)?.length || 0} Players)
-            </h3>
+          {/* Published Match Details Card */}
+          {currentMatchForSquad && (
+            <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 p-1 flex items-center justify-center flex-shrink-0">
+                    <img 
+                      src={getTeamLogoUrl(currentMatchForSquad.team1.code, currentMatchForSquad.team1.name, currentMatchForSquad.team1.logoUrl)} 
+                      alt={currentMatchForSquad.team1.code}
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  </div>
+                  <span className="text-xs font-black text-slate-400">vs</span>
+                  <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 p-1 flex items-center justify-center flex-shrink-0">
+                    <img 
+                      src={getTeamLogoUrl(currentMatchForSquad.team2.code, currentMatchForSquad.team2.name, currentMatchForSquad.team2.logoUrl)} 
+                      alt={currentMatchForSquad.team2.code}
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-[#FFAA00] font-black uppercase tracking-wider">
+                      {currentMatchForSquad.series} • {currentMatchForSquad.format}
+                    </div>
+                    <h3 className="text-base font-black text-white">
+                      {currentMatchForSquad.team1.name} vs {currentMatchForSquad.team2.name}
+                    </h3>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2)?.map((player) => (
-                <div
-                  key={player.id}
-                  className="p-3.5 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <img src={player.avatar} alt={player.name} className="w-10 h-10 rounded-xl object-cover ring-1 ring-[#1A223E]" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-white">{player.name}</span>
-                        <span className="px-1.5 py-0.2 rounded bg-[#131A38] text-[#FFAA00] text-[10px] font-black">
-                          {player.role}
-                        </span>
-                        <span className="text-[10px] text-slate-400">{player.country}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 truncate max-w-xs">{player.careerStatHighlight}</div>
+                {/* Match Status Badge & Action */}
+                <div className="flex items-center gap-2">
+                  {currentMatchForSquad.status === 'UPCOMING' && (
+                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      PUBLISHED CONTEST (Open for User Entries)
+                    </span>
+                  )}
+                  {currentMatchForSquad.status === 'LIVE' && (
+                    <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-black flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+                      LIVE IN PLAY
+                    </span>
+                  )}
+                  {currentMatchForSquad.status === 'FETCHED' && (
+                    <button
+                      onClick={() => {
+                        setConfiguringMatchId(currentMatchForSquad.id);
+                        setPublishingView('config');
+                        setAdminTab('publishing');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Configure & Publish Contest</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Coin Toss Banner */}
+              <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-[#080C1D] to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
+                    🪙
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Official Coin Toss</div>
+                    <div className="text-xs font-bold text-white truncate">
+                      {(currentMatchForSquad as any).tossSummary || `${currentMatchForSquad.team1.name} won the toss and elected to BAT first`}
                     </div>
                   </div>
                 </div>
-              ))}
+                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                  Verified
+                </span>
+              </div>
+
+              {/* 6 Configured Questions (If Published) */}
+              {currentMatchForSquad.questions && currentMatchForSquad.questions.length > 0 && (
+                <div className="space-y-2 pt-1 border-t border-[#1A223E]">
+                  <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider block">
+                    Active Contest Questions ({currentMatchForSquad.questions.length} / 6 Categories)
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {currentMatchForSquad.questions.map((q, idx) => (
+                      <div key={q.id || idx} className="p-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-[#FF6B00] text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">
+                          {idx + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] font-bold text-[#FFAA00] truncate">{q.shortTitle || q.title}</div>
+                          <div className="text-xs font-bold text-white truncate">{q.title}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Squad Filters & Player Search */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E]">
+            {/* Playing XI vs Bench Filter */}
+            <div className="flex items-center gap-1 bg-[#080C1D] p-1 rounded-xl border border-[#1A223E]">
+              <button 
+                onClick={() => setSquadPlayingFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${squadPlayingFilter === 'ALL' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+              >
+                All Players
+              </button>
+              <button 
+                onClick={() => setSquadPlayingFilter('PLAYING_XI')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1 ${squadPlayingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'text-emerald-400'}`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Playing XI (11)
+              </button>
+              <button 
+                onClick={() => setSquadPlayingFilter('BENCH')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black ${squadPlayingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
+              >
+                Bench / Reserves
+              </button>
+            </div>
+
+            {/* Role Filter Buttons */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 hide-scrollbar">
+              <button onClick={() => setSquadRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'ALL' ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
+              <button onClick={() => setSquadRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'BAT' ? 'bg-sky-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
+              <button onClick={() => setSquadRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'BOWL' ? 'bg-rose-500 text-white font-black' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
+              <button onClick={() => setSquadRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'AR' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
+              <button onClick={() => setSquadRoleFilter('WK')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'WK' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🧤 WK</button>
+            </div>
+          </div>
+
+          {/* Current Squad Player Cards Grid */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center justify-between">
+              <span>{selectedTeamForSquad === 'team1' ? currentMatchForSquad?.team1.name : currentMatchForSquad?.team2.name} Squad</span>
+              <span className="text-slate-400 font-normal">
+                Showing {((selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2) || []).filter((p, idx) => {
+                  if (squadRoleFilter !== 'ALL' && p.role !== squadRoleFilter) return false;
+                  const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+                  if (squadPlayingFilter === 'PLAYING_XI' && !isPlaying) return false;
+                  if (squadPlayingFilter === 'BENCH' && isPlaying) return false;
+                  return true;
+                }).length} Players
+              </span>
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {((selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2) || [])
+                .filter((p, idx) => {
+                  if (squadRoleFilter !== 'ALL' && p.role !== squadRoleFilter) return false;
+                  const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+                  if (squadPlayingFilter === 'PLAYING_XI' && !isPlaying) return false;
+                  if (squadPlayingFilter === 'BENCH' && isPlaying) return false;
+                  return true;
+                })
+                .map((player, idx) => {
+                  const isPlaying = player.isPlaying !== undefined ? player.isPlaying : idx < 11;
+
+                  return (
+                    <div
+                      key={player.id || idx}
+                      className="p-3.5 rounded-2xl bg-[#0D122B] border border-[#1A223E] flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img 
+                          src={player.avatar} 
+                          alt={player.name} 
+                          className="w-12 h-12 rounded-xl object-cover bg-slate-800 border border-slate-700 flex-shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1E293B&color=F59E0B&bold=true`;
+                          }}
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm font-black text-white truncate">{player.name}</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0 ${
+                              isPlaying ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {isPlaying ? 'Playing XI' : 'Bench'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
+                              player.role === 'BAT' ? 'bg-sky-500/20 text-sky-300' :
+                              player.role === 'BOWL' ? 'bg-rose-500/20 text-rose-300' :
+                              player.role === 'AR' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
+                            }`}>
+                              {player.role}
+                            </span>
+                            <span className="text-[11px] text-slate-400 truncate border-l border-slate-800 pl-2">
+                              {player.careerStatHighlight || 'Professional Player'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </div>
