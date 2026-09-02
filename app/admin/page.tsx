@@ -65,20 +65,20 @@ export default function AdminPage() {
   if (isLoading && !data) {
     return (
       <div className="min-h-screen bg-[#050816] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-purple-400 font-medium text-sm animate-pulse">Initializing Admin Dashboard...</p>
-        <p className="text-slate-500 text-xs mt-2">This may take a few seconds.</p>
+        <div className="w-10 h-10 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-[#FF8800] font-black text-xs uppercase tracking-wider animate-pulse">Initializing SuperOver Admin...</p>
+        <p className="text-slate-500 text-xs mt-1">Connecting to Management Engine</p>
       </div>
     );
   }
 
   if (!isAdminAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#050816] relative flex items-center justify-center">
+      <div className="min-h-screen bg-[#050816] relative flex items-center justify-center p-4">
         {/* Decorative background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-purple-900/10 blur-[120px]" />
-          <div className="absolute -bottom-[30%] -left-[10%] w-[70%] h-[70%] rounded-full bg-indigo-900/10 blur-[120px]" />
+          <div className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-[#FF6B00]/10 blur-[130px]" />
+          <div className="absolute -bottom-[30%] -left-[10%] w-[70%] h-[70%] rounded-full bg-[#FF8800]/5 blur-[130px]" />
         </div>
         
         {/* Isolated Login Modal */}
