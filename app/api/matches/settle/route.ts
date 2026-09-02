@@ -64,9 +64,11 @@ export async function POST(req: Request) {
           }
 
           const officialPick = picks[qId];
-          if (officialPick && officialPick.answerId && userAns) {
+          const officialAnswerId = typeof officialPick === 'object' && officialPick !== null ? (officialPick.answerId || officialPick.answerText) : officialPick;
+          
+          if (officialAnswerId && userAns) {
             const userAnsString = String(userAns).trim().toLowerCase();
-            const officialAnsString = String(officialPick.answerId).trim().toLowerCase();
+            const officialAnsString = String(officialAnswerId).trim().toLowerCase();
             if (userAnsString === officialAnsString) {
               correctAnswers++;
               if (!isStreakBroken) {

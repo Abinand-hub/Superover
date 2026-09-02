@@ -165,9 +165,11 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
             {match.questions?.map((q) => {
               const actualResult = results?.answers ? results.answers[q.id] : null;
-              const userAnswerId = slip ? slip.answers[q.id] : null;
+              const userAnswerId = slip 
+                ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 
+                : null;
               
-              const isCorrect = userAnswerId && actualResult && String(userAnswerId).toLowerCase() === String(actualResult.answerId).toLowerCase();
+              const isCorrect = userAnswerId && actualResult && String(userAnswerId).trim().toLowerCase() === String(actualResult.answerId || actualResult.answerText).trim().toLowerCase();
 
               // For player questions, we can look up the player
               let userPickDisplayName = userAnswerId || 'Unselected';
