@@ -182,58 +182,106 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
           </div>
           <button 
             onClick={() => setActivePlayerQuestionId(null)}
-            className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"
+            className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
         
-        <div className="p-3 border-b border-slate-800 space-y-3 bg-slate-900/50">
+        <div className="p-3 border-b border-slate-800 space-y-2.5 bg-slate-900/60">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search players..."
+              placeholder="Search by player name or role..."
               value={playerSearch}
               onChange={(e) => setPlayerSearch(e.target.value)}
-              className="w-full bg-slate-800 border-none rounded-xl py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50"
+              className="w-full bg-slate-800/90 border border-slate-700/80 rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:border-amber-500 outline-none"
             />
           </div>
-          {/* Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            <button onClick={() => setTeamFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>All</button>
-            <button onClick={() => setTeamFilter('TEAM1')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM1' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team1.shortName || match.team1.code}</button>
-            <button onClick={() => setTeamFilter('TEAM2')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${teamFilter === 'TEAM2' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>{match.team2.shortName || match.team2.code}</button>
-            <div className="w-px h-4 bg-slate-700 mx-1"></div>
-            <button onClick={() => setRoleFilter('ALL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
-            <button onClick={() => setRoleFilter('BAT')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'BAT' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Bat</button>
-            <button onClick={() => setRoleFilter('BOWL')} className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${roleFilter === 'BOWL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}>Bowl</button>
+
+          {/* Playing XI / Bench Selector */}
+          <div className="flex items-center gap-1.5">
+            <button 
+              onClick={() => setPlayingFilter('ALL')} 
+              className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors ${playingFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+            >
+              All Squad
+            </button>
+            <button 
+              onClick={() => setPlayingFilter('PLAYING_XI')} 
+              className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors flex items-center gap-1 ${playingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-emerald-400'}`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Playing XI
+            </button>
+            <button 
+              onClick={() => setPlayingFilter('BENCH')} 
+              className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors ${playingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+            >
+              Bench / Sub
+            </button>
+          </div>
+
+          {/* Role & Team Filters */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar text-[11px]">
+            <button onClick={() => setTeamFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Teams</button>
+            <button onClick={() => setTeamFilter('TEAM1')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1.shortName || match.team1.code}</button>
+            <button onClick={() => setTeamFilter('TEAM2')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2.shortName || match.team2.code}</button>
+            <div className="w-px h-3.5 bg-slate-700 mx-0.5"></div>
+            <button onClick={() => setRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All</button>
+            <button onClick={() => setRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BAT' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
+            <button onClick={() => setRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BOWL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
+            <button onClick={() => setRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'AR' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
+            <button onClick={() => setRoleFilter('WK')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'WK' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🧤 WK</button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {filteredPlayers.map((p) => (
-            <div
-              key={p.id}
-              onClick={() => handleAnswer(q!.id, p.id)}
-              className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800 hover:border-emerald-500/50 cursor-pointer transition-all"
-            >
-              <img src={p.avatar} alt={p.name} className="w-10 h-10 rounded-full object-cover bg-slate-700" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-white text-sm truncate">{p.name}</h4>
-                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">{p.team}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-slate-400">{p.role}</span>
-                  <span className="text-[10px] text-emerald-400 truncate border-l border-slate-600 pl-2">{p.careerStatHighlight}</span>
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {filteredPlayers.map((p, idx) => {
+            const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+
+            return (
+              <div
+                key={p.id}
+                onClick={() => handleAnswer(q!.id, p.id)}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/80 hover:bg-slate-800 hover:border-amber-500/50 cursor-pointer transition-all shadow-sm"
+              >
+                <img 
+                  src={p.avatar} 
+                  alt={p.name} 
+                  className="w-11 h-11 rounded-xl object-cover bg-slate-700 border border-slate-600 flex-shrink-0"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=1E293B&color=F59E0B&bold=true`;
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="font-bold text-white text-xs sm:text-sm truncate">{p.name}</h4>
+                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 flex-shrink-0">{p.team}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                      p.role === 'BAT' ? 'bg-sky-500/20 text-sky-300' :
+                      p.role === 'BOWL' ? 'bg-rose-500/20 text-rose-300' :
+                      p.role === 'AR' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
+                    }`}>
+                      {p.role}
+                    </span>
+                    <span className={`text-[10px] font-black ${isPlaying ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {isPlaying ? '🟢 Playing XI' : '🟡 Bench'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 truncate border-l border-slate-700 pl-2">
+                      {p.careerStatHighlight}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filteredPlayers.length === 0 && (
-            <div className="text-center py-10 text-slate-500 text-sm">No players found matching your filters.</div>
+            <div className="text-center py-10 text-slate-500 text-xs">No players found matching your filters.</div>
           )}
         </div>
       </div>
@@ -243,6 +291,24 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   const renderQuestions = () => (
     <div className="flex-1 overflow-y-auto relative p-4 sm:p-6 space-y-4">
       {renderPlayerPickerPopup()}
+      
+      {/* Official Toss Result Banner */}
+      <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-indigo-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
+            🪙
+          </div>
+          <div className="min-w-0">
+            <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Coin Toss Update</div>
+            <div className="text-xs font-bold text-white truncate">
+              {(match as any).tossSummary || `${match.team1.name || match.team1.code} won the toss and elected to BAT first`}
+            </div>
+          </div>
+        </div>
+        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+          Verified
+        </span>
+      </div>
       
       {match.status === 'LIVE' && match.liveScore && (
         <div className="mb-4 p-3 rounded-xl bg-[#080C1D] border border-[#FF6B00]/40 flex flex-col items-center justify-center text-center shadow-[0_0_15px_rgba(255,107,0,0.1)]">

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { CricketMatch, MatchStatus, UserPredictionSlip } from '../types';
 import { formatINR } from '../utils/payoutCalculator';
+import { getTeamLogoUrl } from '../utils/teamLogoHelper';
 
 interface MatchLobbyProps {
   matches: CricketMatch[];
@@ -181,17 +182,16 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                     {/* Team 1 */}
                     <div className="flex-1 flex flex-col items-center text-center">
                       <div 
-                        className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center text-2xl shadow-inner relative border"
-                        style={{ backgroundColor: `${match.team1.color}20`, borderColor: match.team1.color }}
+                        className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center text-2xl shadow-inner relative border bg-[#0D122B] border-slate-700"
                       >
-                        {match.team1.logoUrl ? (
-                          <img src={match.team1.logoUrl} alt={match.team1.code} className="w-10 h-10 object-contain drop-shadow-md" />
-                        ) : (
-                          <span className="filter drop-shadow">{match.team1.flagOrLogo}</span>
-                        )}
+                        <img 
+                          src={getTeamLogoUrl(match.team1.code, match.team1.name, match.team1.logoUrl)} 
+                          alt={match.team1.code} 
+                          className="w-10 h-10 object-contain drop-shadow-md rounded-lg"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                        />
                         <div 
-                          className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded text-white shadow-sm"
-                          style={{ backgroundColor: match.team1.color }}
+                          className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-sm"
                         >
                           {match.team1.code}
                         </div>
@@ -214,17 +214,16 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                     {/* Team 2 */}
                     <div className="flex-1 flex flex-col items-center text-center">
                       <div 
-                        className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center text-2xl shadow-inner relative border"
-                        style={{ backgroundColor: `${match.team2.color}20`, borderColor: match.team2.color }}
+                        className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center text-2xl shadow-inner relative border bg-[#0D122B] border-slate-700"
                       >
-                        {match.team2.logoUrl ? (
-                          <img src={match.team2.logoUrl} alt={match.team2.code} className="w-10 h-10 object-contain drop-shadow-md" />
-                        ) : (
-                          <span className="filter drop-shadow">{match.team2.flagOrLogo}</span>
-                        )}
+                        <img 
+                          src={getTeamLogoUrl(match.team2.code, match.team2.name, match.team2.logoUrl)} 
+                          alt={match.team2.code} 
+                          className="w-10 h-10 object-contain drop-shadow-md rounded-lg"
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                        />
                         <div 
-                          className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded text-white shadow-sm"
-                          style={{ backgroundColor: match.team2.color }}
+                          className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shadow-sm"
                         >
                           {match.team2.code}
                         </div>
@@ -234,6 +233,14 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  {/* Toss Banner if available */}
+                  {(match as any).tossSummary && (
+                    <div className="mt-3 py-1.5 px-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center gap-1.5 text-[10px] text-amber-300 font-medium">
+                      <span>🪙</span>
+                      <span className="truncate">{(match as any).tossSummary}</span>
+                    </div>
+                  )}
 
                   {/* LIVE SCORE BANNER */}
                   {match.status === 'LIVE' && match.liveScore && (
