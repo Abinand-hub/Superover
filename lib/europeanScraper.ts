@@ -13,10 +13,26 @@ export interface EuropeanTeamPreset {
   }>;
 }
 
+const ATHLETE_PORTRAITS = [
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1463453091185-61582044d556?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150&auto=format&fit=crop&q=80',
+];
+
 export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   MADRID: {
     name: 'Madrid Cricket Club',
     code: 'MAD',
+    logoUrl: 'https://flagcdn.com/w160/es.png',
     country: 'Spain',
     players: [
       { name: 'Galileo Finlayson-Ble', role: 'AR', careerStatHighlight: 'SR: 185.0 • 12 Wkts' },
@@ -35,6 +51,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   CATALUNYA: {
     name: 'Catalunya Cricket Club',
     code: 'CTL',
+    logoUrl: 'https://flagcdn.com/w160/es-ct.png',
     country: 'Spain',
     players: [
       { name: 'Awais Ahmed', role: 'WK', careerStatHighlight: 'SR: 210.5 • ECS Legend' },
@@ -53,6 +70,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   PAK_I_CARE: {
     name: 'Pak I Care Badalona',
     code: 'PIC',
+    logoUrl: 'https://flagcdn.com/w160/es.png',
     country: 'Spain',
     players: [
       { name: 'Muhammad Ihsan', role: 'WK', careerStatHighlight: 'Record: 156 Off 48 Balls' },
@@ -71,6 +89,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   ROYAL_ROMA: {
     name: 'Royal Roma Cricket Club',
     code: 'ROR',
+    logoUrl: 'https://flagcdn.com/w160/it.png',
     country: 'Italy',
     players: [
       { name: 'Mubarak Hossain', role: 'WK', careerStatHighlight: 'SR: 205.0' },
@@ -89,6 +108,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   BRESCIA: {
     name: 'Brescia Cricket Club',
     code: 'BRE',
+    logoUrl: 'https://flagcdn.com/w160/it.png',
     country: 'Italy',
     players: [
       { name: 'Yasir Dullu', role: 'WK', careerStatHighlight: 'SR: 198.0 • 35 6s' },
@@ -107,6 +127,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   DREUX: {
     name: 'Dreux Cricket Club',
     code: 'DRX',
+    logoUrl: 'https://flagcdn.com/w160/fr.png',
     country: 'France',
     players: [
       { name: 'Hamza Niaz', role: 'BAT', careerStatHighlight: 'SR: 220.0 • Fastest 50' },
@@ -125,6 +146,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   OLD_VICTORIANS: {
     name: 'Old Victorians Cricket Club',
     code: 'OV',
+    logoUrl: 'https://flagcdn.com/w160/je.png',
     country: 'Jersey',
     players: [
       { name: 'Jonty Jenner', role: 'BAT', careerStatHighlight: 'Jersey Captain • SR: 195.0' },
@@ -143,6 +165,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   FORFARSHIRE: {
     name: 'Forfarshire Cricket Club',
     code: 'FOR',
+    logoUrl: 'https://flagcdn.com/w160/gb-sct.png',
     country: 'Scotland',
     players: [
       { name: 'Michael Leask', role: 'AR', careerStatHighlight: 'Scotland International • 6s King' },
@@ -161,6 +184,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   NETHERLANDS_XI: {
     name: 'Netherlands XI',
     code: 'NED',
+    logoUrl: 'https://flagcdn.com/w160/nl.png',
     country: 'Netherlands',
     players: [
       { name: 'Max O\'Dowd', role: 'BAT', careerStatHighlight: 'Top Dutch Batter • Avg: 36.0' },
@@ -179,6 +203,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   ITALY_XI: {
     name: 'Italy XI',
     code: 'ITA',
+    logoUrl: 'https://flagcdn.com/w160/it.png',
     country: 'Italy',
     players: [
       { name: 'Anthony Mosca', role: 'BAT', careerStatHighlight: 'Italian Opener • SR: 175.0' },
@@ -197,6 +222,7 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
   SPAIN_XI: {
     name: 'Spain XI',
     code: 'ESP',
+    logoUrl: 'https://flagcdn.com/w160/es.png',
     country: 'Spain',
     players: [
       { name: 'Christian Munoz-Mills', role: 'BAT', careerStatHighlight: 'Spanish Captain' },
@@ -216,7 +242,6 @@ export const EUROPEAN_TEAMS_ROSTER: Record<string, EuropeanTeamPreset> = {
 
 // Generates upcoming European T10/T20 matches for the next 7 days
 export async function generateUpcomingEuropeanMatches() {
-  const teamKeys = Object.keys(EUROPEAN_TEAMS_ROSTER);
   const matchups = [
     { t1: 'PAK_I_CARE', t2: 'CATALUNYA', series: 'ECS Spain T10 Barcelona', format: 'T10', hoursOffset: 4 },
     { t1: 'MADRID', t2: 'SPAIN_XI', series: 'ECS Spain T10 Series', format: 'T10', hoursOffset: 8 },
@@ -240,47 +265,56 @@ export async function generateUpcomingEuropeanMatches() {
     const matchStartTime = new Date(now.getTime() + m.hoursOffset * 60 * 60 * 1000);
     const apiId = `euro_${m.t1.toLowerCase()}_vs_${m.t2.toLowerCase()}_${matchStartTime.toISOString().slice(0, 10)}`;
 
-    const existingMatch = await Match.findOne({ apiId });
-    if (!existingMatch) {
-      const mapSquad = (team: EuropeanTeamPreset) => {
-        return team.players.map((p, idx) => ({
+    const mapSquad = (team: EuropeanTeamPreset, teamIndex: number) => {
+      return team.players.map((p, idx) => {
+        const portraitIndex = (teamIndex * 6 + idx) % ATHLETE_PORTRAITS.length;
+        return {
           id: `p_${team.code.toLowerCase()}_${idx + 1}`,
           name: p.name,
           shortName: p.name.split(' ').slice(-1)[0] || p.name,
           team: team.code,
           teamName: team.name,
           role: p.role,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=1E293B&color=F59E0B&bold=true`,
+          avatar: ATHLETE_PORTRAITS[portraitIndex],
           country: team.country,
           recentForm: ['45', '2/18', '31*'],
           careerStatHighlight: p.careerStatHighlight || 'European League Star'
-        }));
-      };
+        };
+      });
+    };
 
+    const matchPayload = {
+      apiId,
+      title: `${team1Data.name} vs ${team2Data.name}`,
+      series: m.series,
+      format: m.format,
+      team1: { 
+        name: team1Data.name, 
+        code: team1Data.code, 
+        logoUrl: team1Data.logoUrl || `https://flagcdn.com/w160/${team1Data.country.toLowerCase().slice(0, 2)}.png` 
+      },
+      team2: { 
+        name: team2Data.name, 
+        code: team2Data.code, 
+        logoUrl: team2Data.logoUrl || `https://flagcdn.com/w160/${team2Data.country.toLowerCase().slice(0, 2)}.png` 
+      },
+      matchStartTime: matchStartTime.toISOString(),
+      squadTeam1: mapSquad(team1Data, 0),
+      squadTeam2: mapSquad(team2Data, 1),
+    };
+
+    const existingMatch = await Match.findOne({ apiId });
+    if (!existingMatch) {
       await Match.create({
-        apiId,
-        title: `${team1Data.name} vs ${team2Data.name}`,
-        series: m.series,
-        format: m.format,
-        team1: { 
-          name: team1Data.name, 
-          code: team1Data.code, 
-          logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(team1Data.code)}&background=FF6B00&color=fff&bold=true` 
-        },
-        team2: { 
-          name: team2Data.name, 
-          code: team2Data.code, 
-          logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(team2Data.code)}&background=3B82F6&color=fff&bold=true` 
-        },
-        matchStartTime: matchStartTime.toISOString(),
+        ...matchPayload,
         status: 'FETCHED',
         questions: [],
         entryFees: [25, 50, 100],
-        squadTeam1: mapSquad(team1Data),
-        squadTeam2: mapSquad(team2Data),
       });
-
       createdCount++;
+    } else if (existingMatch.status === 'FETCHED' || existingMatch.status === 'DRAFT') {
+      // Update logos and player avatars
+      await Match.updateOne({ apiId }, { $set: matchPayload });
     }
   }
 
