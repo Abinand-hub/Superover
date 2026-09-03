@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Match from '@/models/Match';
 import { autoLockMatches } from '@/lib/cricapi';
-import { generateUpcomingEuropeanMatches } from '@/lib/europeanScraper';
+import { generateUpcomingFanCodeAndInternationalMatches } from '@/lib/tournamentFeeds';
 import { getPlayerImage } from '@/lib/playerImageRegistry';
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   try {
     await connectToDatabase();
     await autoLockMatches();
-    await generateUpcomingEuropeanMatches();
+    await generateUpcomingFanCodeAndInternationalMatches();
     
     // Admins get upcoming matches for the next 7 days (rolling window)
     const now = new Date();

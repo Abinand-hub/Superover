@@ -11,7 +11,7 @@ interface MatchSelectionManagerProps {
 }
 
 export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ allMatches, onGoToDrafts, onReloadData }) => {
-  const [filterType, setFilterType] = useState<'ALL' | 'EUROPEAN' | 'INTERNATIONAL'>('ALL');
+  const [filterType, setFilterType] = useState<'ALL' | 'INDIAN_DOMESTIC' | 'GLOBAL_LEAGUES' | 'INTERNATIONAL' | 'EUROPEAN'>('ALL');
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Match Squad Inspector Modal State
@@ -27,16 +27,22 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
     return allMatches
       .filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > now)
       .filter(m => {
+        const s = (m.series || '').toLowerCase();
+        const t1 = (m.team1?.name || '').toLowerCase();
+        const t2 = (m.team2?.name || '').toLowerCase();
+
+        if (filterType === 'INDIAN_DOMESTIC') {
+          return s.includes('dehradun') || s.includes('punjab') || s.includes('delhi') || s.includes('dpl') || s.includes('ranji') || s.includes('domestic');
+        }
+        if (filterType === 'GLOBAL_LEAGUES') {
+          return s.includes('caribbean') || s.includes('cpl') || s.includes('ipl') || s.includes('psl') || s.includes('bbl') || s.includes('league');
+        }
         if (filterType === 'EUROPEAN') {
-          return m.series.toLowerCase().includes('ecs') || 
-                 m.series.toLowerCase().includes('ecl') || 
-                 m.series.toLowerCase().includes('european') ||
-                 m.format === 'T10';
+          return s.includes('ecs') || s.includes('ecl') || s.includes('european') || m.format === 'T10';
         }
         if (filterType === 'INTERNATIONAL') {
-          return !m.series.toLowerCase().includes('ecs') && 
-                 !m.series.toLowerCase().includes('ecl') && 
-                 !m.series.toLowerCase().includes('european');
+          return s.includes('tour') || s.includes('cup') || s.includes('trophy') || s.includes('international') || s.includes('acc') || s.includes('icc') ||
+                 (!s.includes('ecs') && !s.includes('ecl') && !s.includes('dehradun') && !s.includes('punjab') && !s.includes('delhi'));
         }
         return true;
       })
@@ -84,7 +90,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
             <Calendar className="w-6 h-6 text-[#FF8800]" />
             Create Match
           </h2>
-          <p className="text-sm text-slate-400 mt-1">Select an upcoming match from the European or International feed to view players and configure contests.</p>
+          <p className="text-sm text-slate-400 mt-1">Select an upcoming match from FanCode domestic, global leagues, or international feeds to view players and configure contests.</p>
         </div>
 
         <button
@@ -98,38 +104,60 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
         <button
           onClick={() => setFilterType('ALL')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex-shrink-0 ${
             filterType === 'ALL'
               ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
               : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
-          All Feeds ({allMatches.filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > Date.now()).length})
+          🌟 All Feeds ({allMatches.filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > Date.now()).length})
         </button>
         <button
-          onClick={() => setFilterType('EUROPEAN')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-            filterType === 'EUROPEAN'
+          onClick={() => setFilterType('INDIAN_DOMESTIC')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
+            filterType === 'INDIAN_DOMESTIC'
               ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
               : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>European T10 / ECL</span>
+          <Zap className="w-3.5 h-3.5" />
+          <span>🇮🇳 Indian Domestic T20 (Dehradun, Punjab, DPL)</span>
+        </button>
+        <button
+          onClick={() => setFilterType('GLOBAL_LEAGUES')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
+            filterType === 'GLOBAL_LEAGUES'
+              ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
+              : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          <Trophy className="w-3.5 h-3.5" />
+          <span>🌴 CPL & Global Leagues</span>
         </button>
         <button
           onClick={() => setFilterType('INTERNATIONAL')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
             filterType === 'INTERNATIONAL'
               ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
               : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
           }`}
         >
           <Globe className="w-3.5 h-3.5" />
-          <span>International / Bilateral</span>
+          <span>🌍 International / Bilateral</span>
+        </button>
+        <button
+          onClick={() => setFilterType('EUROPEAN')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 flex-shrink-0 ${
+            filterType === 'EUROPEAN'
+              ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30'
+              : 'bg-[#11172D] text-slate-400 hover:text-white border border-slate-800'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>🇪🇺 European T10 / ECL</span>
         </button>
       </div>
 
