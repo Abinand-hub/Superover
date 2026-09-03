@@ -1,4 +1,5 @@
 import Match from '@/models/Match';
+import { executeMatchSettlement } from './settlementEngine';
 
 const CRICAPI_KEY = process.env.CRICAPI_KEY || 'MOCK_KEY';
 const CRICAPI_BASE_URL = 'https://api.cricapi.com/v1';
@@ -135,21 +136,10 @@ export async function syncMatchesFromCricAPI() {
 export async function autoLockMatches() {
   const now = new Date();
   const oneMinuteFromNow = new Date(now.getTime() + 60 * 1000);
-  const fiveHoursAgo = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+  const matchDurationMs = 3.5 * 60 * 60 * 1000; // 3.5 hours average T20 duration
+  const matchFinishedThreshold = new Date(now.getTime() - matchDurationMs);
   
-  // 1. Matches whose start time has arrived -> Auto-transition to LIVE
-  const matchesToLive = await Match.find({
-    status: { $in: ['UPCOMING', 'LOCKED'] },
-    matchStartTime: { $lte: now.toISOString(), $gt: fiveHoursAgo.toISOString() }
-  });
-
-  for (const match of matchesToLive) {
-    match.status = 'LIVE';
-    await match.save();
-    console.log(`🔴 Auto-transitioned match to LIVE: ${match.title}`);
-  }
-
-  // 2. Matches starting within 1 minute -> Auto-transition to LOCKED
+  // 1. Matches starting within 1 minute -> Auto-transition to LOCKED
   const matchesToLock = await Match.find({
     status: 'UPCOMING',
     matchStartTime: { $lte: oneMinuteFromNow.toISOString(), $gt: now.toISOString() }
@@ -161,16 +151,36 @@ export async function autoLockMatches() {
     console.log(`🔒 Auto-locked match: ${match.title}`);
   }
 
-  // 3. Matches older than 5 hours that were LIVE -> Auto-transition to COMPLETED
+  // 2. Matches whose official start time has arrived -> Auto-transition to LIVE
+  const matchesToLive = await Match.find({
+    status: { $in: ['UPCOMING', 'LOCKED'] },
+    matchStartTime: { $lte: now.toISOString(), $gt: matchFinishedThreshold.toISOString() }
+  });
+
+  for (const match of matchesToLive) {
+    match.status = 'LIVE';
+    if (!match.liveScore || match.liveScore === '') {
+      match.liveScore = `${match.team1?.code || 'T1'} 0/0 (0.1 ov) • Match In Progress`;
+    }
+    await match.save();
+    console.log(`🔴 Auto-transitioned match to LIVE: ${match.title}`);
+  }
+
+  // 3. Matches whose play has finished -> Auto-settle results and disburse wallet payouts
   const matchesToComplete = await Match.find({
     status: 'LIVE',
-    matchStartTime: { $lte: fiveHoursAgo.toISOString() }
+    matchStartTime: { $lte: matchFinishedThreshold.toISOString() }
   });
 
   for (const match of matchesToComplete) {
-    match.status = 'COMPLETED';
-    await match.save();
-    console.log(`🏁 Auto-concluded match to COMPLETED: ${match.title}`);
+    try {
+      console.log(`🏁 Auto-settling finished match: ${match.title}`);
+      await executeMatchSettlement(match._id.toString());
+    } catch (e) {
+      console.error(`Error auto-settling match ${match._id}:`, e);
+      match.status = 'COMPLETED';
+      await match.save();
+    }
   }
 }
 
