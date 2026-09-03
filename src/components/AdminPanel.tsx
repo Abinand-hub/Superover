@@ -254,18 +254,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [publishingView, setPublishingView] = useState<'list' | 'config'>('list');
   const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
 
-  // Match Management State
-  const publishedMatches = matches.filter(m => m.status === 'UPCOMING' || m.status === 'LIVE' || m.status === 'LOCKED');
-  const defaultSquadMatchId = publishedMatches[0]?.id || matches[0]?.id || '';
+  // Published Matches (Strictly matches that have been configured and published with contest questions)
+  const publishedMatches = matches.filter(m => 
+    (m.status === 'UPCOMING' || m.status === 'LIVE' || m.status === 'LOCKED' || m.status === 'COMPLETED') &&
+    Array.isArray(m.questions) && m.questions.length > 0
+  );
+  const defaultSquadMatchId = publishedMatches[0]?.id || '';
   const [selectedMatchForSquad, setSelectedMatchForSquad] = useState<string>(defaultSquadMatchId);
   const [selectedTeamForSquad, setSelectedTeamForSquad] = useState<'team1' | 'team2'>('team1');
   const [matchesView, setMatchesView] = useState<'LIFECYCLE' | 'LIVE_DASHBOARD' | 'HISTORY'>('LIFECYCLE');
 
   // Squad Viewer Filter State
-  const [squadMatchFilter, setSquadMatchFilter] = useState<'PUBLISHED' | 'ALL'>(publishedMatches.length > 0 ? 'PUBLISHED' : 'ALL');
   const [squadRoleFilter, setSquadRoleFilter] = useState<string>('ALL');
   const [squadPlayingFilter, setSquadPlayingFilter] = useState<'ALL' | 'PLAYING_XI' | 'BENCH'>('ALL');
   const [squadSearchQuery, setSquadSearchQuery] = useState<string>('');
+
+  const currentMatchForSquad = publishedMatches.find((m) => m.id === selectedMatchForSquad) || publishedMatches[0];
 
   // Add Player Modal State
   const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
@@ -277,12 +281,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newPlayerHighlight, setNewPlayerHighlight] = useState<string>('Avg: 42.5 • SR: 148.0');
   const [newPlayerForm, setNewPlayerForm] = useState<string>('54, 78*, 31, 89, 45');
 
-  // Settlement Form State
-  const [selectedMatchIdForSettlement, setSelectedMatchIdForSettlement] = useState<string>(matches[0]?.id || '');
-  const selectedMatchForSettlement = matches.find((m) => m.id === selectedMatchIdForSettlement) || matches[0];
+  // Settlement Form State (Strictly published/live matches with configured questions)
+  const settlementMatches = matches.filter(m => 
+    (m.status === 'LIVE' || m.status === 'LOCKED' || m.status === 'UPCOMING' || m.status === 'COMPLETED') &&
+    Array.isArray(m.questions) && m.questions.length > 0
+  ).sort((a, b) => {
+    const order: Record<string, number> = { LIVE: 1, LOCKED: 2, UPCOMING: 3, COMPLETED: 4 };
+    return (order[a.status] || 5) - (order[b.status] || 5);
+  });
+
+  const defaultSettlementMatchId = settlementMatches[0]?.id || '';
+  const [selectedMatchIdForSettlement, setSelectedMatchIdForSettlement] = useState<string>(defaultSettlementMatchId);
+  const selectedMatchForSettlement = settlementMatches.find((m) => m.id === selectedMatchIdForSettlement) || settlementMatches[0];
 
   const squadForSettlement = selectedMatchForSettlement 
-    ? [...selectedMatchForSettlement.squadTeam1, ...selectedMatchForSettlement.squadTeam2] 
+    ? [...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])] 
     : [];
 
   const [settlementPicks, setSettlementPicks] = useState<Record<string, { answerId: string; answerText: string; statValue: string }>>({});
@@ -301,10 +314,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [showCreateMatchModal, setShowCreateMatchModal] = useState<boolean>(false);
   const [newMatchTitle, setNewMatchTitle] = useState<string>('Delhi Capitals vs Sunrisers Hyderabad');
   const [newMatchSeries, setNewMatchSeries] = useState<string>('IPL 2026');
-  const [newMatchVenue, setNewMatchVenue] = useState<string>('Arun Jaitley Stadium, Delhi');
-
-  const currentMatchForSquad = matches.find((m) => m.id === selectedMatchForSquad) || matches[0];
-
   // Match Lifecycle Handlers
   const handleStartMatch = (match: CricketMatch) => {
     const matchTime = new Date(match.startTime).getTime();
@@ -830,325 +839,328 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] uppercase border border-[#FF6B00]/30">
-                  Squad & Lineup Intelligence
+                  Published Contest Squads
                 </span>
-                <span className="text-xs text-slate-400">Playing XI vs Bench & Official Toss</span>
+                <span className="text-xs text-slate-400">Playing XI vs Bench Lineups & Toss</span>
               </div>
               <h2 className="text-xl font-black text-white mt-1">Match Squad Viewer</h2>
             </div>
 
-            {/* Quick Match Scope Filter */}
-            <div className="flex items-center gap-1.5 bg-[#0D122B] p-1.5 rounded-xl border border-[#1A223E]">
-              <button
-                onClick={() => {
-                  setSquadMatchFilter('PUBLISHED');
-                  if (publishedMatches.length > 0) setSelectedMatchForSquad(publishedMatches[0].id);
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                  squadMatchFilter === 'PUBLISHED'
-                    ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>🚀 Published Contests</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-950/40 text-[10px]">
-                  {publishedMatches.length}
-                </span>
-              </button>
-              <button
-                onClick={() => setSquadMatchFilter('ALL')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
-                  squadMatchFilter === 'ALL'
-                    ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <span>🌐 All Match Feeds</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-950/40 text-[10px]">
-                  {matches.length}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Match & Team Selector */}
-          <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
-                Select {squadMatchFilter === 'PUBLISHED' ? 'Published Contest' : 'Match Feed'}:
-              </label>
-              <select
-                value={selectedMatchForSquad}
-                onChange={(e) => setSelectedMatchForSquad(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
-              >
-                {(squadMatchFilter === 'PUBLISHED' ? publishedMatches : matches).map((m) => {
-                  const tag = m.status === 'UPCOMING' ? '🟢 [PUBLISHED]' : m.status === 'LIVE' ? '🔴 [LIVE]' : m.status === 'LOCKED' ? '🔒 [LOCKED]' : '📋 [DRAFT]';
-                  return (
-                    <option key={m.id} value={m.id}>
-                      {tag} {m.title} ({m.series})
-                    </option>
-                  );
-                })}
-              </select>
-              {squadMatchFilter === 'PUBLISHED' && publishedMatches.length === 0 && (
-                <p className="text-xs text-amber-400 mt-2">No matches currently published. Switch to "All Match Feeds" or create a contest in Match Publishing.</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
-                Select Team Squad:
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setSelectedTeamForSquad('team1')}
-                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                    selectedTeamForSquad === 'team1'
-                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
-                      : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
-                  }`}
-                >
-                  <img 
-                    src={getTeamLogoUrl(currentMatchForSquad?.team1.code, currentMatchForSquad?.team1.name, currentMatchForSquad?.team1.logoUrl)} 
-                    alt={currentMatchForSquad?.team1.code}
-                    className="w-4 h-4 object-contain rounded"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                  />
-                  <span className="truncate">{currentMatchForSquad?.team1.name || currentMatchForSquad?.team1.code} ({(currentMatchForSquad?.squadTeam1 || []).length})</span>
-                </button>
-                <button
-                  onClick={() => setSelectedTeamForSquad('team2')}
-                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                    selectedTeamForSquad === 'team2'
-                      ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
-                      : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
-                  }`}
-                >
-                  <img 
-                    src={getTeamLogoUrl(currentMatchForSquad?.team2.code, currentMatchForSquad?.team2.name, currentMatchForSquad?.team2.logoUrl)} 
-                    alt={currentMatchForSquad?.team2.code}
-                    className="w-4 h-4 object-contain rounded"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                  />
-                  <span className="truncate">{currentMatchForSquad?.team2.name || currentMatchForSquad?.team2.code} ({(currentMatchForSquad?.squadTeam2 || []).length})</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Published Match Details Card */}
-          {currentMatchForSquad && (
-            <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 p-1 flex items-center justify-center flex-shrink-0">
-                    <img 
-                      src={getTeamLogoUrl(currentMatchForSquad.team1.code, currentMatchForSquad.team1.name, currentMatchForSquad.team1.logoUrl)} 
-                      alt={currentMatchForSquad.team1.code}
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                  </div>
-                  <span className="text-xs font-black text-slate-400">vs</span>
-                  <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 p-1 flex items-center justify-center flex-shrink-0">
-                    <img 
-                      src={getTeamLogoUrl(currentMatchForSquad.team2.code, currentMatchForSquad.team2.name, currentMatchForSquad.team2.logoUrl)} 
-                      alt={currentMatchForSquad.team2.code}
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-[#FFAA00] font-black uppercase tracking-wider">
-                      {currentMatchForSquad.series} • {currentMatchForSquad.format}
-                    </div>
-                    <h3 className="text-base font-black text-white">
-                      {currentMatchForSquad.team1.name} vs {currentMatchForSquad.team2.name}
-                    </h3>
-                  </div>
-                </div>
-
-                {/* Match Status Badge & Action */}
-                <div className="flex items-center gap-2">
-                  {currentMatchForSquad.status === 'UPCOMING' && (
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      PUBLISHED CONTEST (Open for User Entries)
-                    </span>
-                  )}
-                  {currentMatchForSquad.status === 'LIVE' && (
-                    <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-black flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
-                      LIVE IN PLAY
-                    </span>
-                  )}
-                  {currentMatchForSquad.status === 'FETCHED' && (
-                    <button
-                      onClick={() => {
-                        setConfiguringMatchId(currentMatchForSquad.id);
-                        setPublishingView('config');
-                        setAdminTab('publishing');
-                      }}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Configure & Publish Contest</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Coin Toss Banner */}
-              <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-[#080C1D] to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
-                    🪙
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Official Coin Toss</div>
-                    <div className="text-xs font-bold text-white truncate">
-                      {(currentMatchForSquad as any).tossSummary || `${currentMatchForSquad.team1.name} won the toss and elected to BAT first`}
-                    </div>
-                  </div>
-                </div>
-                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
-                  Verified
-                </span>
-              </div>
-
-              {/* 6 Configured Questions (If Published) */}
-              {currentMatchForSquad.questions && currentMatchForSquad.questions.length > 0 && (
-                <div className="space-y-2 pt-1 border-t border-[#1A223E]">
-                  <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider block">
-                    Active Contest Questions ({currentMatchForSquad.questions.length} / 6 Categories)
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {currentMatchForSquad.questions.map((q, idx) => (
-                      <div key={q.id || idx} className="p-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-lg bg-[#FF6B00] text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">
-                          {idx + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[10px] font-bold text-[#FFAA00] truncate">{q.shortTitle || q.title}</div>
-                          <div className="text-xs font-bold text-white truncate">{q.title}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Squad Filters & Player Search */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E]">
-            {/* Playing XI vs Bench Filter */}
-            <div className="flex items-center gap-1 bg-[#080C1D] p-1 rounded-xl border border-[#1A223E]">
-              <button 
-                onClick={() => setSquadPlayingFilter('ALL')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${squadPlayingFilter === 'ALL' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
-              >
-                All Players
-              </button>
-              <button 
-                onClick={() => setSquadPlayingFilter('PLAYING_XI')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1 ${squadPlayingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'text-emerald-400'}`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                Playing XI (11)
-              </button>
-              <button 
-                onClick={() => setSquadPlayingFilter('BENCH')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black ${squadPlayingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
-              >
-                Bench / Reserves
-              </button>
-            </div>
-
-            {/* Role Filter Buttons */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 hide-scrollbar">
-              <button onClick={() => setSquadRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'ALL' ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
-              <button onClick={() => setSquadRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'BAT' ? 'bg-sky-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
-              <button onClick={() => setSquadRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'BOWL' ? 'bg-rose-500 text-white font-black' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
-              <button onClick={() => setSquadRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'AR' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
-              <button onClick={() => setSquadRoleFilter('WK')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'WK' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🧤 WK</button>
-            </div>
-          </div>
-
-          {/* Current Squad Player Cards Grid */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center justify-between">
-              <span>{selectedTeamForSquad === 'team1' ? currentMatchForSquad?.team1.name : currentMatchForSquad?.team2.name} Squad</span>
-              <span className="text-slate-400 font-normal">
-                Showing {((selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2) || []).filter((p, idx) => {
-                  if (squadRoleFilter !== 'ALL' && p.role !== squadRoleFilter) return false;
-                  const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
-                  if (squadPlayingFilter === 'PLAYING_XI' && !isPlaying) return false;
-                  if (squadPlayingFilter === 'BENCH' && isPlaying) return false;
-                  return true;
-                }).length} Players
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded-xl bg-[#0D122B] border border-[#1A223E] text-xs font-black text-[#FF8800]">
+                🚀 {publishedMatches.length} Published {publishedMatches.length === 1 ? 'Contest' : 'Contests'}
               </span>
-            </h3>
+            </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {((selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2) || [])
-                .filter((p, idx) => {
-                  if (squadRoleFilter !== 'ALL' && p.role !== squadRoleFilter) return false;
-                  const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
-                  if (squadPlayingFilter === 'PLAYING_XI' && !isPlaying) return false;
-                  if (squadPlayingFilter === 'BENCH' && isPlaying) return false;
-                  return true;
-                })
-                .map((player, idx) => {
-                  const isPlaying = player.isPlaying !== undefined ? player.isPlaying : idx < 11;
+          {publishedMatches.length === 0 ? (
+            <div className="p-12 text-center bg-[#0D122B] rounded-3xl border border-[#1A223E] space-y-4 shadow-xl">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF6B00]/20 to-[#FF8800]/10 border border-[#FF6B00]/30 flex items-center justify-center mx-auto text-3xl">
+                🏏
+              </div>
+              <h3 className="text-lg font-black text-white">No Published Contests Found</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                The Match Squad Viewer displays squads only for matches with active published contests. Configure and publish a match in the Match Publishing tab to inspect its players.
+              </p>
+              <button
+                onClick={() => setAdminTab('publishing')}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs shadow-md shadow-[#FF6B00]/25 transition-all inline-flex items-center gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Go to Match Publishing</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Match & Team Selector */}
+              <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                    Select Published Contest:
+                  </label>
+                  <select
+                    value={selectedMatchForSquad}
+                    onChange={(e) => setSelectedMatchForSquad(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                  >
+                    {publishedMatches.map((m) => {
+                      const tag = m.status === 'UPCOMING' ? '🟢 [PUBLISHED]' : m.status === 'LIVE' ? '🔴 [LIVE]' : m.status === 'LOCKED' ? '🔒 [LOCKED]' : '🏁 [COMPLETED]';
+                      return (
+                        <option key={m.id} value={m.id}>
+                          {tag} {m.title} ({m.series})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
 
-                  return (
-                    <div
-                      key={player.id || idx}
-                      className="p-3.5 rounded-2xl bg-[#0D122B] border border-[#1A223E] flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition-colors"
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                    Select Team Squad:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setSelectedTeamForSquad('team1')}
+                      className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                        selectedTeamForSquad === 'team1'
+                          ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
+                          : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
+                      }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <img 
+                        src={getTeamLogoUrl(currentMatchForSquad?.team1.code, currentMatchForSquad?.team1.name, currentMatchForSquad?.team1.logoUrl)} 
+                        alt={currentMatchForSquad?.team1.code}
+                        className="w-4 h-4 object-contain rounded"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                      />
+                      <span className="truncate">{currentMatchForSquad?.team1.name || currentMatchForSquad?.team1.code} ({(currentMatchForSquad?.squadTeam1 || []).length})</span>
+                    </button>
+                    <button
+                      onClick={() => setSelectedTeamForSquad('team2')}
+                      className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                        selectedTeamForSquad === 'team2'
+                          ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/25'
+                          : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
+                      }`}
+                    >
+                      <img 
+                        src={getTeamLogoUrl(currentMatchForSquad?.team2.code, currentMatchForSquad?.team2.name, currentMatchForSquad?.team2.logoUrl)} 
+                        alt={currentMatchForSquad?.team2.code}
+                        className="w-4 h-4 object-contain rounded"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                      />
+                      <span className="truncate">{currentMatchForSquad?.team2.name || currentMatchForSquad?.team2.code} ({(currentMatchForSquad?.squadTeam2 || []).length})</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Published Match Details Card */}
+              {currentMatchForSquad && (
+                <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 p-1 flex items-center justify-center flex-shrink-0">
                         <img 
-                          src={player.avatar} 
-                          alt={player.name} 
-                          className="w-12 h-12 rounded-xl object-cover bg-slate-800 border border-slate-700 flex-shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1E293B&color=F59E0B&bold=true`;
-                          }}
+                          src={getTeamLogoUrl(currentMatchForSquad.team1.code, currentMatchForSquad.team1.name, currentMatchForSquad.team1.logoUrl)} 
+                          alt={currentMatchForSquad.team1.code}
+                          className="w-full h-full object-contain rounded-lg"
                         />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs sm:text-sm font-black text-white truncate">{player.name}</span>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0 ${
-                              isPlaying ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
-                            }`}>
-                              {isPlaying ? 'Playing XI' : 'Bench'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
-                              player.role === 'BAT' ? 'bg-sky-500/20 text-sky-300' :
-                              player.role === 'BOWL' ? 'bg-rose-500/20 text-rose-300' :
-                              player.role === 'AR' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
-                            }`}>
-                              {player.role}
-                            </span>
-                            <span className="text-[11px] text-slate-400 truncate border-l border-slate-800 pl-2">
-                              {player.careerStatHighlight || 'Professional Player'}
-                            </span>
-                          </div>
+                      </div>
+                      <span className="text-xs font-black text-slate-400">vs</span>
+                      <div className="w-10 h-10 rounded-2xl bg-slate-800 border border-slate-700 p-1 flex items-center justify-center flex-shrink-0">
+                        <img 
+                          src={getTeamLogoUrl(currentMatchForSquad.team2.code, currentMatchForSquad.team2.name, currentMatchForSquad.team2.logoUrl)} 
+                          alt={currentMatchForSquad.team2.code}
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-[#FFAA00] font-black uppercase tracking-wider">
+                          {currentMatchForSquad.series} • {currentMatchForSquad.format}
+                        </div>
+                        <h3 className="text-base font-black text-white">
+                          {currentMatchForSquad.team1.name} vs {currentMatchForSquad.team2.name}
+                        </h3>
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          Starts: {new Date(currentMatchForSquad.startTime).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })} at {new Date(currentMatchForSquad.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-            </div>
-          </div>
+
+                    {/* Match Status Badge */}
+                    <div className="flex items-center gap-2">
+                      {currentMatchForSquad.status === 'UPCOMING' && (
+                        <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                          PUBLISHED (Open for Predictions)
+                        </span>
+                      )}
+                      {currentMatchForSquad.status === 'LIVE' && (
+                        <span className="px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-black flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+                          LIVE IN PLAY
+                        </span>
+                      )}
+                      {currentMatchForSquad.status === 'LOCKED' && (
+                        <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-black flex items-center gap-1.5">
+                          🔒 CONTEST LOCKED
+                        </span>
+                      )}
+                      {currentMatchForSquad.status === 'COMPLETED' && (
+                        <span className="px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-bold">
+                          🏁 COMPLETED
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Coin Toss Banner (Real Only when within 30 mins or live) */}
+                  {((currentMatchForSquad as any).tossSummary && (currentMatchForSquad.status === 'LIVE' || currentMatchForSquad.status === 'COMPLETED' || new Date(currentMatchForSquad.startTime).getTime() - Date.now() <= 30 * 60 * 1000)) ? (
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-[#080C1D] to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
+                          🪙
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Official Coin Toss</div>
+                          <div className="text-xs font-bold text-white truncate">
+                            {(currentMatchForSquad as any).tossSummary}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                        Verified
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        <span className="text-amber-400">🪙</span>
+                        <span>Coin toss will be conducted 15–30 mins prior to match start</span>
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-500 px-2 py-0.5 rounded bg-slate-800/80">
+                        Pending Toss
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 6 Configured Questions Preview */}
+                  {currentMatchForSquad.questions && currentMatchForSquad.questions.length > 0 && (
+                    <div className="space-y-2 pt-1 border-t border-[#1A223E]">
+                      <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider block">
+                        Active Contest Questions ({currentMatchForSquad.questions.length} / 6 Categories)
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {currentMatchForSquad.questions.map((q, idx) => (
+                          <div key={q.id || idx} className="p-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-lg bg-[#FF6B00] text-slate-950 font-black text-xs flex items-center justify-center flex-shrink-0">
+                              {idx + 1}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-[10px] font-bold text-[#FFAA00] truncate">{q.shortTitle || q.title}</div>
+                              <div className="text-xs font-bold text-white truncate">{q.title}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Squad Filters & Player Search */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E]">
+                {/* Playing XI vs Bench Filter */}
+                <div className="flex items-center gap-1 bg-[#080C1D] p-1 rounded-xl border border-[#1A223E]">
+                  <button 
+                    onClick={() => setSquadPlayingFilter('ALL')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold ${squadPlayingFilter === 'ALL' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+                  >
+                    All Players
+                  </button>
+                  <button 
+                    onClick={() => setSquadPlayingFilter('PLAYING_XI')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1 ${squadPlayingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'text-emerald-400'}`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Playing XI (11)
+                  </button>
+                  <button 
+                    onClick={() => setSquadPlayingFilter('BENCH')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black ${squadPlayingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'text-slate-400'}`}
+                  >
+                    Bench / Reserves
+                  </button>
+                </div>
+
+                {/* Role Filter Buttons */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-0.5 hide-scrollbar">
+                  <button onClick={() => setSquadRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'ALL' ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
+                  <button onClick={() => setSquadRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'BAT' ? 'bg-sky-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
+                  <button onClick={() => setSquadRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'BOWL' ? 'bg-rose-500 text-white font-black' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
+                  <button onClick={() => setSquadRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'AR' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
+                  <button onClick={() => setSquadRoleFilter('WK')} className={`px-2.5 py-1 rounded-lg text-xs font-bold ${squadRoleFilter === 'WK' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-400'}`}>🧤 WK</button>
+                </div>
+              </div>
+
+              {/* Current Squad Player Cards Grid */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                  <span>{selectedTeamForSquad === 'team1' ? currentMatchForSquad?.team1.name : currentMatchForSquad?.team2.name} Squad</span>
+                  <span className="text-slate-400 font-normal">
+                    Showing {((selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2) || []).filter((p, idx) => {
+                      if (squadRoleFilter !== 'ALL' && p.role !== squadRoleFilter) return false;
+                      const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+                      if (squadPlayingFilter === 'PLAYING_XI' && !isPlaying) return false;
+                      if (squadPlayingFilter === 'BENCH' && isPlaying) return false;
+                      return true;
+                    }).length} Players
+                  </span>
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {((selectedTeamForSquad === 'team1' ? currentMatchForSquad?.squadTeam1 : currentMatchForSquad?.squadTeam2) || [])
+                    .filter((p, idx) => {
+                      if (squadRoleFilter !== 'ALL' && p.role !== squadRoleFilter) return false;
+                      const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+                      if (squadPlayingFilter === 'PLAYING_XI' && !isPlaying) return false;
+                      if (squadPlayingFilter === 'BENCH' && isPlaying) return false;
+                      return true;
+                    })
+                    .map((player, idx) => {
+                      const isPlaying = player.isPlaying !== undefined ? player.isPlaying : idx < 11;
+
+                      return (
+                        <div
+                          key={player.id || idx}
+                          className="p-3.5 rounded-2xl bg-[#0D122B] border border-[#1A223E] flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img 
+                              src={player.avatar} 
+                              alt={player.name} 
+                              className="w-12 h-12 rounded-xl object-cover bg-slate-800 border border-slate-700 flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=1E293B&color=F59E0B&bold=true`;
+                              }}
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-black text-white truncate">{player.name}</span>
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0 ${
+                                  isPlaying ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                                }`}>
+                                  {isPlaying ? 'Playing XI' : 'Bench'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
+                                  player.role === 'BAT' ? 'bg-sky-500/20 text-sky-300' :
+                                  player.role === 'BOWL' ? 'bg-rose-500/20 text-rose-300' :
+                                  player.role === 'AR' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
+                                }`}>
+                                  {player.role}
+                                </span>
+                                <span className="text-[11px] text-slate-400 truncate border-l border-slate-800 pl-2">
+                                  {player.careerStatHighlight || 'Professional Player'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* TAB CONTENT 4: RESULT SETTLEMENT */}
       {adminTab === 'settlement' && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
             <h2 className="text-lg font-black text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-[#FFAA00]" />
@@ -1166,153 +1178,223 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           )}
 
-          {/* Select Match */}
-          <div className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-              Select Match to End & Settle:
-            </label>
-            <select
-              value={selectedMatchIdForSettlement}
-              onChange={(e) => setSelectedMatchIdForSettlement(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-bold text-xs focus:outline-none focus:border-purple-400"
-              id="select-match-to-settle"
-            >
-              {matches.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.title} ({m.series}) - Status: {m.status}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Questions Winners Form */}
-          <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <h3 className="text-sm font-extrabold text-white">Enter Official Question Answers</h3>
+          {settlementMatches.length === 0 ? (
+            <div className="p-12 text-center bg-[#0D122B] rounded-3xl border border-[#1A223E] space-y-4 shadow-xl">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF6B00]/20 to-[#FF8800]/10 border border-[#FF6B00]/30 flex items-center justify-center mx-auto text-3xl">
+                ⚡
+              </div>
+              <h3 className="text-lg font-black text-white">No Published Contests Ready for Settlement</h3>
+              <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                Settlement and winnings distribution only applies to published matches with configured prediction questions.
+              </p>
               <button
-                onClick={async () => {
-                  if (!selectedMatchForSettlement) return;
-                  try {
-                    const res = await api.autoDetectMatchResults(selectedMatchForSettlement.id);
-                    if (res && res.answers) {
-                      const newPicks: any = {};
-                      Object.keys(res.answers).forEach(qId => {
-                        newPicks[qId] = {
-                          answerId: res.answers[qId] || '',
-                          answerText: res.answers[qId] || '',
-                          statValue: ''
-                        };
-                      });
-                      setSettlementPicks(newPicks);
-                      setSettlementSummaryNote(res.summaryNote || 'Auto-fetched successfully.');
-                    }
-                  } catch (error) {
-                    console.error('Failed to auto-detect results', error);
-                    alert('Failed to auto-detect results. Ensure you are an Admin and CricAPI is reachable.');
-                  }
-                }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:brightness-110 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/20"
-                id="btn-auto-detect-results"
+                onClick={() => setAdminTab('publishing')}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs shadow-md shadow-[#FF6B00]/25 transition-all inline-flex items-center gap-2"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>✨ Auto-Detect Results via API</span>
+                <Calendar className="w-4 h-4" />
+                <span>Create & Publish a Contest</span>
               </button>
             </div>
+          ) : (
+            <>
+              {/* Select Match */}
+              <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Select Published Match to End & Settle:
+                </label>
+                <select
+                  value={selectedMatchIdForSettlement}
+                  onChange={(e) => setSelectedMatchIdForSettlement(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-bold text-xs focus:outline-none focus:border-[#FF6B00]"
+                  id="select-match-to-settle"
+                >
+                  {settlementMatches.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      [{m.status}] {m.title} ({m.series}) — {m.questions?.length || 0} Categories Configured
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {selectedMatchForSettlement?.questions?.map((q) => {
-                const currentPick = settlementPicks[q.id] || { answerId: '', answerText: '', statValue: '' };
-
-                return (
-                  <div key={q.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#FFAA00]">
-                        {q.number}. {q.title} ({q.shortTitle})
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 block mb-1">Official Winner Answer/Player ID:</label>
-                      {q.type === 'PLAYER' ? (
-                        <select
-                          value={currentPick.answerId}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const combinedSquad = [...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])];
-                            const player = combinedSquad.find(p => p.id === val);
-                            setSettlementPicks((prev) => ({
-                              ...prev,
-                              [q.id]: { ...currentPick, answerId: val, answerText: player ? player.name : val },
-                            }));
-                          }}
-                          className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
-                        >
-                          <option value="">Select a player...</option>
-                          {[...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])].map((p: any) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} ({p.team})
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          type="text"
-                          value={currentPick.answerId}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setSettlementPicks((prev) => ({
-                              ...prev,
-                              [q.id]: { ...currentPick, answerId: val, answerText: val },
-                            }));
-                          }}
-                          placeholder="e.g. p_vkohli or Yes"
-                          className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 block mb-1">Official Stat Value / Figure:</label>
-                      <input
-                        type="text"
-                        value={currentPick.statValue}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setSettlementPicks((prev) => ({
-                            ...prev,
-                            [q.id]: { ...currentPick, statValue: val },
-                          }));
-                        }}
-                        placeholder="e.g. 86* off 46 balls or 3/18 (4 ov)"
-                        className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
-                      />
-                    </div>
+              {/* Questions Winners Form */}
+              <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-black text-white">Enter Official Question Answers</h3>
+                    <p className="text-xs text-slate-400">Match: {selectedMatchForSettlement?.title}</p>
                   </div>
-                );
-              })}
-            </div>
+                  <button
+                    onClick={async () => {
+                      if (!selectedMatchForSettlement) return;
+                      try {
+                        const res = await api.autoDetectMatchResults(selectedMatchForSettlement.id);
+                        if (res && res.answers) {
+                          const newPicks: any = {};
+                          Object.keys(res.answers).forEach(qId => {
+                            newPicks[qId] = {
+                              answerId: res.answers[qId] || '',
+                              answerText: res.answers[qId] || '',
+                              statValue: ''
+                            };
+                          });
+                          setSettlementPicks(newPicks);
+                          setSettlementSummaryNote(res.summaryNote || 'Auto-fetched successfully.');
+                        }
+                      } catch (error) {
+                        console.error('Failed to auto-detect results', error);
+                        alert('Failed to auto-detect results. Ensure you are an Admin and CricAPI is reachable.');
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25 transition-all"
+                    id="btn-auto-detect-results"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>✨ Auto-Detect Results via API</span>
+                  </button>
+                </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-400 block mb-1">Official Summary Note / Match Commentary:</label>
-              <textarea
-                value={settlementSummaryNote}
-                onChange={(e) => setSettlementSummaryNote(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none"
-                rows={2}
-              />
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedMatchForSettlement?.questions?.map((q) => {
+                    const currentPick = settlementPicks[q.id] || { answerId: '', answerText: '', statValue: '' };
 
-            <button
-              onClick={handleSettleSubmit}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:brightness-110 active:scale-[0.99] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all"
-              id="btn-confirm-settlement"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Settle Match & Disburse Cash Payouts</span>
-            </button>
-          </div>
+                    return (
+                      <div key={q.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#FFAA00]">
+                            {q.number}. {q.title} ({q.shortTitle})
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-1">Official Winner Answer/Player ID:</label>
+                          {q.type === 'PLAYER' ? (
+                            <select
+                              value={currentPick.answerId}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const combinedSquad = [...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])];
+                                const player = combinedSquad.find(p => p.id === val);
+                                setSettlementPicks((prev) => ({
+                                  ...prev,
+                                  [q.id]: { ...currentPick, answerId: val, answerText: player ? player.name : val },
+                                }));
+                              }}
+                              className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                            >
+                              <option value="">Select a player...</option>
+                              {squadForSettlement.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} ({p.team}) - {p.role}
+                                </option>
+                              ))}
+                            </select>
+                          ) : q.type === 'YES_NO' ? (
+                            <div className="flex gap-2">
+                              {['Yes', 'No'].map((opt) => (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => {
+                                    setSettlementPicks((prev) => ({
+                                      ...prev,
+                                      [q.id]: { ...currentPick, answerId: opt, answerText: opt },
+                                    }));
+                                  }}
+                                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                    currentPick.answerId === opt
+                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
+                                      : 'bg-[#0D122B] text-slate-400 border-[#1A223E]'
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          ) : q.type === 'TEAM' ? (
+                            <div className="flex gap-2">
+                              {[
+                                { id: selectedMatchForSettlement.team1.code, name: selectedMatchForSettlement.team1.name },
+                                { id: selectedMatchForSettlement.team2.code, name: selectedMatchForSettlement.team2.name }
+                              ].map((t) => (
+                                <button
+                                  key={t.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSettlementPicks((prev) => ({
+                                      ...prev,
+                                      [q.id]: { ...currentPick, answerId: t.id, answerText: t.name },
+                                    }));
+                                  }}
+                                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors truncate px-2 ${
+                                    currentPick.answerId === t.id
+                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
+                                      : 'bg-[#0D122B] text-slate-400 border-[#1A223E]'
+                                  }`}
+                                >
+                                  {t.name}
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <input
+                              type="text"
+                              value={currentPick.answerText}
+                              onChange={(e) => {
+                                setSettlementPicks((prev) => ({
+                                  ...prev,
+                                  [q.id]: { ...currentPick, answerId: e.target.value, answerText: e.target.value },
+                                }));
+                              }}
+                              placeholder="e.g., Over 185.5 or Team Name"
+                              className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                            />
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-1">Official Stat Value / Score / Notes:</label>
+                          <input
+                            type="text"
+                            value={currentPick.statValue}
+                            onChange={(e) => {
+                              setSettlementPicks((prev) => ({
+                                ...prev,
+                                [q.id]: { ...currentPick, statValue: e.target.value },
+                              }));
+                            }}
+                            placeholder="e.g. 78 runs (45 balls) or 4/22"
+                            className="w-full px-3 py-1 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-xs focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-400 block mb-1">Official Summary Note / Match Commentary:</label>
+                  <textarea
+                    value={settlementSummaryNote}
+                    onChange={(e) => setSettlementSummaryNote(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none"
+                    rows={2}
+                  />
+                </div>
+
+                <button
+                  onClick={handleSettleSubmit}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B00]/30 transition-all"
+                  id="btn-confirm-settlement"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Settle Match & Disburse Cash Payouts</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
+
       {/* TAB CONTENT: JACKPOT APPROVALS */}
       {adminTab === 'jackpots' && (
         <div className="space-y-4">

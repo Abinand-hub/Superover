@@ -355,22 +355,34 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
             </div>
 
             {/* Coin Toss Banner */}
-            <div className="p-3 mx-4 mt-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm flex-shrink-0">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
-                  🪙
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Official Coin Toss</div>
-                  <div className="text-xs font-bold text-white truncate">
-                    {(inspectingMatch as any).tossSummary || `${inspectingMatch.team1.name} won the toss and elected to BAT first`}
+            {((inspectingMatch as any).tossSummary && (inspectingMatch.status === 'LIVE' || inspectingMatch.status === 'COMPLETED' || new Date(inspectingMatch.startTime).getTime() - Date.now() <= 30 * 60 * 1000)) ? (
+              <div className="p-3 mx-4 mt-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm flex-shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
+                    🪙
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Official Coin Toss</div>
+                    <div className="text-xs font-bold text-white truncate">
+                      {(inspectingMatch as any).tossSummary}
+                    </div>
                   </div>
                 </div>
+                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                  Verified
+                </span>
               </div>
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
-                Verified
-              </span>
-            </div>
+            ) : (
+              <div className="p-2.5 mx-4 mt-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <span className="text-amber-400">🪙</span>
+                  <span>Coin toss will be conducted 15–30 mins prior to match start</span>
+                </div>
+                <span className="text-[9px] font-bold text-slate-500 px-2 py-0.5 rounded bg-slate-800/80">
+                  Pending Toss
+                </span>
+              </div>
+            )}
 
             {/* Team Selection Tabs */}
             <div className="p-4 pb-2 flex-shrink-0 space-y-3">

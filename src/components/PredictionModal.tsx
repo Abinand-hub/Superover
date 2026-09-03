@@ -292,23 +292,35 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     <div className="flex-1 overflow-y-auto relative p-4 sm:p-6 space-y-4">
       {renderPlayerPickerPopup()}
       
-      {/* Official Toss Result Banner */}
-      <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-indigo-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
-            🪙
-          </div>
-          <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Coin Toss Update</div>
-            <div className="text-xs font-bold text-white truncate">
-              {(match as any).tossSummary || `${match.team1.name || match.team1.code} won the toss and elected to BAT first`}
+      {/* Official Toss Result Banner or Scheduled Toss Notice */}
+      {((match as any).tossSummary && (match.status === 'LIVE' || match.status === 'COMPLETED' || new Date(match.startTime).getTime() - Date.now() <= 30 * 60 * 1000)) ? (
+        <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-orange-500/15 border border-amber-500/30 flex items-center justify-between gap-2 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-xs flex-shrink-0">
+              🪙
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Official Coin Toss</div>
+              <div className="text-xs font-bold text-white truncate">
+                {(match as any).tossSummary}
+              </div>
             </div>
           </div>
+          <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+            Verified
+          </span>
         </div>
-        <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
-          Verified
-        </span>
-      </div>
+      ) : (
+        <div className="p-2.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span className="text-amber-400">🪙</span>
+            <span>Toss will be conducted 15–30 mins prior to match start</span>
+          </div>
+          <span className="text-[9px] font-bold text-slate-500 px-2 py-0.5 rounded bg-slate-800/80">
+            Pending Toss
+          </span>
+        </div>
+      )}
       
       {match.status === 'LIVE' && match.liveScore && (
         <div className="mb-4 p-3 rounded-xl bg-[#080C1D] border border-[#FF6B00]/40 flex flex-col items-center justify-center text-center shadow-[0_0_15px_rgba(255,107,0,0.1)]">

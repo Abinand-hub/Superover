@@ -234,8 +234,8 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                     </div>
                   </div>
 
-                  {/* Toss Banner if available */}
-                  {(match as any).tossSummary && (
+                  {/* Toss Banner if available and conducted */}
+                  {(match as any).tossSummary && (match.status === 'LIVE' || match.status === 'COMPLETED' || new Date(match.startTime).getTime() - Date.now() <= 30 * 60 * 1000) && (
                     <div className="mt-3 py-1.5 px-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center gap-1.5 text-[10px] text-amber-300 font-medium">
                       <span>🪙</span>
                       <span className="truncate">{(match as any).tossSummary}</span>
