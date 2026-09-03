@@ -498,6 +498,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <div className="flex items-center gap-2">
           <button
+            onClick={async () => {
+              if (window.confirm("⚠️ Reset All Contests & Start Fresh?\n\nThis will clear old published/locked test matches, remove test slips, and regenerate clean upcoming match feeds so you can test one match from scratch.")) {
+                try {
+                  const res = await fetch('/api/admin/reset-matches', { method: 'POST' });
+                  const data = await res.json();
+                  alert(data.message || 'Contests reset successfully!');
+                  window.location.reload();
+                } catch (e) {
+                  console.error(e);
+                  alert('Failed to reset matches.');
+                }
+              }
+            }}
+            className="px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-black transition-all flex items-center gap-1.5 shadow-sm"
+            id="btn-admin-reset-all"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+            <span>Reset All (Start Fresh)</span>
+          </button>
+          <button
             onClick={onCloseAdmin}
             className="px-4 py-2 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 text-xs font-bold transition-colors border border-[#1A223E]"
             id="btn-admin-back-to-fan"
