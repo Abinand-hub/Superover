@@ -43,17 +43,23 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   const [playerSearch, setPlayerSearch] = useState<string>('');
   const [teamFilter, setTeamFilter] = useState<'ALL' | 'TEAM1' | 'TEAM2'>('ALL');
   const [roleFilter, setRoleFilter] = useState<'ALL' | PlayerRole>('ALL');
+  const [playingFilter, setPlayingFilter] = useState<'ALL' | 'PLAYING_XI' | 'BENCH'>('ALL');
 
-  const allSquadPlayers = [...match.squadTeam1, ...match.squadTeam2];
+  const allSquadPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
   const playerMap = new Map(allSquadPlayers.map((p) => [p.id, p]));
 
-  const filteredPlayers = allSquadPlayers.filter((p) => {
-    if (teamFilter === 'TEAM1' && p.team !== match.team1.code) return false;
-    if (teamFilter === 'TEAM2' && p.team !== match.team2.code) return false;
+  const filteredPlayers = allSquadPlayers.filter((p, idx) => {
+    if (teamFilter === 'TEAM1' && p.team !== (match.team1?.code || '')) return false;
+    if (teamFilter === 'TEAM2' && p.team !== (match.team2?.code || '')) return false;
     if (roleFilter !== 'ALL' && p.role !== roleFilter) return false;
+    const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+    if (playingFilter === 'PLAYING_XI' && !isPlaying) return false;
+    if (playingFilter === 'BENCH' && isPlaying) return false;
     if (playerSearch.trim()) {
       const q = playerSearch.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.shortName.toLowerCase().includes(q) || p.team.toLowerCase().includes(q);
+      return (p.name || '').toLowerCase().includes(q) || 
+             (p.shortName || '').toLowerCase().includes(q) || 
+             (p.team || '').toLowerCase().includes(q);
     }
     return true;
   });
@@ -227,8 +233,8 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
           {/* Role & Team Filters */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar text-[11px]">
             <button onClick={() => setTeamFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Teams</button>
-            <button onClick={() => setTeamFilter('TEAM1')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1.shortName || match.team1.code}</button>
-            <button onClick={() => setTeamFilter('TEAM2')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2.shortName || match.team2.code}</button>
+            <button onClick={() => setTeamFilter('TEAM1')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'}</button>
+            <button onClick={() => setTeamFilter('TEAM2')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'}</button>
             <div className="w-px h-3.5 bg-slate-700 mx-0.5"></div>
             <button onClick={() => setRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All</button>
             <button onClick={() => setRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BAT' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
@@ -244,8 +250,8 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
             return (
               <div
-                key={p.id}
-                onClick={() => handleAnswer(q!.id, p.id)}
+                key={p.id || `p_${idx}`}
+                onClick={() => handleAnswer(q?.id || activePlayerQuestionId, p.id)}
                 className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/80 hover:bg-slate-800 hover:border-amber-500/50 cursor-pointer transition-all shadow-sm"
               >
                 <img 
