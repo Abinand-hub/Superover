@@ -40,11 +40,14 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
           return s.includes('caribbean') || s.includes('cpl') || s.includes('ipl') || s.includes('psl') || s.includes('bbl') || s.includes('league');
         }
         if (filterType === 'EUROPEAN') {
-          return s.includes('ecs') || s.includes('ecl') || s.includes('european') || m.format === 'T10';
+          return s.includes('ecs') || s.includes('ecl') || s.includes('european') || s.includes('vitality') || s.includes('blast') || 
+                 s.includes('surrey') || s.includes('somerset') || s.includes('lancashire') || s.includes('yorkshire') || 
+                 s.includes('netherlands') || s.includes('spain') || s.includes('italy') || s.includes('forfarshire') || s.includes('dreux') ||
+                 m.format === 'T10' || (m.format === 'T20' && (t1.includes('surrey') || t1.includes('lancashire') || t1.includes('netherlands') || t1.includes('spain')));
         }
         if (filterType === 'INTERNATIONAL') {
           return s.includes('tour') || s.includes('cup') || s.includes('trophy') || s.includes('international') || s.includes('acc') || s.includes('icc') ||
-                 (!s.includes('ecs') && !s.includes('ecl') && !s.includes('dehradun') && !s.includes('punjab') && !s.includes('delhi'));
+                 (!s.includes('ecs') && !s.includes('ecl') && !s.includes('vitality') && !s.includes('european') && !s.includes('dehradun') && !s.includes('punjab') && !s.includes('delhi'));
         }
         return true;
       })
@@ -159,7 +162,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
           }`}
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>🇪🇺 European T10 / ECL</span>
+          <span>🇪🇺 European T20 / ECL / Vitality Blast</span>
         </button>
       </div>
 

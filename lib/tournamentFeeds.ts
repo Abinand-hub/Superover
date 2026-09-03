@@ -565,11 +565,159 @@ export const FANCODE_ALL_TEAMS: Record<string, TeamPreset> = {
       { name: 'Fergus Duncan', role: 'BOWL', careerStatHighlight: 'Best: 3/16' },
       { name: 'Lyle Robertson', role: 'AR', careerStatHighlight: 'SR: 160.0' },
     ]
+  },
+
+  // --- EUROPEAN T20 LEAGUES (Vitality Blast T20 & Continental T20 Cup) ---
+  SURREY: {
+    name: 'Surrey',
+    code: 'SUR',
+    logoUrl: 'https://flagcdn.com/w160/gb-eng.png',
+    country: 'United Kingdom',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Will Jacks', role: 'BAT', careerStatHighlight: 'England & IPL Star • 25-ball Century' },
+      { name: 'Sam Curran', role: 'AR', careerStatHighlight: 'T20 World Cup Player of Tournament' },
+      { name: 'Chris Jordan', role: 'BOWL', careerStatHighlight: 'Death Overs Master • 100+ T20 Wkts' },
+      { name: 'Ollie Pope', role: 'BAT', careerStatHighlight: 'England Test Vice-Captain' },
+      { name: 'Jamie Smith', role: 'WK', careerStatHighlight: 'Explosive Keeper Batter • SR: 175.0' },
+      { name: 'Laurie Evans', role: 'BAT', careerStatHighlight: 'T20 Franchise Legend • Avg: 38.0' },
+      { name: 'Sean Abbott', role: 'AR', careerStatHighlight: 'Australia All-Rounder • SR: 165.0' },
+      { name: 'Tom Curran', role: 'AR', careerStatHighlight: 'Back-of-hand Slower Ball Specialist' },
+      { name: 'Reece Topley', role: 'BOWL', careerStatHighlight: 'Left-Arm Fast • 6/24 vs India' },
+      { name: 'Dan Lawrence', role: 'BAT', careerStatHighlight: 'Middle Order Stroke Maker' },
+      { name: 'Gus Atkinson', role: 'BOWL', careerStatHighlight: 'Express Pace 148km/h' },
+    ]
+  },
+  SOMERSET: {
+    name: 'Somerset',
+    code: 'SOM',
+    logoUrl: 'https://flagcdn.com/w160/gb-eng.png',
+    country: 'United Kingdom',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Tom Banton', role: 'WK', careerStatHighlight: '360 Degree Batsman • SR: 185.0' },
+      { name: 'Will Smeed', role: 'BAT', careerStatHighlight: 'Hundred Centurion • Power Opener' },
+      { name: 'Tom Kohler-Cadmore', role: 'BAT', careerStatHighlight: 'PSL & IPL Star • SR: 170.0' },
+      { name: 'Lewis Gregory', role: 'AR', careerStatHighlight: 'Somerset Captain • T20 Trophy Winner' },
+      { name: 'Tom Abell', role: 'BAT', careerStatHighlight: 'England T20 Batter' },
+      { name: 'Craig Overton', role: 'AR', careerStatHighlight: 'England Pacer • Tall Bounce' },
+      { name: 'Roelof van der Merwe', role: 'AR', careerStatHighlight: 'The Bulldog • Iconic Spin All-Rounder' },
+      { name: 'Matt Henry', role: 'BOWL', careerStatHighlight: 'New Zealand Pace Legend' },
+      { name: 'Riley Meredith', role: 'BOWL', careerStatHighlight: 'Australia 150km/h Fast' },
+      { name: 'Jack Leach', role: 'BOWL', careerStatHighlight: 'Left-Arm Orthodox Spin' },
+      { name: 'Ben Green', role: 'BOWL', careerStatHighlight: 'Vitality Blast Leading Wicket Taker' },
+    ]
+  },
+  LANCASHIRE: {
+    name: 'Lancashire Lightning',
+    code: 'LAN',
+    logoUrl: 'https://flagcdn.com/w160/gb-eng.png',
+    country: 'United Kingdom',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Phil Salt', role: 'WK', careerStatHighlight: 'World No.2 T20I Batter • 2x Consecutive 100s' },
+      { name: 'Jos Buttler', role: 'WK', careerStatHighlight: 'England Captain • World T20 Legend' },
+      { name: 'Liam Livingstone', role: 'AR', careerStatHighlight: '122m Six Record • Spin Both Ways' },
+      { name: 'Keaton Jennings', role: 'BAT', careerStatHighlight: 'Lancashire T20 Captain' },
+      { name: 'Luke Wells', role: 'AR', careerStatHighlight: 'Leg Spin & Power Opener' },
+      { name: 'Tom Hartley', role: 'BOWL', careerStatHighlight: 'England Left-Arm Spinner' },
+      { name: 'Luke Wood', role: 'BOWL', careerStatHighlight: 'Left-Arm Fast • IPL Pacer' },
+      { name: 'Saqib Mahmood', role: 'BOWL', careerStatHighlight: 'Reverse Swing Specialist' },
+      { name: 'George Balderson', role: 'AR', careerStatHighlight: 'Medium Pacer & Anchor' },
+      { name: 'Chris Green', role: 'AR', careerStatHighlight: 'T20 Franchise Regular' },
+      { name: 'Mitchell Stanley', role: 'BOWL', careerStatHighlight: 'Express Pace' },
+    ]
+  },
+  YORKSHIRE: {
+    name: 'Yorkshire Vikings',
+    code: 'YOR',
+    logoUrl: 'https://flagcdn.com/w160/gb-eng.png',
+    country: 'United Kingdom',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Harry Brook', role: 'BAT', careerStatHighlight: 'England Superstar • SR: 190.0' },
+      { name: 'Jonny Bairstow', role: 'WK', careerStatHighlight: 'World Cup Winner • Premier Striker' },
+      { name: 'Dawid Malan', role: 'BAT', careerStatHighlight: 'Former World No.1 T20I Batter' },
+      { name: 'Adam Lyth', role: 'BAT', careerStatHighlight: 'Vitality Blast Record 161 Runs' },
+      { name: 'Shan Masood', role: 'BAT', careerStatHighlight: 'Pakistan Test Captain' },
+      { name: 'Jordan Thompson', role: 'AR', careerStatHighlight: 'Death Overs All-Rounder' },
+      { name: 'Dom Bess', role: 'AR', careerStatHighlight: 'Off-Spin All-Rounder' },
+      { name: 'Matthew Fisher', role: 'BOWL', careerStatHighlight: 'England Pacer' },
+      { name: 'Ben Coad', role: 'BOWL', careerStatHighlight: 'Swing Bowling Maestro' },
+      { name: 'Dan Moriarty', role: 'BOWL', careerStatHighlight: 'Left-Arm Spin' },
+      { name: 'Jafer Chohan', role: 'BOWL', careerStatHighlight: 'Leg Spin Mystery' },
+    ]
+  },
+  NETHERLANDS_XI: {
+    name: 'Netherlands XI',
+    code: 'NED',
+    logoUrl: 'https://flagcdn.com/w160/nl.png',
+    country: 'Netherlands',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Scott Edwards', role: 'WK', careerStatHighlight: 'Dutch Captain • Sweep Shot Master' },
+      { name: 'Bas de Leede', role: 'AR', careerStatHighlight: 'Durham All-Rounder • World Cup Legend' },
+      { name: 'Max O\'Dowd', role: 'BAT', careerStatHighlight: 'Leading Dutch T20I Run Scorer' },
+      { name: 'Vikramjit Singh', role: 'BAT', careerStatHighlight: 'Power Opener • SR: 165.0' },
+      { name: 'Colin Ackermann', role: 'AR', careerStatHighlight: 'T20 Record: 7/18 Wickets' },
+      { name: 'Logan van Beek', role: 'AR', careerStatHighlight: 'Super Over 30 Runs Legend' },
+      { name: 'Paul van Meekeren', role: 'BOWL', careerStatHighlight: '145km/h Express Pace' },
+      { name: 'Aryan Dutt', role: 'BOWL', careerStatHighlight: 'New Ball Off-Spinner • Econ: 5.6' },
+      { name: 'Teja Nidamanuru', role: 'BAT', careerStatHighlight: 'Clutch Middle Order Hitter' },
+      { name: 'Vivian Kingma', role: 'BOWL', careerStatHighlight: 'Opening Swing Specialist' },
+      { name: 'Shariz Ahmad', role: 'BOWL', careerStatHighlight: 'Leg Spin Talent' },
+    ]
+  },
+  ITALY_XI: {
+    name: 'Italy XI',
+    code: 'ITA',
+    logoUrl: 'https://flagcdn.com/w160/it.png',
+    country: 'Italy',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Joe Burns', role: 'BAT', careerStatHighlight: 'Former Australian Test Centurion' },
+      { name: 'Harry Manenti', role: 'AR', careerStatHighlight: 'BBL & Italian All-Rounder • SR: 190.0' },
+      { name: 'Gareth Berg', role: 'AR', careerStatHighlight: 'Italian Legend & Head Coach' },
+      { name: 'Marcus Campopiano', role: 'BAT', careerStatHighlight: 'Avg: 36.0 • Top Order Anchor' },
+      { name: 'Anthony Mosca', role: 'BAT', careerStatHighlight: 'Power Opener • SR: 178.0' },
+      { name: 'Grant Stewart', role: 'AR', careerStatHighlight: 'Sussex / Kent County Star' },
+      { name: 'Gian-Piero Meade', role: 'WK', careerStatHighlight: 'Reliable Keeper Batsman' },
+      { name: 'Stefano di Bartolomeo', role: 'BOWL', careerStatHighlight: 'Best: 4/12' },
+      { name: 'Crishan Kalugamage', role: 'BOWL', careerStatHighlight: 'Econ: 6.8' },
+      { name: 'Jaspreet Singh', role: 'BOWL', careerStatHighlight: 'Italian Pacer' },
+      { name: 'Damith Kosala', role: 'BOWL', careerStatHighlight: 'Econ: 7.0' },
+    ]
+  },
+  SPAIN_XI: {
+    name: 'Spain XI',
+    code: 'ESP',
+    logoUrl: 'https://flagcdn.com/w160/es.png',
+    country: 'Spain',
+    category: 'EUROPEAN',
+    players: [
+      { name: 'Christian Munoz-Mills', role: 'BAT', careerStatHighlight: 'Spanish Captain' },
+      { name: 'Awais Ahmed', role: 'WK', careerStatHighlight: 'ECS Record 6s Hitter' },
+      { name: 'Yasir Ali', role: 'AR', careerStatHighlight: 'Avg: 48.0 • 20 Wkts' },
+      { name: 'Hamza Dar', role: 'BAT', careerStatHighlight: 'SR: 185.0' },
+      { name: 'Daniel Doyle-Calle', role: 'BAT', careerStatHighlight: 'Avg: 38.0' },
+      { name: 'Ravi Panchal', role: 'AR', careerStatHighlight: 'Econ: 7.0 • 15 Wkts' },
+      { name: 'Muhammad Ihsan', role: 'BAT', careerStatHighlight: 'Power Batsman' },
+      { name: 'Atif Mehmood', role: 'BOWL', careerStatHighlight: 'Best: 4/6' },
+      { name: 'Charlie Rumistrzewicz', role: 'BOWL', careerStatHighlight: 'Young Spin Talent' },
+      { name: 'Lorne Burns', role: 'BOWL', careerStatHighlight: 'Econ: 6.9' },
+      { name: 'Muhammad Atif', role: 'BOWL', careerStatHighlight: 'Best: 3/10' },
+    ]
   }
 };
 
 // All FanCode Fixtures scheduled across the upcoming 2 days (48 hours window)
 export const FANCODE_UPCOMING_MATCHUPS = [
+  // --- European T20 Leagues (Vitality Blast T20 & European T20 Continental Cup) ---
+  { t1: 'SURREY', t2: 'SOMERSET', series: 'Vitality Blast T20 2026', format: 'T20', hoursOffset: 5 },
+  { t1: 'LANCASHIRE', t2: 'YORKSHIRE', series: 'Vitality Blast T20 2026', format: 'T20', hoursOffset: 16 },
+  { t1: 'NETHERLANDS_XI', t2: 'ITALY_XI', series: 'European T20 Continental Cup 2026', format: 'T20', hoursOffset: 24 },
+  { t1: 'SPAIN_XI', t2: 'NETHERLANDS_XI', series: 'European T20 Continental Cup 2026', format: 'T20', hoursOffset: 36 },
+
   // --- Indian Domestic T20 (Dehradun T20, Sher-E-Punjab, Delhi Premier League) ---
   { t1: 'DOIWALA_KINGS', t2: 'VIKASNAGAR_DHAMAKA', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 3 },
   { t1: 'MUSSOORIE_THUNDER', t2: 'SELAQUI_STRIKERS', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 6 },
