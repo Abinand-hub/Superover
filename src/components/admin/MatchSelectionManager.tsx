@@ -21,11 +21,13 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
   const [squadPlayingFilter, setSquadPlayingFilter] = useState<'ALL' | 'PLAYING_XI' | 'BENCH'>('ALL');
   const [squadSearch, setSquadSearch] = useState<string>('');
 
-  // Filter for matches that haven't been published yet and are in the future
+  // Filter for matches that haven't been published yet and are in the upcoming 2-day (48h) window
   const availableMatches = useMemo(() => {
     const now = new Date().getTime();
+    const twoDaysAhead = now + 2 * 24 * 60 * 60 * 1000;
+
     return allMatches
-      .filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > now)
+      .filter(m => (m.status === 'FETCHED' || m.status === 'DRAFT') && new Date(m.startTime).getTime() > now && new Date(m.startTime).getTime() <= twoDaysAhead)
       .filter(m => {
         const s = (m.series || '').toLowerCase();
         const t1 = (m.team1?.name || '').toLowerCase();
@@ -90,7 +92,7 @@ export const MatchSelectionManager: React.FC<MatchSelectionManagerProps> = ({ al
             <Calendar className="w-6 h-6 text-[#FF8800]" />
             Create Match
           </h2>
-          <p className="text-sm text-slate-400 mt-1">Select an upcoming match from FanCode domestic, global leagues, or international feeds to view players and configure contests.</p>
+          <p className="text-sm text-slate-400 mt-1">Select an upcoming match (next 48 hours) from FanCode domestic, global leagues, or international feeds to view players and configure contests.</p>
         </div>
 
         <button

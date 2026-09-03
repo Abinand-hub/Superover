@@ -28,7 +28,7 @@ export async function syncMatchesFromCricAPI() {
     const matches = allMatches;
 
     const now = new Date();
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     // Automatically remove expired unconfigured (FETCHED) matches from past days
     try {
@@ -43,8 +43,8 @@ export async function syncMatchesFromCricAPI() {
     for (const match of matches) {
       const matchDate = new Date(match.dateTimeGMT);
       
-      // ONLY fetch upcoming matches strictly within the next 7 days window (now to 7 days)
-      if (match.matchStarted === false && matchDate >= now && matchDate <= sevenDaysFromNow) {
+      // ONLY fetch upcoming matches strictly within the next 2 days window (now to 2 days)
+      if (match.matchStarted === false && matchDate >= now && matchDate <= twoDaysFromNow) {
         
         const existingMatch = await Match.findOne({ apiId: match.id });
         

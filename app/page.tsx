@@ -13,7 +13,7 @@ export default async function Page() {
     
     const now = new Date();
     const past = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-    const future = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const future = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     const query = {
       status: { $in: ['UPCOMING', 'LOCKED', 'LIVE', 'COMPLETED'] },

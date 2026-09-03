@@ -12,9 +12,9 @@ export async function GET(req: Request) {
     await autoLockMatches();
     await generateUpcomingFanCodeAndInternationalMatches();
     
-    // Admins get upcoming matches for the next 7 days (rolling window)
+    // Admins get upcoming matches for the next 2 days (rolling 48h window)
     const now = new Date();
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     // Auto-remove any past raw unconfigured matches
     try {
@@ -26,13 +26,13 @@ export async function GET(req: Request) {
       console.warn('Failed to cleanup past fetched matches in admin route:', e);
     }
 
-    // Return matches strictly within the next 7 days, or active LIVE/LOCKED matches
+    // Return matches strictly within the next 2 days, or active LIVE/LOCKED matches
     const query = {
       $or: [
         {
           matchStartTime: {
             $gte: now.toISOString(),
-            $lte: sevenDaysFromNow.toISOString()
+            $lte: twoDaysFromNow.toISOString()
           }
         },
         { status: { $in: ['LIVE', 'LOCKED'] } }

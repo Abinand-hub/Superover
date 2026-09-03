@@ -12,15 +12,15 @@ export async function GET(req: Request) {
     const now = new Date();
     // Allow up to 48 hours in the past so admins have time to settle results
     const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
-    // Return matches from 48h ago to 7 days from now, sorted by start time
+    // Return matches from 48h ago to 2 days from now, sorted by start time
     // Only return published matches (exclude FETCHED and DRAFT)
     const query = {
       status: { $in: ['UPCOMING', 'LOCKED', 'LIVE', 'COMPLETED'] },
       matchStartTime: {
         $gte: twoDaysAgo.toISOString(),
-        $lte: sevenDaysFromNow.toISOString()
+        $lte: twoDaysFromNow.toISOString()
       }
     };
     

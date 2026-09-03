@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     await autoLockMatches();
     
     const now = new Date();
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     // Auto-remove any past raw unconfigured matches
     try {
@@ -33,10 +33,10 @@ export async function GET(req: Request) {
         {
           matchStartTime: {
             $gte: now.toISOString(),
-            $lte: sevenDaysFromNow.toISOString()
+            $lte: twoDaysFromNow.toISOString()
           }
         },
-        { status: { $in: ['LIVE'] } }
+        { status: { $in: ['LIVE', 'LOCKED'] } }
       ]
     };
     

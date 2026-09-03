@@ -568,30 +568,30 @@ export const FANCODE_ALL_TEAMS: Record<string, TeamPreset> = {
   }
 };
 
-// All FanCode Fixtures scheduled across the upcoming 7 days
+// All FanCode Fixtures scheduled across the upcoming 2 days (48 hours window)
 export const FANCODE_UPCOMING_MATCHUPS = [
   // --- Indian Domestic T20 (Dehradun T20, Sher-E-Punjab, Delhi Premier League) ---
   { t1: 'DOIWALA_KINGS', t2: 'VIKASNAGAR_DHAMAKA', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 3 },
-  { t1: 'MUSSOORIE_THUNDER', t2: 'SELAQUI_STRIKERS', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 7 },
-  { t1: 'RISHIKESH_DRAGONS', t2: 'VIKASNAGAR_DHAMAKA', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 24 },
-  { t1: 'JALANDHAR_WARRIORS', t2: 'FAZILKA_FALCONS', series: 'Sher-E-Punjab T20, 2026', format: 'T20', hoursOffset: 12 },
-  { t1: 'AMRITSAR_AVIATORS', t2: 'MOHALI_LEGENDS', series: 'Sher-E-Punjab T20, 2026', format: 'T20', hoursOffset: 30 },
-  { t1: 'EAST_DELHI_RIDERS', t2: 'SOUTH_DELHI_SUPERSTARS', series: 'Delhi Premier League, 2026', format: 'T20', hoursOffset: 18 },
+  { t1: 'MUSSOORIE_THUNDER', t2: 'SELAQUI_STRIKERS', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 6 },
+  { t1: 'JALANDHAR_WARRIORS', t2: 'FAZILKA_FALCONS', series: 'Sher-E-Punjab T20, 2026', format: 'T20', hoursOffset: 10 },
+  { t1: 'EAST_DELHI_RIDERS', t2: 'SOUTH_DELHI_SUPERSTARS', series: 'Delhi Premier League, 2026', format: 'T20', hoursOffset: 14 },
+  { t1: 'AMRITSAR_AVIATORS', t2: 'MOHALI_LEGENDS', series: 'Sher-E-Punjab T20, 2026', format: 'T20', hoursOffset: 20 },
+  { t1: 'RISHIKESH_DRAGONS', t2: 'VIKASNAGAR_DHAMAKA', series: 'Dehradun T20 League 2026', format: 'T20', hoursOffset: 26 },
   
   // --- Global Leagues (CPL 2026) ---
-  { t1: 'TRINBAGO_KNIGHT_RIDERS', t2: 'GUYANA_AMAZON_WARRIORS', series: 'Caribbean Premier League, 2026', format: 'T20', hoursOffset: 36 },
+  { t1: 'TRINBAGO_KNIGHT_RIDERS', t2: 'GUYANA_AMAZON_WARRIORS', series: 'Caribbean Premier League, 2026', format: 'T20', hoursOffset: 30 },
 
   // --- International / Bilateral & Asia Cup Qualifiers ---
-  { t1: 'ZIMBABWE', t2: 'AUSTRALIA', series: 'Australia tour of Zimbabwe, 2026', format: 'T20', hoursOffset: 42 },
-  { t1: 'AFGHANISTAN', t2: 'INDIA', series: 'India Tour of Afghanistan, 2026', format: 'T20', hoursOffset: 60 },
-  { t1: 'NEPAL', t2: 'UAE', series: "ACC Men's Premier Cup 2026", format: 'T20', hoursOffset: 50 },
+  { t1: 'ZIMBABWE', t2: 'AUSTRALIA', series: 'Australia tour of Zimbabwe, 2026', format: 'T20', hoursOffset: 34 },
+  { t1: 'NEPAL', t2: 'UAE', series: "ACC Men's Premier Cup 2026", format: 'T20', hoursOffset: 38 },
+  { t1: 'AFGHANISTAN', t2: 'INDIA', series: 'India Tour of Afghanistan, 2026', format: 'T20', hoursOffset: 44 },
 
   // --- European T10 / ECL ---
-  { t1: 'PAK_I_CARE', t2: 'CATALUNYA', series: 'ECS Spain T10 Barcelona', format: 'T10', hoursOffset: 5 },
-  { t1: 'MADRID', t2: 'CATALUNYA', series: 'ECS Spain T10 Series', format: 'T10', hoursOffset: 15 },
-  { t1: 'ROYAL_ROMA', t2: 'BRESCIA', series: 'ECS Italy T10 Rome', format: 'T10', hoursOffset: 28 },
-  { t1: 'DREUX', t2: 'OLD_VICTORIANS', series: 'European Cricket League (ECL) 2026', format: 'T10', hoursOffset: 35 },
-  { t1: 'FORFARSHIRE', t2: 'DREUX', series: 'European Cricket League (ECL) 2026', format: 'T10', hoursOffset: 65 },
+  { t1: 'PAK_I_CARE', t2: 'CATALUNYA', series: 'ECS Spain T10 Barcelona', format: 'T10', hoursOffset: 4 },
+  { t1: 'MADRID', t2: 'CATALUNYA', series: 'ECS Spain T10 Series', format: 'T10', hoursOffset: 12 },
+  { t1: 'ROYAL_ROMA', t2: 'BRESCIA', series: 'ECS Italy T10 Rome', format: 'T10', hoursOffset: 22 },
+  { t1: 'DREUX', t2: 'OLD_VICTORIANS', series: 'European Cricket League (ECL) 2026', format: 'T10', hoursOffset: 32 },
+  { t1: 'FORFARSHIRE', t2: 'DREUX', series: 'European Cricket League (ECL) 2026', format: 'T10', hoursOffset: 42 },
 ];
 
 export async function generateUpcomingFanCodeAndInternationalMatches() {
