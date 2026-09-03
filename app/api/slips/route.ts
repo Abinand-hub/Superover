@@ -173,3 +173,56 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const body = await req.json();
+    const { slipId, answers } = body;
+
+    if (!slipId || !answers) {
+      return NextResponse.json({ error: 'Missing slipId or answers' }, { status: 400 });
+    }
+
+    await connectToDatabase();
+
+    const slip = await Slip.findOne({ _id: slipId, userId: decoded.userId });
+    if (!slip) {
+      return NextResponse.json({ error: 'Slip not found' }, { status: 404 });
+    }
+
+    const match = await Match.findById(slip.matchId);
+    if (!match) {
+      return NextResponse.json({ error: 'Match not found' }, { status: 404 });
+    }
+
+    // Verify match is still upcoming and before start time
+    const now = new Date();
+    if (match.status !== 'UPCOMING' || (match.matchStartTime && now >= new Date(match.matchStartTime))) {
+      return NextResponse.json({ error: 'Match has locked or started. Editing is no longer allowed.' }, { status: 400 });
+    }
+
+    slip.answers = answers;
+    slip.updatedAt = new Date();
+    await slip.save();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Predictions and player lineup updated successfully!',
+      slip: {
+        ...slip.toObject(),
+        id: slip._id
+      }
+    });
+  } catch (error: any) {
+    console.error('Update Slip Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

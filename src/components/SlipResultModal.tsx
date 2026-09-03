@@ -14,7 +14,8 @@ import {
   Share2, 
   Check,
   ArrowRight,
-  TrendingUp
+  TrendingUp,
+  Edit3
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CricketMatch, SettlementDetail, UserPredictionSlip } from '../types';
@@ -25,6 +26,7 @@ interface SlipResultModalProps {
   slip?: UserPredictionSlip;
   onClose: () => void;
   onPlayAnother?: () => void;
+  onEditSlip?: (match: CricketMatch, slip: UserPredictionSlip) => void;
 }
 
 export const SlipResultModal: React.FC<SlipResultModalProps> = ({
@@ -32,6 +34,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
   slip,
   onClose,
   onPlayAnother,
+  onEditSlip,
 }) => {
   const isWon = slip && slip.status === 'WON' && (slip.multiplierWon || 0) > 0;
   const isPendingApproval = slip && slip.status === 'PENDING_APPROVAL';
@@ -259,12 +262,27 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
         {/* Modal Bottom Actions */}
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3 flex-shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+            >
+              Close
+            </button>
+
+            {slip && (slip.status === 'PENDING' || slip.status === 'LIVE') && match.status === 'UPCOMING' && onEditSlip && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onEditSlip(match, slip);
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25 transition-all"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Swap Players</span>
+              </button>
+            )}
+          </div>
 
           {onPlayAnother && (
             <button

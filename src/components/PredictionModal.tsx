@@ -12,8 +12,11 @@ interface PredictionModalProps {
   user: UserAccount;
   wallet: Wallet;
   initialFee?: number;
+  initialAnswers?: Record<string, string>;
+  editingSlipId?: string;
   onClose: () => void;
   onSubmitSlip: (answers: Record<string, string>, entryFee: number, totalPaid: number, jackpotMultiplier: number, freeHit: boolean, freeHitFee: number, wheelMultiplier?: number) => void;
+  onUpdateSlip?: (slipId: string, answers: Record<string, string>) => void;
   onOpenDeposit: () => void;
 }
 
@@ -22,11 +25,14 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   user,
   wallet,
   initialFee = 25,
+  initialAnswers = {},
+  editingSlipId,
   onClose,
   onSubmitSlip,
+  onUpdateSlip,
   onOpenDeposit,
 }) => {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   
   // View states
   const [activePlayerQuestionId, setActivePlayerQuestionId] = useState<string | null>(null);
@@ -441,13 +447,23 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
       
       {isComplete && (
         <div className="mt-6">
-          <button 
-            onClick={() => setCurrentView('STAKE')}
-            className="w-full py-4 rounded-xl font-black text-slate-950 text-lg bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
-          >
-            PROCEED TO STAKE
-            <ArrowRight className="w-5 h-5" />
-          </button>
+          {editingSlipId && onUpdateSlip ? (
+            <button 
+              onClick={() => onUpdateSlip(editingSlipId, answers)}
+              className="w-full py-4 rounded-xl font-black text-slate-950 text-base sm:text-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B00]/25"
+            >
+              <Check className="w-5 h-5" />
+              <span>SAVE & SWAP PLAYERS (UPDATE SLIP)</span>
+            </button>
+          ) : (
+            <button 
+              onClick={() => setCurrentView('STAKE')}
+              className="w-full py-4 rounded-xl font-black text-slate-950 text-lg bg-amber-500 hover:bg-amber-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+            >
+              PROCEED TO STAKE
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          )}
         </div>
       )}
     </div>

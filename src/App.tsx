@@ -98,12 +98,12 @@ export default function App({ initialMatches = [] }: AppProps) {
   // Modals
   const [selectedMatchForPlay, setSelectedMatchForPlay] = useState<{ match: CricketMatch; fee: number } | null>(null);
   const [selectedMatchForResults, setSelectedMatchForResults] = useState<{ match: CricketMatch; slip?: UserPredictionSlip } | null>(null);
+  const [editingSlipState, setEditingSlipState] = useState<{ match: CricketMatch; slip: UserPredictionSlip } | null>(null);
   const [walletModalState, setWalletModalState] = useState<{ open: boolean; tab: 'deposit' | 'withdraw' | 'passbook' }>({ open: false, tab: 'deposit' });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
-
 
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
@@ -183,6 +183,21 @@ export default function App({ initialMatches = [] }: AppProps) {
     } catch (error) {
       console.error('Failed to submit slip:', error);
       alert('Failed to submit prediction. Please check your balance or try again.');
+    }
+  };
+
+  // Handler: Update Existing Prediction Slip (Swap Players after Toss)
+  const handleUpdateSlip = async (slipId: string, answers: Record<string, string>) => {
+    try {
+      const response = await api.updatePredictionSlip(slipId, answers);
+      if (response && response.slip) {
+        setSlips((prev) => prev.map((s) => (s.id === slipId ? { ...s, answers } : s)));
+        setEditingSlipState(null);
+        alert('✅ Lineup updated! Your swapped players have been saved successfully.');
+      }
+    } catch (error: any) {
+      console.error('Failed to update slip:', error);
+      alert(error.message || 'Failed to update prediction slip.');
     }
   };
 
@@ -479,22 +494,25 @@ export default function App({ initialMatches = [] }: AppProps) {
 
       </main>
 
-      {/* Footer & Compliance Notice */}
-      <footer className="bg-[#03050D] border-t border-[#1A223E] py-8 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="hidden lg:flex items-center gap-2 text-sm font-medium text-slate-400">
-                <span className="text-[#FF6B00]">SuperOver</span>
-                <span>•</span>
-                <span>Low-stakes 6-stat cricket selection game</span>
+      {/* Main Footer - Optimized for Mobile */}
+      <footer className="mt-auto bg-[#080C1D] border-t border-[#1A223E] py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#FF6B00] flex items-center justify-center font-black text-slate-950 text-xs shadow-md shadow-[#FF6B00]/30">
+                SO
               </div>
+              <span className="font-extrabold text-white text-sm tracking-tight font-display">SuperOver</span>
+              <span className="text-[10px] text-slate-500 border-l border-slate-700 pl-2">Low Stakes • High Thrill</span>
             </div>
 
-            <div className="flex items-center gap-4 text-xs">
-              <button onClick={() => setIsRulesModalOpen(true)} className="hover:text-white transition-colors">Rules & FAQs</button>
-              <button onClick={() => setIsResponsibleModalOpen(true)} className="hover:text-white transition-colors">Responsible Gaming</button>
-              <button onClick={() => setWalletModalState({ open: true, tab: 'deposit' })} className="hover:text-white transition-colors">UPI Deposit</button>
+            <div className="flex items-center gap-4 text-xs text-slate-400">
+              <button onClick={() => setIsRulesModalOpen(true)} className="hover:text-white transition-colors">
+                Rules & FAQs
+              </button>
+              <button onClick={() => setIsResponsibleModalOpen(true)} className="hover:text-white transition-colors">
+                Responsible Gaming
+              </button>
             </div>
           </div>
 
@@ -508,17 +526,24 @@ export default function App({ initialMatches = [] }: AppProps) {
 
       {/* ALL MODALS (Lazy Loaded) */}
       <React.Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-[#050816]/50 backdrop-blur-sm z-50"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
-        {/* MODAL 1: 6-Stat Prediction Game Flow */}
-        {selectedMatchForPlay && (
+        {/* MODAL 1: 6-Stat Prediction Game Flow (Entry / Edit & Swap Lineup) */}
+        {(selectedMatchForPlay || editingSlipState) && (
           <PredictionModal
-            match={selectedMatchForPlay.match}
+            match={editingSlipState ? editingSlipState.match : selectedMatchForPlay!.match}
             user={currentUser}
             wallet={wallet}
-            initialFee={selectedMatchForPlay.fee}
-            onClose={() => setSelectedMatchForPlay(null)}
+            initialFee={editingSlipState ? editingSlipState.slip.entryFee : selectedMatchForPlay?.fee}
+            initialAnswers={editingSlipState ? (editingSlipState.slip.answers instanceof Map ? Object.fromEntries(editingSlipState.slip.answers) : editingSlipState.slip.answers) : undefined}
+            editingSlipId={editingSlipState?.slip.id}
+            onUpdateSlip={handleUpdateSlip}
+            onClose={() => {
+              setSelectedMatchForPlay(null);
+              setEditingSlipState(null);
+            }}
             onSubmitSlip={handleSubmitSelectionSlip}
             onOpenDeposit={() => {
               setSelectedMatchForPlay(null);
+              setEditingSlipState(null);
               setWalletModalState({ open: true, tab: 'deposit' });
             }}
           />
@@ -530,6 +555,10 @@ export default function App({ initialMatches = [] }: AppProps) {
             match={selectedMatchForResults.match}
             slip={selectedMatchForResults.slip}
             onClose={() => setSelectedMatchForResults(null)}
+            onEditSlip={(match, slip) => {
+              setSelectedMatchForResults(null);
+              setEditingSlipState({ match, slip });
+            }}
             onPlayAnother={() => {
               setSelectedMatchForResults(null);
               setActiveTab('lobby');

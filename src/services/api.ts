@@ -163,6 +163,11 @@ export const api = {
       } as UserPredictionSlip,
       wallet: INITIAL_WALLET
     }),
+  updatePredictionSlip: (slipId: string, answers: Record<string, string>) =>
+    fetchWithMockFallback<{ message: string, slip: UserPredictionSlip }>('/slips', {
+      method: 'PUT',
+      body: JSON.stringify({ slipId, answers })
+    }),
 
   // Platform
   getMetrics: () => fetchWithMockFallback<PlatformMetrics>('/metrics', { method: 'GET' }, INITIAL_PLATFORM_METRICS),
