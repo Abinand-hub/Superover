@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectToDatabase from '@/lib/mongodb';
 import Match from '@/models/Match';
 
@@ -9,9 +10,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await req.json();
     
+    const query = {
+      $or: [
+        ...(mongoose.Types.ObjectId.isValid(id) ? [{ _id: id }] : []),
+        { apiId: id },
+        { id: id }
+      ]
+    };
+
     // Body can contain { status: 'DRAFT' } or { status: 'UPCOMING', questions: [...] }
     const match = await Match.findOneAndUpdate(
-      { _id: id },
+      query,
       { $set: body },
       { new: true }
     ).lean();

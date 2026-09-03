@@ -1976,7 +1976,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <MatchConfigurator 
               matchId={configuringMatchId}
               onBack={() => setPublishingView('list')}
-              onMatchPublished={() => { setPublishingView('list'); setAdminTab('matches'); }}
+              onMatchPublished={async () => {
+                if (onReloadData) {
+                  await onReloadData();
+                }
+                setSelectedMatchForSquad(configuringMatchId);
+                setPublishingView('list');
+                setAdminTab('matches');
+              }}
             />
           )}
         </div>
