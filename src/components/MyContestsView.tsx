@@ -53,9 +53,18 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
 
   const matchMap = new Map(matches.map((m) => [m.id, m]));
 
-  // User-specific filtering
-  const userSlips = slips.filter((s) => s.userId === user.id);
-  const userTransactions = transactions.filter((t) => t.userId === user.id);
+  // User-specific filtering (resilient check across user.id and string representations)
+  const currentUserId = (user.id || (user as any)._id || '').toString();
+  const userSlips = slips.filter((s) => {
+    if (!currentUserId || currentUserId === 'u_guest') return true;
+    const slipUserId = (s.userId || (s as any).user || '').toString();
+    return !slipUserId || slipUserId === currentUserId;
+  });
+  const userTransactions = transactions.filter((t) => {
+    if (!currentUserId || currentUserId === 'u_guest') return true;
+    const txUserId = (t.userId || '').toString();
+    return !txUserId || txUserId === currentUserId;
+  });
 
   const depositsList = userTransactions.filter((t) => t.type === 'DEPOSIT');
   const withdrawalsList = userTransactions.filter((t) => t.type === 'WITHDRAWAL');

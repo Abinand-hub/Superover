@@ -254,9 +254,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [publishingView, setPublishingView] = useState<'list' | 'config'>('list');
   const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
 
-  // Published Matches (Strictly matches that have been configured and published with contest questions)
+  // Published Squad Matches (Strictly UPCOMING / LIVE / LOCKED matches with configured questions)
   const publishedMatches = matches.filter(m => 
-    (m.status === 'UPCOMING' || m.status === 'LIVE' || m.status === 'LOCKED' || m.status === 'COMPLETED') &&
+    (m.status === 'UPCOMING' || m.status === 'LIVE' || m.status === 'LOCKED') &&
     Array.isArray(m.questions) && m.questions.length > 0
   );
   const defaultSquadMatchId = publishedMatches[0]?.id || '';
@@ -1217,23 +1217,92 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           ) : (
             <>
-              {/* Select Match */}
-              <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                  Select Published Match to End & Settle:
-                </label>
-                <select
-                  value={selectedMatchIdForSettlement}
-                  onChange={(e) => setSelectedMatchIdForSettlement(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-bold text-xs focus:outline-none focus:border-[#FF6B00]"
-                  id="select-match-to-settle"
-                >
-                  {settlementMatches.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      [{m.status}] {m.title} ({m.series}) — {m.questions?.length || 0} Categories Configured
-                    </option>
-                  ))}
-                </select>
+              {/* Interactive Match Boxes Grid */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    Select a Published Match Box to Settle & Disburse Winnings ({settlementMatches.length} Matches):
+                  </label>
+                  <span className="text-[11px] text-slate-400">Click any box to inspect & settle</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {settlementMatches.map((m) => {
+                    const isSelected = (selectedMatchForSettlement?.id === m.id) || (selectedMatchIdForSettlement === m.id);
+                    const isLive = m.status === 'LIVE';
+                    const isCompleted = m.status === 'COMPLETED';
+                    const isLocked = m.status === 'LOCKED';
+
+                    // Determine outcome headline
+                    const winnerOutcome = m.actualResults?.summaryNote 
+                      ? m.actualResults.summaryNote 
+                      : m.liveScore 
+                      ? m.liveScore 
+                      : 'Scheduled for play • Awaiting result';
+
+                    return (
+                      <div
+                        key={m.id}
+                        onClick={() => setSelectedMatchIdForSettlement(m.id)}
+                        className={`p-4 rounded-2xl border cursor-pointer transition-all relative overflow-hidden flex flex-col justify-between gap-3 shadow-md ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-[#FF6B00]/20 via-[#0D122B] to-[#FF8800]/10 border-[#FF6B00] shadow-[0_0_25px_rgba(255,107,0,0.25)] ring-2 ring-[#FF6B00]/50'
+                            : 'bg-[#0D122B] border-[#1A223E] hover:border-[#2A355E] hover:bg-[#131A38]'
+                        }`}
+                        id={`match-settle-box-${m.id}`}
+                      >
+                        {/* Status & Series */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 rounded bg-[#080C1D] text-[#FFAA00] text-[10px] font-extrabold uppercase border border-[#1A223E] truncate">
+                            {m.series}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${
+                            isLive ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
+                            isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                            isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                            'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                          }`}>
+                            {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping"></span>}
+                            {isCompleted && '✓ '}
+                            {m.status}
+                          </span>
+                        </div>
+
+                        {/* Title & Timing */}
+                        <div>
+                          <h4 className="text-sm sm:text-base font-black text-white font-display line-clamp-1">
+                            {m.title}
+                          </h4>
+                          <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                            <span>{new Date(m.startTime || (m as any).matchStartTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                            <span>•</span>
+                            <span className="text-[#FFAA00] font-bold">{m.questions?.length || 0} Categories</span>
+                          </div>
+                        </div>
+
+                        {/* Match Outcome / Score / Winner Headline Box */}
+                        <div className="p-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E]">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Match Outcome / Score:</span>
+                          <div className={`text-xs font-bold truncate ${isCompleted ? 'text-emerald-400' : isLive ? 'text-amber-300 font-mono' : 'text-slate-300'}`}>
+                            {winnerOutcome}
+                          </div>
+                        </div>
+
+                        {/* Action CTA Button on Box */}
+                        <div className="pt-2 border-t border-[#1A223E] flex items-center justify-between">
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            {isSelected ? '👉 Selected for Payout' : 'Click to Settle'}
+                          </span>
+                          <span className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
+                            isSelected ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30' : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {isCompleted ? 'Review & Settle' : 'Settle Questions'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Questions Winners Form */}
