@@ -154,7 +154,7 @@ export async function autoLockMatches() {
   // 2. Matches whose official start time has arrived -> Auto-transition to LIVE
   const matchesToLive = await Match.find({
     status: { $in: ['UPCOMING', 'LOCKED'] },
-    matchStartTime: { $lte: now.toISOString(), $gt: matchFinishedThreshold.toISOString() }
+    matchStartTime: { $lte: now.toISOString() }
   });
 
   for (const match of matchesToLive) {
@@ -164,24 +164,6 @@ export async function autoLockMatches() {
     }
     await match.save();
     console.log(`🔴 Auto-transitioned match to LIVE: ${match.title}`);
-  }
-
-  // 3. Matches whose play has finished -> Auto-settle results and disburse wallet payouts
-  const matchesToComplete = await Match.find({
-    status: { $in: ['LIVE', 'LOCKED', 'UPCOMING'] },
-    matchStartTime: { $lte: matchFinishedThreshold.toISOString() },
-    'questions.0': { $exists: true }
-  });
-
-  for (const match of matchesToComplete) {
-    try {
-      console.log(`🏁 Auto-settling finished match: ${match.title}`);
-      await executeMatchSettlement(match._id.toString());
-    } catch (e) {
-      console.error(`Error auto-settling match ${match._id}:`, e);
-      match.status = 'COMPLETED';
-      await match.save();
-    }
   }
 }
 

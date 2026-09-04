@@ -65,8 +65,11 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
   onPlayAnother,
   onEditSlip,
 }) => {
+  const isSettled = match.status === 'COMPLETED' || slip?.status === 'WON' || slip?.status === 'LOST' || slip?.status === 'PENDING_APPROVAL';
   const isWon = slip && slip.status === 'WON' && (slip.multiplierWon || 0) > 0;
   const isPendingApproval = slip && slip.status === 'PENDING_APPROVAL';
+  const isLost = slip && slip.status === 'LOST';
+  const isActiveSlip = slip && !isSettled;
 
   useEffect(() => {
     if (isWon) {
@@ -84,7 +87,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
   }, [isWon]);
 
   const results = match.actualResults;
-  const allSquadPlayers = [...match.squadTeam1, ...match.squadTeam2];
+  const allSquadPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
   const playerMap = new Map(allSquadPlayers.map((p) => [p.id, p]));
 
   const getQuestionIcon = (iconName: string) => {
@@ -106,8 +109,10 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
         <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[10px] uppercase border border-slate-700">
-                Official Match Results & Settlement
+              <span className={`px-2 py-0.5 rounded font-bold text-[10px] uppercase border ${
+                isSettled ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+              }`}>
+                {isSettled ? 'Official Match Results & Settlement' : 'Active Prediction Slip'}
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 {match.series}
@@ -132,7 +137,9 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
           {slip ? (
             <div
               className={`p-4 sm:p-5 rounded-2xl border ${
-                isPendingApproval
+                isActiveSlip
+                  ? 'bg-gradient-to-br from-amber-500/20 via-slate-900 to-slate-950 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                  : isPendingApproval
                   ? 'bg-gradient-to-br from-amber-500/20 via-amber-950/30 to-slate-900 border-amber-400/50 shadow-lg shadow-amber-500/10'
                   : isWon
                   ? 'bg-gradient-to-br from-amber-500/20 via-emerald-950/30 to-slate-900 border-amber-400/50 shadow-lg'
@@ -143,28 +150,54 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                 <div className="flex items-center gap-3.5">
                   <div
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-black ${
-                      isPendingApproval
+                      isActiveSlip
+                        ? 'bg-gradient-to-br from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
+                        : isPendingApproval
                         ? 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 shadow-md shadow-amber-500/30'
                         : isWon
                         ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 shadow-md shadow-amber-500/30'
                         : 'bg-slate-800 text-slate-400'
                     }`}
                   >
-                    {isPendingApproval ? <ShieldCheck className="w-6 h-6" /> : isWon ? <Trophy className="w-6 h-6" /> : <XCircle className="w-6 h-6 text-slate-400" />}
+                    {isActiveSlip ? (
+                      match.status === 'LIVE' ? <Flame className="w-6 h-6 text-slate-950" /> : <Zap className="w-6 h-6 text-slate-950" />
+                    ) : isPendingApproval ? (
+                      <ShieldCheck className="w-6 h-6" />
+                    ) : isWon ? (
+                      <Trophy className="w-6 h-6" />
+                    ) : (
+                      <XCircle className="w-6 h-6 text-slate-400" />
+                    )}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-base font-black ${isPendingApproval ? 'text-amber-400' : isWon ? 'text-amber-400' : 'text-slate-300'}`}>
-                        {isPendingApproval ? `${slip.multiplierWon}X Jackpot Pending Approval ⏳` : isWon ? `${slip.multiplierWon}X Cash Prize Won!` : 'Better Luck Next SuperOver'}
+                      <span className={`text-base font-black ${
+                        isActiveSlip ? 'text-amber-400' : isPendingApproval ? 'text-amber-400' : isWon ? 'text-amber-400' : 'text-slate-300'
+                      }`}>
+                        {isActiveSlip 
+                          ? (match.status === 'LIVE' ? 'Match Live in Play 🔴' : 'Prediction Slip Confirmed ⚡') 
+                          : isPendingApproval 
+                          ? `${slip.multiplierWon}X Jackpot Pending Approval ⏳` 
+                          : isWon 
+                          ? `${slip.multiplierWon}X Cash Prize Won!` 
+                          : 'Better Luck Next SuperOver'}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
-                        {slip.correctCount ?? 0} / 6 Correct
-                      </span>
+                      {isSettled ? (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
+                          {slip.correctCount ?? 0} / 6 Correct
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black border border-emerald-500/30">
+                          6 PICKS LOCKED
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {isPendingApproval 
-                        ? 'Your massive win is undergoing standard security checks by the admin.'
+                      {isActiveSlip
+                        ? `Entry: ${formatINR(slip.entryFee)} • Placed at ${new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Results settle upon match end`
+                        : isPendingApproval 
+                        ? 'Your win is undergoing standard security checks by the admin.'
                         : `Entry: ${formatINR(slip.entryFee)} • Submitted ${new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                       }
                     </p>
@@ -173,10 +206,12 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
                 <div className="text-right sm:border-l sm:border-slate-800 sm:pl-4">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
-                    {isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
+                    {isActiveSlip ? 'Potential 100X Win' : isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
                   </span>
-                  <span className={`text-2xl font-black font-display ${isPendingApproval ? 'text-amber-400 animate-pulse' : isWon ? 'text-emerald-400' : 'text-slate-500'}`}>
-                    {formatINR(slip.payoutAmount || 0)}
+                  <span className={`text-2xl font-black font-display ${
+                    isActiveSlip ? 'text-amber-400 font-mono' : isPendingApproval ? 'text-amber-400 animate-pulse' : isWon ? 'text-emerald-400' : 'text-slate-500'
+                  }`}>
+                    {isActiveSlip ? formatINR(slip.entryFee * 100) : formatINR(slip.payoutAmount || 0)}
                   </span>
                 </div>
               </div>
@@ -189,23 +224,49 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
           )}
 
           {/* Match Outcome / Score Banner */}
-          <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-amber-500/5 border border-amber-500/30 flex items-center justify-between gap-3">
-            <div>
-              <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block">Official Match Outcome & Victory</span>
-              <span className="text-xs sm:text-sm font-black text-white font-display">
-                {getMatchWinnerOutcome(match)}
+          {isSettled ? (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900 to-amber-500/5 border border-amber-500/30 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block">Official Match Outcome & Victory</span>
+                <span className="text-xs sm:text-sm font-black text-white font-display">
+                  {getMatchWinnerOutcome(match)}
+                </span>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase whitespace-nowrap">
+                Match Complete
               </span>
             </div>
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase whitespace-nowrap">
-              Match Complete
-            </span>
-          </div>
+          ) : match.status === 'LIVE' ? (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-rose-500/15 via-slate-900 to-rose-500/10 border border-rose-500/40 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-rose-400 tracking-wider block">Live Match In Play</span>
+                <span className="text-xs sm:text-sm font-bold text-white">
+                  {match.liveScore || 'Match In Progress • Live Stream Connected'}
+                </span>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase whitespace-nowrap animate-pulse">
+                🔴 LIVE
+              </span>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-[#080C1D] border border-slate-800 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Match Schedule</span>
+                <span className="text-xs font-bold text-white">
+                  Scheduled Start: {new Date(match.startTime || (match as any).matchStartTime || 0).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-black uppercase whitespace-nowrap">
+                {match.status === 'LOCKED' ? '🔒 Locked' : '🟢 Open'}
+              </span>
+            </div>
+          )}
 
           {/* 6 Stats Breakdown List */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
               <span>Stat Category</span>
-              <span>Official Result vs Your Pick</span>
+              <span>{isSettled ? 'Official Result vs Your Pick' : 'Your Selected Pick'}</span>
             </div>
 
             {match.questions?.map((q) => {
@@ -260,43 +321,51 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
                     {/* Right: Winner info & comparison */}
                     <div className="flex items-center gap-3 justify-between sm:justify-end">
-                      {/* Actual Winner */}
-                      <div className="text-right">
-                        <div className="text-xs font-bold text-amber-300">
-                          {officialAnswerText}
-                        </div>
-                        <div className="text-[11px] font-mono text-slate-400">
-                          {statDetailText}
-                        </div>
-                      </div>
+                      {isSettled ? (
+                        <>
+                          {/* Actual Official Winner */}
+                          <div className="text-right">
+                            <div className="text-xs font-bold text-amber-300">
+                              {officialAnswerText}
+                            </div>
+                            <div className="text-[11px] font-mono text-slate-400">
+                              {statDetailText}
+                            </div>
+                          </div>
 
-                      {/* User Pick Badge (if entered) */}
-                      {slip && (
-                        <div className="pl-2 border-l border-slate-800">
-                          {!rawResult ? (
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-slate-400 font-bold">
-                                Pick: {userPickDisplayName}
-                              </span>
-                              <span className="text-[10px] text-amber-500 font-bold mt-0.5">
-                                Pending ⏳
-                              </span>
-                            </div>
-                          ) : isCorrect ? (
-                             <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/40">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Match ✅</span>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-slate-400 line-through">
-                                Pick: {userPickDisplayName}
-                              </span>
-                              <span className="text-[10px] text-rose-400 font-black">
-                                Missed ❌
-                              </span>
+                          {/* User Pick Badge */}
+                          {slip && (
+                            <div className="pl-2 border-l border-slate-800">
+                              {isCorrect ? (
+                                <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/40">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Match ✅</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-slate-400 line-through">
+                                    Pick: {userPickDisplayName}
+                                  </span>
+                                  <span className="text-[10px] text-rose-400 font-black">
+                                    Missed ❌
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           )}
+                        </>
+                      ) : (
+                        /* Active Slip State */
+                        <div className="flex items-center gap-2">
+                          <div className="text-right">
+                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Your Pick</span>
+                            <span className="text-xs font-bold text-amber-300">
+                              {userPickDisplayName}
+                            </span>
+                          </div>
+                          <span className="px-2 py-1 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                            Locked ⏳
+                          </span>
                         </div>
                       )}
                     </div>
