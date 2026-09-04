@@ -361,8 +361,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // Create Match Modal State
   const [showCreateMatchModal, setShowCreateMatchModal] = useState<boolean>(false);
-  const [newMatchTitle, setNewMatchTitle] = useState<string>('Delhi Capitals vs Sunrisers Hyderabad');
-  const [newMatchSeries, setNewMatchSeries] = useState<string>('IPL 2026');
+  const [newMatchTitle, setNewMatchTitle] = useState<string>('India vs Australia');
+  const [newMatchSeries, setNewMatchSeries] = useState<string>('ICC T20 World Cup 2026');
+  const [newMatchFormat, setNewMatchFormat] = useState<string>('T20');
+  const [newMatchTeam1Name, setNewMatchTeam1Name] = useState<string>('India');
+  const [newMatchTeam1Code, setNewMatchTeam1Code] = useState<string>('IND');
+  const [newMatchTeam2Name, setNewMatchTeam2Name] = useState<string>('Australia');
+  const [newMatchTeam2Code, setNewMatchTeam2Code] = useState<string>('AUS');
+  const [newMatchVenue, setNewMatchVenue] = useState<string>('Wankhede Stadium, Mumbai');
+  const [newMatchDateTime, setNewMatchDateTime] = useState<string>(() => {
+    const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+  });
   // Match Lifecycle Handlers
   const handleStartMatch = (match: CricketMatch) => {
     const matchTime = new Date(match.startTime).getTime();
@@ -1950,25 +1961,101 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3.5 text-xs">
               <div>
                 <label className="text-slate-300 font-bold block mb-1">Match Title:</label>
                 <input
                   type="text"
                   value={newMatchTitle}
                   onChange={(e) => setNewMatchTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-purple-400"
+                  placeholder="e.g. India vs Australia"
+                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-bold block mb-1">Series / Tournament:</label>
+                  <input
+                    type="text"
+                    value={newMatchSeries}
+                    onChange={(e) => setNewMatchSeries(e.target.value)}
+                    placeholder="e.g. ICC T20 World Cup 2026"
+                    className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-[#FF6B00]"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 font-bold block mb-1">Match Format:</label>
+                  <select
+                    value={newMatchFormat}
+                    onChange={(e) => setNewMatchFormat(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-[#FF6B00]"
+                  >
+                    <option value="T20">T20</option>
+                    <option value="ODI">ODI</option>
+                    <option value="TEST">TEST</option>
+                    <option value="T10">T10</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <span className="text-[10px] font-black uppercase text-[#FF8800] block">Team 1 Details</span>
+                  <input
+                    type="text"
+                    value={newMatchTeam1Name}
+                    onChange={(e) => {
+                      setNewMatchTeam1Name(e.target.value);
+                      setNewMatchTitle(`${e.target.value} vs ${newMatchTeam2Name}`);
+                    }}
+                    placeholder="Team 1 Name (e.g. India)"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={newMatchTeam1Code}
+                    onChange={(e) => setNewMatchTeam1Code(e.target.value.toUpperCase())}
+                    placeholder="Code (e.g. IND)"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs uppercase"
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <span className="text-[10px] font-black uppercase text-[#FFAA00] block">Team 2 Details</span>
+                  <input
+                    type="text"
+                    value={newMatchTeam2Name}
+                    onChange={(e) => {
+                      setNewMatchTeam2Name(e.target.value);
+                      setNewMatchTitle(`${newMatchTeam1Name} vs ${e.target.value}`);
+                    }}
+                    placeholder="Team 2 Name (e.g. Australia)"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={newMatchTeam2Code}
+                    onChange={(e) => setNewMatchTeam2Code(e.target.value.toUpperCase())}
+                    placeholder="Code (e.g. AUS)"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs uppercase"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="text-slate-300 font-bold block mb-1">Series / Tournament:</label>
+                <label className="text-slate-300 font-bold block mb-1">
+                  📅 Exact Match Start Date & Time (Local IST):
+                </label>
                 <input
-                  type="text"
-                  value={newMatchSeries}
-                  onChange={(e) => setNewMatchSeries(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-purple-400"
+                  type="datetime-local"
+                  value={newMatchDateTime}
+                  onChange={(e) => setNewMatchDateTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white font-mono focus:outline-none focus:border-[#FF6B00]"
                 />
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Match contest locks 15 mins prior to this time; goes LIVE automatically at start time.
+                </span>
               </div>
 
               <div>
@@ -1977,103 +2064,75 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   type="text"
                   value={newMatchVenue}
                   onChange={(e) => setNewMatchVenue(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-purple-400"
+                  placeholder="e.g. Wankhede Stadium, Mumbai"
+                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
               <button
                 onClick={() => {
+                  const startTimeDate = new Date(newMatchDateTime);
+                  const startTimeIso = isNaN(startTimeDate.getTime()) 
+                    ? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() 
+                    : startTimeDate.toISOString();
+
+                  const lockTimeIso = new Date(new Date(startTimeIso).getTime() - 15 * 60 * 1000).toISOString();
+
+                  const t1Code = newMatchTeam1Code.trim() || 'T1';
+                  const t2Code = newMatchTeam2Code.trim() || 'T2';
+                  const t1Name = newMatchTeam1Name.trim() || 'Team 1';
+                  const t2Name = newMatchTeam2Name.trim() || 'Team 2';
+
+                  const generateSquad = (teamCode: string, teamName: string) => [
+                    { id: `p_${teamCode.toLowerCase()}_1`, name: `${teamCode} Batter 1`, shortName: `Bat 1`, team: teamCode, teamName, role: 'BAT' as const, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80', country: teamName, recentForm: ['68', '45', '82*'], careerStatHighlight: 'Top Order Ace' },
+                    { id: `p_${teamCode.toLowerCase()}_2`, name: `${teamCode} Batter 2`, shortName: `Bat 2`, team: teamCode, teamName, role: 'BAT' as const, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80', country: teamName, recentForm: ['52', '31', '64'], careerStatHighlight: 'Power Hitter' },
+                    { id: `p_${teamCode.toLowerCase()}_3`, name: `${teamCode} Keeper`, shortName: `WK 1`, team: teamCode, teamName, role: 'WK' as const, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80', country: teamName, recentForm: ['44', '38*'], careerStatHighlight: 'Gloveman & Finisher' },
+                    { id: `p_${teamCode.toLowerCase()}_4`, name: `${teamCode} All-Rounder`, shortName: `AR 1`, team: teamCode, teamName, role: 'AR' as const, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80', country: teamName, recentForm: ['35', '2/18'], careerStatHighlight: 'Match Winner' },
+                    { id: `p_${teamCode.toLowerCase()}_5`, name: `${teamCode} Bowler 1`, shortName: `Bowl 1`, team: teamCode, teamName, role: 'BOWL' as const, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80', country: teamName, recentForm: ['3/21', '2/15'], careerStatHighlight: 'Strike Bowler' },
+                    { id: `p_${teamCode.toLowerCase()}_6`, name: `${teamCode} Bowler 2`, shortName: `Bowl 2`, team: teamCode, teamName, role: 'BOWL' as const, avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80', country: teamName, recentForm: ['2/24', '1/19'], careerStatHighlight: 'Death Overs Specialist' },
+                  ];
+
                   const newMatch: CricketMatch = {
                     id: `match_${Date.now()}`,
-                    title: newMatchTitle,
-                    series: newMatchSeries,
+                    title: `${t1Name} vs ${t2Name}`,
+                    series: newMatchSeries || 'Featured T20 Series',
                     matchNumber: `Match ${matches.length + 1}`,
                     team1: {
-                      code: 'DC',
-                      name: 'Delhi Capitals',
-                      shortName: 'DC',
-                      color: '#004C97',
-                      accentColor: '#EF1B23',
-                      flagOrLogo: '🐯',
+                      code: t1Code,
+                      name: t1Name,
+                      shortName: t1Code,
+                      color: '#FF6B00',
+                      accentColor: '#FF8800',
+                      flagOrLogo: '🏏',
                     },
                     team2: {
-                      code: 'SRH',
-                      name: 'Sunrisers Hyderabad',
-                      shortName: 'SRH',
-                      color: '#F26522',
-                      accentColor: '#000000',
-                      flagOrLogo: '🦅',
+                      code: t2Code,
+                      name: t2Name,
+                      shortName: t2Code,
+                      color: '#004C97',
+                      accentColor: '#00C8FF',
+                      flagOrLogo: '⚡',
                     },
-                    venue: newMatchVenue,
-                    city: 'Delhi',
-                    startTime: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
-                    lockTime: new Date(Date.now() + 7 * 60 * 60 * 1000 + 50 * 60 * 1000).toISOString(),
+                    venue: newMatchVenue || 'National Cricket Stadium',
+                    city: 'Host City',
+                    startTime: startTimeIso,
+                    lockTime: lockTimeIso,
                     status: 'UPCOMING',
-                    format: 'T20',
-                    totalPool: 150000,
-                    totalEntries: 620,
+                    format: newMatchFormat || 'T20',
+                    totalPool: 100000,
+                    totalEntries: 50,
                     entryFees: [25, 50, 100],
-                    squadTeam1: [
-                      {
-                        id: `p_dc_${Date.now()}_1`,
-                        name: 'Rishabh Pant',
-                        shortName: 'R. Pant',
-                        team: 'DC',
-                        teamName: 'Delhi Capitals',
-                        role: 'WK',
-                        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-                        country: 'IND',
-                        recentForm: ['58', '44', '89*'],
-                        careerStatHighlight: 'SR: 155.2 • 3500+ Runs',
-                      },
-                      {
-                        id: `p_dc_${Date.now()}_2`,
-                        name: 'Kuldeep Yadav',
-                        shortName: 'K. Yadav',
-                        team: 'DC',
-                        teamName: 'Delhi Capitals',
-                        role: 'BOWL',
-                        avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-                        country: 'IND',
-                        recentForm: ['3/20', '2/18'],
-                        careerStatHighlight: 'Econ: 6.8',
-                      },
-                    ],
-                    squadTeam2: [
-                      {
-                        id: `p_srh_${Date.now()}_1`,
-                        name: 'Travis Head',
-                        shortName: 'T. Head',
-                        team: 'SRH',
-                        teamName: 'Sunrisers Hyderabad',
-                        role: 'BAT',
-                        avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80',
-                        country: 'AUS',
-                        recentForm: ['89', '102*'],
-                        careerStatHighlight: 'SR: 189.5',
-                      },
-                      {
-                        id: `p_srh_${Date.now()}_2`,
-                        name: 'Pat Cummins',
-                        shortName: 'P. Cummins',
-                        team: 'SRH',
-                        teamName: 'Sunrisers Hyderabad',
-                        role: 'BOWL',
-                        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                        country: 'AUS',
-                        recentForm: ['3/22', '2/19'],
-                        careerStatHighlight: 'Hat-trick hero',
-                      },
-                    ],
+                    squadTeam1: generateSquad(t1Code, t1Name),
+                    squadTeam2: generateSquad(t2Code, t2Name),
                     questions: DEFAULT_QUESTIONS,
                   };
 
                   onCreateMatch(newMatch);
                   setShowCreateMatchModal(false);
                 }}
-                className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/30"
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs shadow-md shadow-[#FF6B00]/30 transition-all"
               >
-                Create Match & Publish
+                🚀 Create Match & Publish Contest
               </button>
             </div>
           </div>

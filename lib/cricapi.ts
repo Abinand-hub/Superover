@@ -102,6 +102,10 @@ export async function syncMatchesFromCricAPI() {
         }
 
         if (!existingMatch) {
+          const normalizedStartTime = match.dateTimeGMT
+            ? new Date(match.dateTimeGMT.endsWith('Z') ? match.dateTimeGMT : match.dateTimeGMT + 'Z').toISOString()
+            : new Date().toISOString();
+
           // Create new match
           await Match.create({
             apiId: match.id,
@@ -110,7 +114,7 @@ export async function syncMatchesFromCricAPI() {
             format: (match.matchType || 'T20').toUpperCase(),
             team1: { name: match.teams[0], code: team1Code, logoUrl: team1Logo },
             team2: { name: match.teams[1], code: team2Code, logoUrl: team2Logo },
-            matchStartTime: match.dateTimeGMT,
+            matchStartTime: normalizedStartTime,
             status: match.matchStarted ? 'LIVE' : 'FETCHED',
             questions: [],
             entryFees: [25, 50, 100],
