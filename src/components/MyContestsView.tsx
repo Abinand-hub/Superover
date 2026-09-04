@@ -325,8 +325,8 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {/* Swap Players / Edit Lineup for Upcoming Matches */}
-                          {isPending && match?.status === 'UPCOMING' && onEditSlip && (
+                          {/* Swap Players / Edit Lineup strictly before match start */}
+                          {isPending && match?.status === 'UPCOMING' && new Date(match.startTime || (match as any).matchStartTime || 0).getTime() > Date.now() && onEditSlip && (
                             <button
                               onClick={() => onEditSlip(match, slip)}
                               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25 transition-all"

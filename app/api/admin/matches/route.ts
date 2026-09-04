@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       console.warn('Failed to cleanup past fetched matches in admin route:', e);
     }
 
-    // Return matches strictly within the next 2 days, or active LIVE/LOCKED matches
+    // Return matches strictly within the next 2 days, or active LIVE/LOCKED/COMPLETED matches, or published matches
     const query = {
       $or: [
         {
@@ -35,7 +35,8 @@ export async function GET(req: Request) {
             $lte: twoDaysFromNow.toISOString()
           }
         },
-        { status: { $in: ['LIVE', 'LOCKED'] } }
+        { status: { $in: ['LIVE', 'LOCKED', 'COMPLETED'] } },
+        { 'questions.0': { $exists: true } }
       ]
     };
     

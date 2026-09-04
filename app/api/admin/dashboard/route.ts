@@ -36,7 +36,8 @@ export async function GET(req: Request) {
             $lte: twoDaysFromNow.toISOString()
           }
         },
-        { status: { $in: ['LIVE', 'LOCKED'] } }
+        { status: { $in: ['LIVE', 'LOCKED', 'COMPLETED'] } },
+        { 'questions.0': { $exists: true } }
       ]
     };
     

@@ -167,28 +167,40 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
             </div>
 
             {match.questions?.map((q) => {
-              const actualResult = results?.answers ? results.answers[q.id] : null;
+              const rawResult = results?.answers ? results.answers[q.id] : null;
+              const officialAnswerId = typeof rawResult === 'object' && rawResult !== null
+                ? (rawResult.answerId || rawResult.answerText)
+                : rawResult;
+
+              const officialAnswerText = typeof rawResult === 'object' && rawResult !== null
+                ? (rawResult.answerText || playerMap.get(officialAnswerId)?.name || officialAnswerId)
+                : (playerMap.get(officialAnswerId)?.name || officialAnswerId || 'TBD');
+
+              const statDetailText = typeof rawResult === 'object' && rawResult !== null
+                ? (rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
+                : (rawResult ? 'Official Verified Result' : 'Awaiting Result');
+
               const userAnswerId = slip 
                 ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 
                 : null;
               
-              const isCorrect = userAnswerId && actualResult && String(userAnswerId).trim().toLowerCase() === String(actualResult.answerId || actualResult.answerText).trim().toLowerCase();
+              const isCorrect = !!(userAnswerId && officialAnswerId && String(userAnswerId).trim().toLowerCase() === String(officialAnswerId).trim().toLowerCase());
 
-              // For player questions, we can look up the player
+              // For player questions, look up player details
               let userPickDisplayName = userAnswerId || 'Unselected';
               if (q.type === 'PLAYER' && userAnswerId) {
                 const p = playerMap.get(userAnswerId);
-                if (p) userPickDisplayName = p.shortName;
+                if (p) userPickDisplayName = p.name || p.shortName;
               }
 
               return (
                 <div
                   key={q.id}
                   className={`p-3.5 rounded-xl border transition-colors ${
-                    slip
+                    slip && rawResult
                       ? isCorrect
-                        ? 'bg-emerald-500/10 border-emerald-500/40'
-                        : 'bg-slate-950/60 border-slate-800/80'
+                        ? 'bg-emerald-500/15 border-emerald-500/50 shadow-sm'
+                        : 'bg-rose-500/10 border-rose-500/30'
                       : 'bg-slate-950/60 border-slate-800'
                   }`}
                 >
@@ -209,17 +221,17 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                       {/* Actual Winner */}
                       <div className="text-right">
                         <div className="text-xs font-bold text-amber-300">
-                          {actualResult?.answerText || 'TBD'}
+                          {officialAnswerText}
                         </div>
                         <div className="text-[11px] font-mono text-slate-400">
-                          {actualResult?.statValue || 'Awaiting Result'}
+                          {statDetailText}
                         </div>
                       </div>
 
                       {/* User Pick Badge (if entered) */}
                       {slip && (
                         <div className="pl-2 border-l border-slate-800">
-                          {!actualResult ? (
+                          {!rawResult ? (
                             <div className="flex flex-col items-end">
                               <span className="text-[10px] text-slate-400 font-bold">
                                 Pick: {userPickDisplayName}
@@ -229,16 +241,16 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                               </span>
                             </div>
                           ) : isCorrect ? (
-                             <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/30">
+                             <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/40">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>Match ✅</span>
                             </div>
                           ) : (
                             <div className="flex flex-col items-end">
-                              <span className="text-[10px] text-slate-500 line-through">
+                              <span className="text-[10px] text-slate-400 line-through">
                                 Pick: {userPickDisplayName}
                               </span>
-                              <span className="text-[10px] text-rose-400 font-bold">
+                              <span className="text-[10px] text-rose-400 font-black">
                                 Missed ❌
                               </span>
                             </div>
@@ -270,7 +282,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
               Close
             </button>
 
-            {slip && (slip.status === 'PENDING' || slip.status === 'LIVE') && match.status === 'UPCOMING' && onEditSlip && (
+            {slip && (slip.status === 'PENDING' || slip.status === 'LIVE') && match.status === 'UPCOMING' && new Date(match.startTime || (match as any).matchStartTime || 0).getTime() > Date.now() && onEditSlip && (
               <button
                 onClick={() => {
                   onClose();

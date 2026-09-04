@@ -168,8 +168,9 @@ export async function autoLockMatches() {
 
   // 3. Matches whose play has finished -> Auto-settle results and disburse wallet payouts
   const matchesToComplete = await Match.find({
-    status: 'LIVE',
-    matchStartTime: { $lte: matchFinishedThreshold.toISOString() }
+    status: { $in: ['LIVE', 'LOCKED', 'UPCOMING'] },
+    matchStartTime: { $lte: matchFinishedThreshold.toISOString() },
+    'questions.0': { $exists: true }
   });
 
   for (const match of matchesToComplete) {

@@ -52,7 +52,15 @@ export function generateAutoWinningPicks(match: any) {
  * and disburses real cash winnings to winning users' wallets.
  */
 export async function executeMatchSettlement(matchId: string, picks?: any, summary?: string) {
-  const match = await Match.findById(matchId);
+  const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(matchId);
+  const match = await Match.findOne({
+    $or: [
+      ...(isValidObjectId ? [{ _id: matchId }] : []),
+      { apiId: matchId },
+      { id: matchId }
+    ]
+  });
+
   if (!match) {
     throw new Error('Match not found for settlement');
   }
@@ -70,7 +78,14 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
   await match.save();
 
   // 2. Fetch and evaluate all user prediction slips
-  const slips = await Slip.find({ matchId: match._id });
+  const slips = await Slip.find({
+    $or: [
+      { matchId: match._id },
+      { matchId: match._id.toString() },
+      ...(match.apiId ? [{ matchId: match.apiId }] : []),
+      { matchId: matchId }
+    ]
+  });
   let payoutsCount = 0;
   let totalDisbursed = 0;
 
