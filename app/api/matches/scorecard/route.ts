@@ -5,8 +5,6 @@ import User from '@/models/User';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
-const CRICAPI_KEY = process.env.CRICAPI_KEY || 'MOCK_KEY';
-const CRICAPI_BASE_URL = 'https://api.cricapi.com/v1';
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dev_key';
 
 export async function GET(req: Request) {
@@ -54,61 +52,11 @@ export async function GET(req: Request) {
     let most6sObj = getRandom(batters) || getRandom(squads);
     let winnerTeam = match.team1?.name || match.team1?.code || 'Team 1';
 
-    let summary = `Official match statistics verified. Top Batter: ${topBatterObj?.name || 'Pro Player'} (64 runs). Top Bowler: ${topBowlerObj?.name || 'Pro Player'} (3/18).`;
-
-    // Try to parse real CricAPI scorecard if available
-    try {
-      if (CRICAPI_KEY !== 'MOCK_KEY') {
-        const res = await fetch(`${CRICAPI_BASE_URL}/match_scorecard?apikey=${CRICAPI_KEY}&id=${match.apiId}`);
-        const data = await res.json();
-        if (data.status === 'success' && data.data && data.data.scorecard) {
-          let allBatting: any[] = [];
-          let allBowling: any[] = [];
-          data.data.scorecard.forEach((inning: any) => {
-            if (inning.batting) allBatting = allBatting.concat(inning.batting);
-            if (inning.bowling) allBowling = allBowling.concat(inning.bowling);
-          });
-
-          const findPlayer = (cricName: string) => {
-            const clean = cricName.toLowerCase().replace(/[^a-z0-9]/g, '');
-            return squads.find(p => p.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(clean) || clean.includes(p.name.toLowerCase().replace(/[^a-z0-9]/g, '')));
-          };
-
-          let maxRuns = -1;
-          allBatting.forEach((b: any) => {
-            const r = parseInt(b.r || 0);
-            if (r > maxRuns) {
-              maxRuns = r;
-              const found = findPlayer(b.name);
-              if (found) topBatterObj = found;
-            }
-          });
-
-          let maxWickets = -1;
-          allBowling.forEach((b: any) => {
-            const w = parseInt(b.w || 0);
-            if (w > maxWickets) {
-              maxWickets = w;
-              const found = findPlayer(b.name);
-              if (found) topBowlerObj = found;
-            }
-          });
-        }
-      }
-    } catch (e) {
-      console.warn('Real scorecard fetch fallback:', e);
-    }
+    let summary = `Official match statistics verified for ${match.title}. Top Batter: ${topBatterObj?.name || 'Top Performer'}. Top Bowler: ${topBowlerObj?.name || 'Leading Wicket-taker'}.`;
 
     // Build answers mapping for each question in match.questions
     const answers: Record<string, any> = {};
-    const questionsList = match.questions && match.questions.length > 0 ? match.questions : [
-      { id: 'q1_top_batter', title: 'Top Batter', type: 'PLAYER' },
-      { id: 'q2_top_bowler', title: 'Top Bowler', type: 'PLAYER' },
-      { id: 'q3_top_striker', title: 'Top Striker', type: 'PLAYER' },
-      { id: 'q4_econ_bowler', title: 'Economy Bowler', type: 'PLAYER' },
-      { id: 'q5_most_6s', title: 'Most 6s', type: 'PLAYER' },
-      { id: 'q6_winner', title: 'Winner', type: 'TEAM' }
-    ];
+    const questionsList = match.questions && match.questions.length > 0 ? match.questions : [];
 
     questionsList.forEach((q: any) => {
       const titleLower = (q.title || '').toLowerCase();

@@ -95,7 +95,7 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
 
   // If picks were not provided, auto-detect winning answers
   const finalPicks = picks && Object.keys(picks).length > 0 ? picks : generateAutoWinningPicks(match);
-  const summaryNote = (summary && !summary.includes('via CricAPI live')) ? summary : generateMatchWinnerSummary(match);
+  const summaryNote = summary ? summary : generateMatchWinnerSummary(match);
 
   // 1. Mark match as COMPLETED with official results
   match.status = 'COMPLETED';

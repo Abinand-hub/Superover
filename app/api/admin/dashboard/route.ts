@@ -6,7 +6,7 @@ import Transaction from '@/models/Transaction';
 import User from '@/models/User';
 import { CricketMatch } from '@/src/types';
 
-import { autoLockMatches } from '@/lib/cricapi';
+import { autoLockMatches } from '@/lib/matchLifecycle';
 
 export const dynamic = 'force-dynamic';
 

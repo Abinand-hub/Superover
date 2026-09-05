@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Match from '@/models/Match';
-import { autoLockMatches } from '@/lib/cricapi';
+import { autoLockMatches } from '@/lib/matchLifecycle';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
