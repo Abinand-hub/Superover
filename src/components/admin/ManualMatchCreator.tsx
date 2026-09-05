@@ -600,6 +600,26 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     setQuestionBankModalIndex(null);
   };
 
+  // Helper to handle direct question bank dropdown change for slot `index`
+  const handleSelectQuestionDropdown = (index: number, selectedShortTitle: string) => {
+    const allBankQuestions = MASTER_QUESTION_BANK.flatMap(cat => cat.questions);
+    const found = allBankQuestions.find(q => q.shortTitle === selectedShortTitle);
+    if (!found) return;
+
+    const updated = [...customQuestions];
+    updated[index] = {
+      ...updated[index],
+      title: found.title,
+      shortTitle: found.shortTitle,
+      subtitle: found.subtitle,
+      type: found.type as any,
+      optionsType: found.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
+      criteria: found.criteria as any,
+      iconName: found.iconName as any
+    };
+    setCustomQuestions(updated);
+  };
+
   // Create & Publish Match to Database
   const handlePublishMatch = async () => {
     if (!team1Name.trim() || !team2Name.trim()) {
@@ -622,16 +642,56 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
 
       const lockTimeIso = new Date(new Date(startTimeIso).getTime() - 15 * 60 * 1000).toISOString();
 
-      const allPlayerNames = [...squad1.map(p => p.name), ...squad2.map(p => p.name)];
+      const squad1PlayerNames = squad1.map(p => p.name);
+      const squad2PlayerNames = squad2.map(p => p.name);
+      const allPlayerNames = [...squad1PlayerNames, ...squad2PlayerNames];
 
-      // Build Questions populated with squad options
+      // Build Questions populated with strictly segregated squad options
       const configuredQuestions = customQuestions.map(q => {
-        if (q.type === 'PLAYER' || q.optionsType === 'DYNAMIC_SQUAD') {
+        const titleLower = (q.title || '').toLowerCase();
+        const shortTitleLower = (q.shortTitle || '').toLowerCase();
+        const subTitleLower = (q.subtitle || '').toLowerCase();
+
+        const isTeam1Strict = titleLower.includes('team 1') || 
+                              titleLower.includes('(team 1)') ||
+                              shortTitleLower.includes('team 1') ||
+                              subTitleLower.includes('team 1');
+
+        const isTeam2Strict = titleLower.includes('team 2') || 
+                              titleLower.includes('(team 2)') ||
+                              shortTitleLower.includes('team 2') ||
+                              subTitleLower.includes('team 2');
+
+        if (q.type === 'TEAM') {
           return {
             ...q,
-            options: allPlayerNames
+            optionsType: 'FIXED',
+            options: [team1Name.trim() || 'Team 1', team2Name.trim() || 'Team 2']
           };
         }
+
+        if (q.type === 'PLAYER' || q.optionsType === 'DYNAMIC_SQUAD') {
+          if (isTeam1Strict) {
+            return {
+              ...q,
+              optionsType: 'DYNAMIC_SQUAD',
+              options: squad1PlayerNames
+            };
+          } else if (isTeam2Strict) {
+            return {
+              ...q,
+              optionsType: 'DYNAMIC_SQUAD',
+              options: squad2PlayerNames
+            };
+          } else {
+            return {
+              ...q,
+              optionsType: 'DYNAMIC_SQUAD',
+              options: allPlayerNames
+            };
+          }
+        }
+
         return q;
       });
 
@@ -1102,121 +1162,123 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
             {/* 4. ADMIN CONTEST QUESTIONS WITH QUESTION BANK PICKER */}
             <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-[#FF8800] uppercase tracking-wider flex items-center gap-1.5">
-                  <HelpCircle className="w-4 h-4 text-[#FFAA00]" />
-                  4. Admin Contest Questions ({customQuestions.length})
-                </span>
+                <div>
+                  <span className="text-[11px] font-black text-[#FF8800] uppercase tracking-wider flex items-center gap-1.5">
+                    <HelpCircle className="w-4 h-4 text-[#FFAA00]" />
+                    4. Admin Contest Questions ({customQuestions.length})
+                  </span>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Pick standard questions from the Question Bank dropdown for each slot.
+                  </p>
+                </div>
                 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomQuestions(DEFAULT_QUESTIONS)}
+                    className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold border border-slate-700 flex items-center gap-1 transition-all"
+                    title="Reset to default 6 questions"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset 6</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setQuestionBankModalIndex(null)}
                     className="px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/40 text-[10px] font-black flex items-center gap-1 transition-all"
                   >
                     <Database className="w-3 h-3" />
-                    <span>Question Bank</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowQuestionEditor(!showQuestionEditor)}
-                    className="text-[11px] text-[#FFAA00] hover:underline font-bold flex items-center gap-1"
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    <span>{showQuestionEditor ? 'Close' : 'Edit'}</span>
+                    <span>Browse Bank</span>
                   </button>
                 </div>
               </div>
 
-              {!showQuestionEditor ? (
-                <ul className="text-[11px] text-slate-300 space-y-2">
-                  {customQuestions.map((q, idx) => (
-                    <li key={q.id || idx} className="p-2 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <span className="font-bold text-white block truncate">{idx + 1}. {q.title}</span>
-                        <span className="text-[10px] text-slate-400 block truncate">{q.subtitle}</span>
+              {/* Questions List with Direct Dropdown Selector */}
+              <div className="space-y-3 pt-1">
+                {customQuestions.map((q, idx) => {
+                  const titleLower = (q.title || '').toLowerCase();
+                  const shortTitleLower = (q.shortTitle || '').toLowerCase();
+                  const isTeam1 = titleLower.includes('team 1') || shortTitleLower.includes('team 1');
+                  const isTeam2 = titleLower.includes('team 2') || shortTitleLower.includes('team 2');
+
+                  return (
+                    <div key={q.id || idx} className="p-3 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2 text-xs hover:border-[#FF6B00]/40 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-md bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] flex items-center justify-center border border-[#FF6B00]/30">
+                            #{idx + 1}
+                          </span>
+                          <span className="text-[11px] font-black text-white">Select Question from Bank:</span>
+                        </div>
+
+                        {/* Player / Team Scope Badge */}
+                        {isTeam1 ? (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                            🏏 {team1Code || 'Team 1'} Players Only
+                          </span>
+                        ) : isTeam2 ? (
+                          <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                            🏏 {team2Code || 'Team 2'} Players Only
+                          </span>
+                        ) : q.type === 'TEAM' ? (
+                          <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                            🏆 Team Selection
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                            👥 Both Teams Players
+                          </span>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setQuestionBankModalIndex(idx)}
-                        className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#FFAA00] text-[10px] font-bold border border-slate-700 flex-shrink-0"
-                        title="Swap from Question Bank"
-                      >
-                        Swap
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                /* Editable Questions List */
-                <div className="space-y-3 pt-2">
-                  <div className="flex justify-between items-center">
-                    <button
-                      type="button"
-                      onClick={() => setQuestionBankModalIndex(null)}
-                      className="text-[10px] text-purple-400 hover:underline flex items-center gap-1 font-bold"
-                    >
-                      <Database className="w-3 h-3" />
-                      <span>+ Browse Question Bank</span>
-                    </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setCustomQuestions(DEFAULT_QUESTIONS)}
-                      className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>Reset Standard 6</span>
-                    </button>
-                  </div>
+                      {/* Dropdown Selector */}
+                      <div>
+                        <select
+                          value={q.shortTitle || ''}
+                          onChange={(e) => handleSelectQuestionDropdown(idx, e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00] cursor-pointer"
+                        >
+                          <option value="" disabled>-- Select Question from Bank --</option>
+                          {MASTER_QUESTION_BANK.map((group) => (
+                            <optgroup key={group.category} label={group.category} className="bg-[#0D122B] text-[#FFAA00] font-bold">
+                              {group.questions.map((bankQ) => (
+                                <option key={bankQ.shortTitle} value={bankQ.shortTitle} className="text-white bg-[#080C1D] font-medium">
+                                  {bankQ.shortTitle} — {bankQ.title}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
 
-                  {customQuestions.map((q, idx) => (
-                    <div key={q.id || idx} className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E] space-y-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black text-[#FFAA00]">Question #{idx + 1}</span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setQuestionBankModalIndex(idx)}
-                            className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-bold"
-                          >
-                            Swap from Bank
-                          </button>
-                          <select
-                            value={q.type}
-                            onChange={(e) => handleUpdateQuestion(idx, 'type', e.target.value)}
-                            className="px-2 py-0.5 rounded bg-[#080C1D] border border-[#1A223E] text-slate-300 text-[10px]"
-                          >
-                            <option value="TEAM">TEAM Selection</option>
-                            <option value="PLAYER">PLAYER Selection</option>
-                            <option value="YES_NO">YES / NO</option>
-                            <option value="NUMBER">NUMBER / STAT</option>
-                          </select>
+                      {/* Title & Subtitle detail fields */}
+                      <div className="space-y-1.5 pt-1">
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-bold block mb-0.5">Question Display Title:</label>
+                          <input
+                            type="text"
+                            value={q.title}
+                            onChange={(e) => handleUpdateQuestion(idx, 'title', e.target.value)}
+                            placeholder="Question Title"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-bold block mb-0.5">Subtitle / Scoring Criteria:</label>
+                          <input
+                            type="text"
+                            value={q.subtitle || ''}
+                            onChange={(e) => handleUpdateQuestion(idx, 'subtitle', e.target.value)}
+                            placeholder="Subtitle / Criteria description"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080C1D] border border-[#1A223E] text-slate-300 text-[11px] focus:outline-none focus:border-[#FF6B00]"
+                          />
                         </div>
                       </div>
-
-                      <div>
-                        <input
-                          type="text"
-                          value={q.title}
-                          onChange={(e) => handleUpdateQuestion(idx, 'title', e.target.value)}
-                          placeholder="Question Title"
-                          className="w-full px-2 py-1 rounded-lg bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold"
-                        />
-                      </div>
-
-                      <div>
-                        <input
-                          type="text"
-                          value={q.subtitle || ''}
-                          onChange={(e) => handleUpdateQuestion(idx, 'subtitle', e.target.value)}
-                          placeholder="Subtitle / Criteria description"
-                          className="w-full px-2 py-1 rounded-lg bg-[#080C1D] border border-[#1A223E] text-slate-400 text-[10px]"
-                        />
-                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
 
             {/* CREATE & PUBLISH BUTTON */}

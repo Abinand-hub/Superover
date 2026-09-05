@@ -54,9 +54,49 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   const allSquadPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
   const playerMap = new Map(allSquadPlayers.map((p) => [p.id, p]));
 
+  const activeQuestion = match.questions.find(q => q.id === activePlayerQuestionId);
+
   const filteredPlayers = allSquadPlayers.filter((p, idx) => {
-    if (teamFilter === 'TEAM1' && p.team !== (match.team1?.code || '')) return false;
-    if (teamFilter === 'TEAM2' && p.team !== (match.team2?.code || '')) return false;
+    // If the question has specific allowed options defined (e.g. only Team 1 players), respect it strictly!
+    if (activeQuestion?.options && activeQuestion.options.length > 0) {
+      const isAllowed = activeQuestion.options.some(opt => 
+        opt.toLowerCase() === (p.name || '').toLowerCase() || 
+        opt.toLowerCase() === (p.shortName || '').toLowerCase() || 
+        opt === p.id
+      );
+      if (!isAllowed) return false;
+    }
+
+    // Auto team constraint from question title/subtitle
+    const titleLower = (activeQuestion?.title || '').toLowerCase();
+    const shortTitleLower = (activeQuestion?.shortTitle || '').toLowerCase();
+    const subTitleLower = (activeQuestion?.subtitle || '').toLowerCase();
+    
+    const isTeam1Strict = titleLower.includes('team 1') || 
+                          titleLower.includes('(team 1)') ||
+                          shortTitleLower.includes('team 1') ||
+                          subTitleLower.includes('team 1') ||
+                          (match.team1?.name && (titleLower.includes(match.team1.name.toLowerCase()) || shortTitleLower.includes(match.team1.name.toLowerCase())));
+
+    const isTeam2Strict = titleLower.includes('team 2') || 
+                          titleLower.includes('(team 2)') ||
+                          shortTitleLower.includes('team 2') ||
+                          subTitleLower.includes('team 2') ||
+                          (match.team2?.name && (titleLower.includes(match.team2.name.toLowerCase()) || shortTitleLower.includes(match.team2.name.toLowerCase())));
+
+    const isPlayerInTeam1 = (match.squadTeam1 || []).some(tp => tp.id === p.id || tp.name.toLowerCase() === (p.name || '').toLowerCase()) || 
+                            p.team === (match.team1?.code || '') || 
+                            p.teamName?.toLowerCase() === (match.team1?.name || '').toLowerCase();
+
+    const isPlayerInTeam2 = (match.squadTeam2 || []).some(tp => tp.id === p.id || tp.name.toLowerCase() === (p.name || '').toLowerCase()) || 
+                            p.team === (match.team2?.code || '') || 
+                            p.teamName?.toLowerCase() === (match.team2?.name || '').toLowerCase();
+
+    if (isTeam1Strict && !isPlayerInTeam1) return false;
+    if (isTeam2Strict && !isPlayerInTeam2) return false;
+
+    if (teamFilter === 'TEAM1' && !isPlayerInTeam1) return false;
+    if (teamFilter === 'TEAM2' && !isPlayerInTeam2) return false;
     if (roleFilter !== 'ALL' && p.role !== roleFilter) return false;
     const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
     if (playingFilter === 'PLAYING_XI' && !isPlaying) return false;
@@ -238,11 +278,47 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
           {/* Role & Team Filters */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar text-[11px]">
-            <button onClick={() => setTeamFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Teams</button>
-            <button onClick={() => setTeamFilter('TEAM1')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'}</button>
-            <button onClick={() => setTeamFilter('TEAM2')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'}</button>
+            {(() => {
+              const titleLower = (q?.title || '').toLowerCase();
+              const shortTitleLower = (q?.shortTitle || '').toLowerCase();
+              const subTitleLower = (q?.subtitle || '').toLowerCase();
+              
+              const isT1 = titleLower.includes('team 1') || 
+                           titleLower.includes('(team 1)') ||
+                           shortTitleLower.includes('team 1') ||
+                           subTitleLower.includes('team 1') ||
+                           (match.team1?.name && (titleLower.includes(match.team1.name.toLowerCase()) || shortTitleLower.includes(match.team1.name.toLowerCase())));
+
+              const isT2 = titleLower.includes('team 2') || 
+                           titleLower.includes('(team 2)') ||
+                           shortTitleLower.includes('team 2') ||
+                           subTitleLower.includes('team 2') ||
+                           (match.team2?.name && (titleLower.includes(match.team2.name.toLowerCase()) || shortTitleLower.includes(match.team2.name.toLowerCase())));
+
+              if (isT1) {
+                return (
+                  <div className="px-2.5 py-1 rounded-lg font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap flex items-center gap-1">
+                    <span>🏏 Locked to {match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'} Squad Only</span>
+                  </div>
+                );
+              }
+              if (isT2) {
+                return (
+                  <div className="px-2.5 py-1 rounded-lg font-black bg-sky-500/20 text-sky-300 border border-sky-500/30 whitespace-nowrap flex items-center gap-1">
+                    <span>🏏 Locked to {match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'} Squad Only</span>
+                  </div>
+                );
+              }
+              return (
+                <>
+                  <button onClick={() => setTeamFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Teams</button>
+                  <button onClick={() => setTeamFilter('TEAM1')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'}</button>
+                  <button onClick={() => setTeamFilter('TEAM2')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'}</button>
+                </>
+              );
+            })()}
             <div className="w-px h-3.5 bg-slate-700 mx-0.5"></div>
-            <button onClick={() => setRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All</button>
+            <button onClick={() => setRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
             <button onClick={() => setRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BAT' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
             <button onClick={() => setRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BOWL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
             <button onClick={() => setRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'AR' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
