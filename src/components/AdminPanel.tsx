@@ -51,6 +51,7 @@ import { api } from '../services/api';
 import { DEFAULT_QUESTIONS } from '../data/initialData';
 import { LiveMarketAnalysis } from './admin/LiveMarketAnalysis';
 import { QuestionBankManager } from './admin/QuestionBankManager';
+import { ManualMatchCreator } from './admin/ManualMatchCreator';
 import { MatchSelectionManager } from './admin/MatchSelectionManager';
 import { MatchConfigurator } from './admin/MatchConfigurator';
 import { ClientDetailView } from './admin/ClientDetailView';
@@ -609,7 +610,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-[#1A223E]">
         {[
           { id: 'overview', label: 'Platform KPI', icon: BarChart3 },
-          { id: 'publishing', label: 'Match Publishing', icon: Calendar },
+          { id: 'publishing', label: 'Create Match (Manual)', icon: PlusCircle },
           { id: 'questionBank', label: 'Question Bank', icon: Database },
           { id: 'matches', label: 'Match Lifecycle (Start/End)', icon: Trophy },
           { id: 'squads', label: 'Match Squad Viewer', icon: UserPlus },
@@ -617,7 +618,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           { id: 'jackpots', label: 'Jackpot Approvals', icon: Gift },
           { id: 'users', label: `User Inspector (${metrics.totalUsers})`, icon: Users },
           { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL' && t.status === 'PENDING').length})`, icon: ArrowUpRight },
-          { id: 'financials', label: 'Audit CSV & Rake', icon: FileSpreadsheet },
+          { id: 'financials', label: 'Financial Audit & CSV', icon: FileSpreadsheet },
           { id: 'market', label: 'Live Market Analysis', icon: TrendingUp },
           { id: 'settings', label: 'Platform Settings', icon: Settings },
         ].map((tab) => {
@@ -643,7 +644,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* TAB CONTENT 1: OVERVIEW */}
       {adminTab === 'overview' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Pool Volume</span>
               <span className="text-2xl sm:text-3xl font-black text-white font-display mt-1 block">
@@ -658,14 +659,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 {formatINR(allTransactions.filter(t => t.type === 'CONTEST_PAYOUT').reduce((sum, t) => sum + t.amount, 0))}
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">0.5X, 3X, 10X & 100X Winners</span>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-[#FF6B00]/15 to-[#0D122B] border border-[#FF6B00]/30 shadow-md">
-              <span className="text-[10px] text-[#FF8800] font-bold uppercase tracking-wider block">Platform Net Rake</span>
-              <span className="text-2xl sm:text-3xl font-black text-[#4ADE80] font-display mt-1 block">
-                {formatINR(allSlips.reduce((sum, slip) => sum + (slip.entryFee || 0), 0) * 0.15)}
-              </span>
-              <span className="text-[11px] text-[#FFAA00] mt-1 block">~15% House Commission</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
@@ -2156,30 +2149,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
       
       {adminTab === 'publishing' && (
-        <div className="space-y-4">
-          {publishingView === 'list' && (
-            <MatchSelectionManager 
-              allMatches={matches}
-              onMatchesDrafted={() => onReloadData && onReloadData()}
-              onGoToDrafts={(matchId: string) => { setConfiguringMatchId(matchId); setPublishingView('config'); }}
-              onReloadData={onReloadData}
-            />
-          )}
-          {publishingView === 'config' && configuringMatchId && (
-            <MatchConfigurator 
-              matchId={configuringMatchId}
-              onBack={() => setPublishingView('list')}
-              onMatchPublished={async () => {
-                if (onReloadData) {
-                  await onReloadData();
-                }
-                setSelectedMatchForSquad(configuringMatchId);
-                setPublishingView('list');
-                setAdminTab('matches');
-              }}
-            />
-          )}
-        </div>
+        <ManualMatchCreator 
+          allMatches={matches}
+          onCreateMatch={onCreateMatch}
+          onUpdateMatch={onUpdateMatch}
+          onReloadData={onReloadData}
+          onGoToSettle={(matchId) => {
+            setSelectedMatchIdForSettlement(matchId);
+            setAdminTab('settlement');
+          }}
+          onGoToSquads={(matchId) => {
+            setSelectedMatchForSquad(matchId);
+            setAdminTab('squads');
+          }}
+        />
       )}
 
       {adminTab === 'questionBank' && (

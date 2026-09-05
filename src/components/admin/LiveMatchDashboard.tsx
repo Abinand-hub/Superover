@@ -108,11 +108,11 @@ export const LiveMatchDashboard: React.FC<LiveMatchDashboardProps> = ({ liveMatc
               <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 relative overflow-hidden">
                 <TrendingUp className="w-24 h-24 absolute -bottom-6 -right-6 text-emerald-500/10" />
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold mb-2 relative z-10">
-                  LIVE PROFIT
+                  RETAINED BALANCE
                 </div>
                 <div className="text-2xl font-black text-emerald-400 relative z-10">{formatINR(liveProfit)}</div>
                 <div className="mt-2 text-[10px] text-emerald-500/60 relative z-10">
-                  Estimated house rake
+                  Pool minus projected payouts
                 </div>
               </div>
             </div>
