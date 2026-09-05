@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CricketMatch, Player, PlayerRole } from '../../types';
 import { 
   PlusCircle, 
@@ -17,10 +17,14 @@ import {
   Edit3,
   Flame,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Search,
+  X,
+  Globe,
+  Image as ImageIcon
 } from 'lucide-react';
 import { formatINR } from '../../utils/payoutCalculator';
-import { getTeamLogoUrl } from '../../utils/teamLogoHelper';
+import { getTeamLogoUrl, PRESET_LOGO_CATALOG, TEAM_LOGO_MAP } from '../../utils/teamLogoHelper';
 import { DEFAULT_QUESTIONS } from '../../data/initialData';
 
 interface ManualMatchCreatorProps {
@@ -32,7 +36,7 @@ interface ManualMatchCreatorProps {
   onGoToSquads?: (matchId: string) => void;
 }
 
-// Preset popular squads for fast 1-click setup if desired
+// Preset popular squads for fast 1-click setup
 const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string; squad: { name: string; shortName: string; role: PlayerRole }[] }> = {
   IND: {
     name: 'India',
@@ -106,10 +110,64 @@ const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string
       { name: 'Tabraiz Shamsi', shortName: 'T. Shamsi', role: 'BOWL' },
     ]
   },
+  PAK: {
+    name: 'Pakistan',
+    code: 'PAK',
+    logoUrl: 'https://flagcdn.com/w160/pk.png',
+    squad: [
+      { name: 'Babar Azam', shortName: 'B. Azam', role: 'BAT' },
+      { name: 'Mohammad Rizwan', shortName: 'M. Rizwan', role: 'WK' },
+      { name: 'Fakhar Zaman', shortName: 'F. Zaman', role: 'BAT' },
+      { name: 'Usman Khan', shortName: 'U. Khan', role: 'BAT' },
+      { name: 'Iftikhar Ahmed', shortName: 'I. Ahmed', role: 'AR' },
+      { name: 'Shadab Khan', shortName: 'S. Khan', role: 'AR' },
+      { name: 'Imad Wasim', shortName: 'I. Wasim', role: 'AR' },
+      { name: 'Shaheen Afridi', shortName: 'S. Afridi', role: 'BOWL' },
+      { name: 'Naseem Shah', shortName: 'N. Shah', role: 'BOWL' },
+      { name: 'Haris Rauf', shortName: 'H. Rauf', role: 'BOWL' },
+      { name: 'Mohammad Amir', shortName: 'M. Amir', role: 'BOWL' },
+    ]
+  },
+  NZ: {
+    name: 'New Zealand',
+    code: 'NZ',
+    logoUrl: 'https://flagcdn.com/w160/nz.png',
+    squad: [
+      { name: 'Finn Allen', shortName: 'F. Allen', role: 'BAT' },
+      { name: 'Devon Conway', shortName: 'D. Conway', role: 'WK' },
+      { name: 'Kane Williamson', shortName: 'K. Williamson', role: 'BAT' },
+      { name: 'Daryl Mitchell', shortName: 'D. Mitchell', role: 'AR' },
+      { name: 'Glenn Phillips', shortName: 'G. Phillips', role: 'AR' },
+      { name: 'James Neesham', shortName: 'J. Neesham', role: 'AR' },
+      { name: 'Mitchell Santner', shortName: 'M. Santner', role: 'AR' },
+      { name: 'Tim Southee', shortName: 'T. Southee', role: 'BOWL' },
+      { name: 'Trent Boult', shortName: 'T. Boult', role: 'BOWL' },
+      { name: 'Lockie Ferguson', shortName: 'L. Ferguson', role: 'BOWL' },
+      { name: 'Ish Sodhi', shortName: 'I. Sodhi', role: 'BOWL' },
+    ]
+  },
+  WI: {
+    name: 'West Indies',
+    code: 'WI',
+    logoUrl: 'https://flagcdn.com/w160/jm.png',
+    squad: [
+      { name: 'Brandon King', shortName: 'B. King', role: 'BAT' },
+      { name: 'Johnson Charles', shortName: 'J. Charles', role: 'BAT' },
+      { name: 'Nicholas Pooran', shortName: 'N. Pooran', role: 'WK' },
+      { name: 'Rovman Powell', shortName: 'R. Powell', role: 'BAT' },
+      { name: 'Sherfane Rutherford', shortName: 'S. Rutherford', role: 'BAT' },
+      { name: 'Andre Russell', shortName: 'A. Russell', role: 'AR' },
+      { name: 'Romario Shepherd', shortName: 'R. Shepherd', role: 'AR' },
+      { name: 'Roston Chase', shortName: 'R. Chase', role: 'AR' },
+      { name: 'Akeal Hosein', shortName: 'A. Hosein', role: 'BOWL' },
+      { name: 'Alzarri Joseph', shortName: 'A. Joseph', role: 'BOWL' },
+      { name: 'Gudakesh Motie', shortName: 'G. Motie', role: 'BOWL' },
+    ]
+  },
   CSK: {
     name: 'Chennai Super Kings',
     code: 'CSK',
-    logoUrl: 'https://flagcdn.com/w160/in.png',
+    logoUrl: 'https://documents.iplt20.com/ipl/CSK/logos/Logo-square/CSKsquare.png',
     squad: [
       { name: 'Ruturaj Gaikwad', shortName: 'R. Gaikwad', role: 'BAT' },
       { name: 'Devon Conway', shortName: 'D. Conway', role: 'BAT' },
@@ -127,7 +185,7 @@ const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string
   MI: {
     name: 'Mumbai Indians',
     code: 'MI',
-    logoUrl: 'https://flagcdn.com/w160/in.png',
+    logoUrl: 'https://documents.iplt20.com/ipl/MI/Logos/Logo-square/MI_Square.png',
     squad: [
       { name: 'Rohit Sharma', shortName: 'R. Sharma', role: 'BAT' },
       { name: 'Ishan Kishan', shortName: 'I. Kishan', role: 'WK' },
@@ -145,7 +203,7 @@ const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string
   RCB: {
     name: 'Royal Challengers Bengaluru',
     code: 'RCB',
-    logoUrl: 'https://flagcdn.com/w160/in.png',
+    logoUrl: 'https://documents.iplt20.com/ipl/RCB/Logos/Logo-square/RCBsquare.png',
     squad: [
       { name: 'Faf du Plessis', shortName: 'F. du Plessis', role: 'BAT' },
       { name: 'Virat Kohli', shortName: 'V. Kohli', role: 'BAT' },
@@ -163,7 +221,7 @@ const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string
   KKR: {
     name: 'Kolkata Knight Riders',
     code: 'KKR',
-    logoUrl: 'https://flagcdn.com/w160/in.png',
+    logoUrl: 'https://documents.iplt20.com/ipl/KKR/Logos/Logo-square/KKRsquare.png',
     squad: [
       { name: 'Philip Salt', shortName: 'P. Salt', role: 'WK' },
       { name: 'Sunil Narine', shortName: 'S. Narine', role: 'AR' },
@@ -201,7 +259,12 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   const [format, setFormat] = useState('T20');
   const [venue, setVenue] = useState('Wankhede Stadium, Mumbai');
 
-  // Start Date / Time (Defaults to 2 hours from now formatted for datetime-local)
+  // Flag Picker Modal State
+  const [pickingLogoFor, setPickingLogoFor] = useState<'team1' | 'team2' | null>(null);
+  const [logoSearchQuery, setLogoSearchQuery] = useState('');
+  const [customLogoInput, setCustomLogoInput] = useState('');
+
+  // Start Date / Time
   const defaultDateTime = () => {
     const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const year = d.getFullYear();
@@ -252,6 +315,21 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Auto-detect logo when team code or name changes
+  const handleTeam1Change = (name: string, code: string) => {
+    setTeam1Name(name);
+    setTeam1Code(code);
+    const autoLogo = getTeamLogoUrl(code, name);
+    if (autoLogo) setTeam1Logo(autoLogo);
+  };
+
+  const handleTeam2Change = (name: string, code: string) => {
+    setTeam2Name(name);
+    setTeam2Code(code);
+    const autoLogo = getTeamLogoUrl(code, name);
+    if (autoLogo) setTeam2Logo(autoLogo);
+  };
+
   // Handle Preset Selection for Team 1
   const applyPresetTeam1 = (code: string) => {
     const p = PRESET_TEAMS[code];
@@ -298,6 +376,29 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     );
   };
 
+  // Select Flag from Modal
+  const handleSelectLogo = (item: { name: string; code: string; logoUrl: string }) => {
+    if (pickingLogoFor === 'team1') {
+      setTeam1Logo(item.logoUrl);
+      if (!team1Name || team1Name === 'India') setTeam1Name(item.name);
+      if (!team1Code || team1Code === 'IND') setTeam1Code(item.code);
+    } else if (pickingLogoFor === 'team2') {
+      setTeam2Logo(item.logoUrl);
+      if (!team2Name || team2Name === 'Australia') setTeam2Name(item.name);
+      if (!team2Code || team2Code === 'AUS') setTeam2Code(item.code);
+    }
+    setPickingLogoFor(null);
+  };
+
+  // Apply Custom URL
+  const handleApplyCustomUrl = () => {
+    if (!customLogoInput.trim()) return;
+    if (pickingLogoFor === 'team1') setTeam1Logo(customLogoInput.trim());
+    else if (pickingLogoFor === 'team2') setTeam2Logo(customLogoInput.trim());
+    setCustomLogoInput('');
+    setPickingLogoFor(null);
+  };
+
   // Add Individual Player
   const handleAddPlayer = () => {
     if (!newPlayerName.trim()) return;
@@ -324,7 +425,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     setNewPlayerName('');
   };
 
-  // Bulk Add Players (1 player per line)
+  // Bulk Add Players
   const handleBulkAdd = () => {
     if (!bulkPlayerText.trim()) return;
     const lines = bulkPlayerText.split('\n').map(l => l.trim()).filter(Boolean);
@@ -332,7 +433,6 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     const teamN = activeSquadTab === 'team1' ? team1Name : team2Name;
 
     const newPlayers: Player[] = lines.map((line, idx) => {
-      // Check if line has role e.g. "Virat Kohli (BAT)"
       let role: PlayerRole = 'BAT';
       let name = line;
       if (line.toLowerCase().includes('(bowl)') || line.toLowerCase().includes('- bowl')) {
@@ -400,10 +500,8 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
 
       const lockTimeIso = new Date(new Date(startTimeIso).getTime() - 15 * 60 * 1000).toISOString();
 
-      // Combine squad names for player question options
       const allPlayerNames = [...squad1.map(p => p.name), ...squad2.map(p => p.name)];
 
-      // Build Questions populated with squad options
       const configuredQuestions = DEFAULT_QUESTIONS.map(q => {
         if (q.type === 'PLAYER') {
           return {
@@ -424,7 +522,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           code: team1Code.trim() || 'T1',
           name: team1Name.trim(),
           shortName: team1Code.trim() || 'T1',
-          logoUrl: team1Logo.trim(),
+          logoUrl: team1Logo.trim() || getTeamLogoUrl(team1Code, team1Name),
           color: '#FF6B00',
           accentColor: '#FF8800',
           flagOrLogo: '🏏',
@@ -433,7 +531,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           code: team2Code.trim() || 'T2',
           name: team2Name.trim(),
           shortName: team2Code.trim() || 'T2',
-          logoUrl: team2Logo.trim(),
+          logoUrl: team2Logo.trim() || getTeamLogoUrl(team2Code, team2Name),
           color: '#004C97',
           accentColor: '#00C8FF',
           flagOrLogo: '⚡',
@@ -483,7 +581,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
             Create Match Manually
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Build your contest with teams, squad rosters, match schedule, and 6 prediction questions. It will appear live on the fan portal instantly.
+            Build your contest with custom team flags/logos, squads, match schedule, and 6 prediction questions.
           </p>
         </div>
 
@@ -575,13 +673,13 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           <div className="p-6 rounded-3xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-xl">
             <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
               <Shield className="w-4 h-4 text-[#FFAA00]" />
-              2. Competing Teams Setup
+              2. Competing Teams & Flags Setup
             </h3>
 
             {/* Quick Preset Selector Buttons */}
             <div className="space-y-2">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                ⚡ Quick Preset Loaders:
+                ⚡ Quick 1-Click Team Presets:
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {Object.keys(PRESET_TEAMS).map((code) => (
@@ -592,9 +690,15 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                       if (activeSquadTab === 'team1') applyPresetTeam1(code);
                       else applyPresetTeam2(code);
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-[#080C1D] hover:bg-[#131A38] text-slate-300 hover:text-white border border-[#1A223E] text-[11px] font-bold transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-[#080C1D] hover:bg-[#131A38] text-slate-300 hover:text-white border border-[#1A223E] text-[11px] font-bold transition-all flex items-center gap-1.5"
                   >
-                    + {code} to {activeSquadTab === 'team1' ? 'Team 1' : 'Team 2'}
+                    <img 
+                      src={PRESET_TEAMS[code].logoUrl} 
+                      alt={code} 
+                      className="w-3.5 h-3.5 object-contain rounded-sm"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                    />
+                    <span>+ {code} to {activeSquadTab === 'team1' ? 'Team 1' : 'Team 2'}</span>
                   </button>
                 ))}
               </div>
@@ -605,31 +709,54 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#FF6B00]/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#FF8800] uppercase tracking-wider">TEAM 1</span>
-                  <img
-                    src={getTeamLogoUrl(team1Code, team1Name, team1Logo)}
-                    alt={team1Code}
-                    className="w-6 h-6 object-contain rounded"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                  />
+                  
+                  {/* Flag / Logo Clicker */}
+                  <button
+                    type="button"
+                    onClick={() => setPickingLogoFor('team1')}
+                    className="p-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 flex items-center gap-1.5 transition-all group"
+                    title="Click to change flag or logo"
+                  >
+                    <img
+                      src={team1Logo || getTeamLogoUrl(team1Code, team1Name)}
+                      alt={team1Code}
+                      className="w-7 h-7 object-contain rounded"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                    />
+                    <span className="text-[10px] text-slate-400 group-hover:text-white font-bold pr-1">Change</span>
+                  </button>
                 </div>
+
                 <div>
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Full Name:</label>
                   <input
                     type="text"
                     value={team1Name}
-                    onChange={(e) => setTeam1Name(e.target.value)}
+                    onChange={(e) => handleTeam1Change(e.target.value, team1Code)}
                     placeholder="e.g. India"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold"
                   />
                 </div>
+
                 <div>
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Code (3-4 Letters):</label>
                   <input
                     type="text"
                     value={team1Code}
-                    onChange={(e) => setTeam1Code(e.target.value.toUpperCase())}
+                    onChange={(e) => handleTeam1Change(team1Name, e.target.value.toUpperCase())}
                     placeholder="e.g. IND"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold uppercase"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold block mb-1">Flag / Logo URL:</label>
+                  <input
+                    type="text"
+                    value={team1Logo}
+                    onChange={(e) => setTeam1Logo(e.target.value)}
+                    placeholder="https://flagcdn.com/w160/in.png"
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-[11px] font-mono"
                   />
                 </div>
               </div>
@@ -638,31 +765,54 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#00C8FF]/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black text-[#00C8FF] uppercase tracking-wider">TEAM 2</span>
-                  <img
-                    src={getTeamLogoUrl(team2Code, team2Name, team2Logo)}
-                    alt={team2Code}
-                    className="w-6 h-6 object-contain rounded"
-                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                  />
+                  
+                  {/* Flag / Logo Clicker */}
+                  <button
+                    type="button"
+                    onClick={() => setPickingLogoFor('team2')}
+                    className="p-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 flex items-center gap-1.5 transition-all group"
+                    title="Click to change flag or logo"
+                  >
+                    <img
+                      src={team2Logo || getTeamLogoUrl(team2Code, team2Name)}
+                      alt={team2Code}
+                      className="w-7 h-7 object-contain rounded"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                    />
+                    <span className="text-[10px] text-slate-400 group-hover:text-white font-bold pr-1">Change</span>
+                  </button>
                 </div>
+
                 <div>
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Full Name:</label>
                   <input
                     type="text"
                     value={team2Name}
-                    onChange={(e) => setTeam2Name(e.target.value)}
+                    onChange={(e) => handleTeam2Change(e.target.value, team2Code)}
                     placeholder="e.g. Australia"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold"
                   />
                 </div>
+
                 <div>
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Code (3-4 Letters):</label>
                   <input
                     type="text"
                     value={team2Code}
-                    onChange={(e) => setTeam2Code(e.target.value.toUpperCase())}
+                    onChange={(e) => handleTeam2Change(team2Name, e.target.value.toUpperCase())}
                     placeholder="e.g. AUS"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold uppercase"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold block mb-1">Flag / Logo URL:</label>
+                  <input
+                    type="text"
+                    value={team2Logo}
+                    onChange={(e) => setTeam2Logo(e.target.value)}
+                    placeholder="https://flagcdn.com/w160/au.png"
+                    className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-[11px] font-mono"
                   />
                 </div>
               </div>
@@ -699,6 +849,12 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                     : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
                 }`}
               >
+                <img 
+                  src={team1Logo || getTeamLogoUrl(team1Code, team1Name)} 
+                  alt={team1Code} 
+                  className="w-4 h-4 object-contain rounded-sm"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                />
                 <span>{team1Code || 'Team 1'} ({squad1.length})</span>
               </button>
               <button
@@ -710,6 +866,12 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                     : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
                 }`}
               >
+                <img 
+                  src={team2Logo || getTeamLogoUrl(team2Code, team2Name)} 
+                  alt={team2Code} 
+                  className="w-4 h-4 object-contain rounded-sm"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                />
                 <span>{team2Code || 'Team 2'} ({squad2.length})</span>
               </button>
             </div>
@@ -873,7 +1035,24 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                       </span>
                     </div>
 
-                    <h4 className="text-base font-black text-white">{m.title}</h4>
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={getTeamLogoUrl(m.team1.code, m.team1.name, m.team1.logoUrl)}
+                        alt={m.team1.code}
+                        className="w-5 h-5 object-contain rounded"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                      />
+                      <span className="font-bold text-white text-sm">{m.team1.name}</span>
+                      <span className="text-xs text-slate-500 font-black">vs</span>
+                      <img
+                        src={getTeamLogoUrl(m.team2.code, m.team2.name, m.team2.logoUrl)}
+                        alt={m.team2.code}
+                        className="w-5 h-5 object-contain rounded"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                      />
+                      <span className="font-bold text-white text-sm">{m.team2.name}</span>
+                    </div>
+
                     <div className="text-xs text-slate-400">
                       Starts: {new Date(m.startTime || (m as any).matchStartTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} • Venue: {m.venue}
                     </div>
@@ -933,6 +1112,111 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           </div>
         )}
       </div>
+
+      {/* FLAG & LOGO PICKER POPUP MODAL */}
+      {pickingLogoFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050816]/90 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-[#0D122B] border border-[#1A223E] rounded-3xl shadow-2xl overflow-hidden my-auto p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-[#1A223E] pb-4">
+              <div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-[#FF6B00]" />
+                  Pick Flag or Logo for {pickingLogoFor === 'team1' ? team1Name || 'Team 1' : team2Name || 'Team 2'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Select an official IPL crest, international country flag, or paste a custom image URL.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPickingLogoFor(null)}
+                className="p-1.5 rounded-xl bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Box */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={logoSearchQuery}
+                onChange={(e) => setLogoSearchQuery(e.target.value)}
+                placeholder="Search by country or team name (e.g. Australia, CSK, Pakistan, England)..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+              />
+            </div>
+
+            {/* Custom Logo URL Paste Input */}
+            <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-slate-400 flex-shrink-0" />
+              <input
+                type="text"
+                value={customLogoInput}
+                onChange={(e) => setCustomLogoInput(e.target.value)}
+                placeholder="Or paste any custom Image/Flag URL here..."
+                className="flex-1 bg-transparent text-white text-xs font-mono focus:outline-none placeholder:text-slate-500"
+              />
+              <button
+                type="button"
+                onClick={handleApplyCustomUrl}
+                disabled={!customLogoInput.trim()}
+                className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black text-xs disabled:opacity-40"
+              >
+                Apply URL
+              </button>
+            </div>
+
+            {/* Catalog Grid */}
+            <div className="max-h-80 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+              {PRESET_LOGO_CATALOG.map((cat) => {
+                const filteredTeams = cat.teams.filter(t => 
+                  !logoSearchQuery.trim() || 
+                  t.name.toLowerCase().includes(logoSearchQuery.toLowerCase()) || 
+                  t.code.toLowerCase().includes(logoSearchQuery.toLowerCase())
+                );
+
+                if (filteredTeams.length === 0) return null;
+
+                return (
+                  <div key={cat.category} className="space-y-2">
+                    <span className="text-[11px] font-black text-[#FFAA00] uppercase tracking-wider block">
+                      {cat.category}
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {filteredTeams.map((team) => (
+                        <button
+                          key={team.name + team.code}
+                          type="button"
+                          onClick={() => handleSelectLogo(team)}
+                          className="p-2.5 rounded-xl bg-[#080C1D] hover:bg-[#131A38] border border-[#1A223E] hover:border-[#FF6B00]/50 flex items-center gap-2.5 text-left transition-all group"
+                        >
+                          <img
+                            src={team.logoUrl}
+                            alt={team.name}
+                            className="w-7 h-7 object-contain rounded flex-shrink-0 group-hover:scale-110 transition-transform"
+                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-white text-xs truncate group-hover:text-[#FF8800]">
+                              {team.name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono">
+                              {team.code}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
