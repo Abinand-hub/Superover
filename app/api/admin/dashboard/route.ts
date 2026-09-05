@@ -28,22 +28,9 @@ export async function GET(req: Request) {
       console.warn('Failed to cleanup past fetched matches in dashboard route:', e);
     }
 
-    const matchQuery = {
-      $or: [
-        {
-          matchStartTime: {
-            $gte: now.toISOString(),
-            $lte: twoDaysFromNow.toISOString()
-          }
-        },
-        { status: { $in: ['LIVE', 'LOCKED', 'COMPLETED'] } },
-        { 'questions.0': { $exists: true } }
-      ]
-    };
-    
     // Fetch all required data concurrently from DB
     const [matchesRaw, slipsRaw, transactionsRaw, totalUsers] = await Promise.all([
-      Match.find(matchQuery).sort({ matchStartTime: 1 }).lean(),
+      Match.find({}).sort({ matchStartTime: -1 }).lean(),
       Slip.find({}).sort({ submittedAt: -1 }).limit(1000).lean(), // Limit to recent slips for performance
       Transaction.find({}).sort({ createdAt: -1 }).limit(1000).lean(), // Limit to recent transactions
       User.countDocuments({})

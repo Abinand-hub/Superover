@@ -122,6 +122,9 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
     let streakCount = 0;
     let isStreakBroken = false;
 
+    const combinedSquad = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
+    const playerMap = new Map(combinedSquad.map(p => [p.id, p]));
+
     if (match.questions && Array.isArray(match.questions)) {
       for (const q of match.questions) {
         const qId = q.id;
@@ -140,7 +143,16 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
         if (officialAnswerId && userAns) {
           const userAnsString = String(userAns).trim().toLowerCase();
           const officialAnsString = String(officialAnswerId).trim().toLowerCase();
-          if (userAnsString === officialAnsString) {
+          
+          const userName = playerMap.get(userAns)?.name?.toLowerCase() || '';
+          const officialName = playerMap.get(officialAnswerId)?.name?.toLowerCase() || '';
+
+          const isMatch = (userAnsString === officialAnsString) ||
+                          (userName && userName === officialAnsString) ||
+                          (officialName && officialName === userAnsString) ||
+                          (userName && officialName && userName === officialName);
+
+          if (isMatch) {
             correctAnswers++;
             if (!isStreakBroken) {
               streakCount++;

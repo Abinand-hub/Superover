@@ -125,13 +125,20 @@ export default function AdminPage() {
           faqs={INITIAL_FAQS}
           onUpdateMatch={async (m) => {
             try {
-              await api.updateMatch(m);
-              setData(prev => prev ? {...prev, matches: prev.matches.map(x => x.id === m.id ? m : x)} : prev);
+              await api.updateMatchAdmin(m.id, m);
+              await loadAdminData();
             } catch(e) {
-              console.error(e);
+              console.error('Update match error:', e);
             }
           }}
-          onCreateMatch={(m) => setData(prev => prev ? {...prev, matches: [m, ...prev.matches]} : prev)}
+          onCreateMatch={async (m) => {
+            try {
+              await api.createMatchAdmin(m);
+              await loadAdminData();
+            } catch(e) {
+              console.error('Create match error:', e);
+            }
+          }}
           onSettleMatch={async (matchId, results) => {
             try {
               const res = await api.settleMatch({ matchId, picks: (results as any).answers, summary: (results as any).summaryNote });

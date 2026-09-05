@@ -376,16 +376,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   });
   // Match Lifecycle Handlers
   const handleStartMatch = (match: CricketMatch) => {
-    const matchTime = new Date(match.startTime).getTime();
-    if (matchTime > Date.now()) {
-      alert(`⚠️ Cannot start match early!\nThis match is officially scheduled for ${new Date(match.startTime).toLocaleString()}.\nMatches start automatically when their scheduled time arrives.`);
-      return;
-    }
     const updated: CricketMatch = {
       ...match,
       status: 'LIVE',
+      liveScore: match.liveScore || `${match.team1.code} 0/0 (0.1 ov) • In Play`,
     };
     onUpdateMatch(updated);
+  };
+
+  const handleUpdateLiveScore = (match: CricketMatch, score: string) => {
+    const updated: CricketMatch = {
+      ...match,
+      liveScore: score,
+    };
+    onUpdateMatch(updated);
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (confirm('Are you sure you want to permanently delete this match and contest?')) {
+      try {
+        await api.deleteMatchAdmin(matchId);
+        if (onReloadData) {
+          await onReloadData();
+        }
+      } catch (e) {
+        console.error('Failed to delete match:', e);
+        alert('Failed to delete match.');
+      }
+    }
   };
 
   const handleRevertToScheduled = (match: CricketMatch) => {
@@ -811,34 +829,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   {/* Match Action Buttons */}
                   <div className="flex items-center gap-2 flex-wrap pt-2 lg:pt-0 border-t lg:border-t-0 border-[#1A223E]">
-                    {/* START MATCH BUTTON / SCHEDULED STATUS */}
+                    {/* START MATCH BUTTON (GO LIVE) */}
                     {match.status !== 'LIVE' && match.status !== 'COMPLETED' && (
-                      new Date(match.startTime).getTime() > Date.now() ? (
-                        <div 
-                          className="px-3.5 py-1.5 rounded-xl bg-[#080C1D] border border-amber-500/30 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 shadow-sm"
-                          title="Matches start automatically when the scheduled match time arrives"
-                        >
-                          <Clock className="w-3.5 h-3.5 text-[#FF8800] flex-shrink-0" />
-                          <span>Starts {new Date(match.startTime).toLocaleDateString([], { day: 'numeric', month: 'short' })} at {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (Auto-Live)</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleStartMatch(match)}
-                          className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-rose-600/30"
-                          id={`btn-start-match-${match.id}`}
-                        >
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>Start Match (Go LIVE)</span>
-                        </button>
-                      )
+                      <button
+                        onClick={() => handleStartMatch(match)}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:brightness-110 text-white text-xs font-black flex items-center gap-1.5 shadow-md shadow-rose-600/30"
+                        id={`btn-start-match-${match.id}`}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Start Match (Go LIVE)</span>
+                      </button>
                     )}
 
                     {/* REVERT PREMATURE LIVE MATCH BUTTON */}
-                    {match.status === 'LIVE' && new Date(match.startTime).getTime() > Date.now() && (
+                    {match.status === 'LIVE' && (
                       <button
                         onClick={() => handleRevertToScheduled(match)}
                         className="px-3 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                        title="Revert match back to scheduled state since match time is in the future"
+                        title="Revert match back to scheduled state"
                       >
                         <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
                         <span>Revert to Scheduled</span>
@@ -846,16 +854,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     )}
 
                     {/* END & SETTLE BUTTON */}
-                    {match.status === 'LIVE' && (
-                      <button
-                        onClick={() => handleEndMatch(match)}
-                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/30"
-                        id={`btn-end-settle-match-${match.id}`}
-                      >
-                        <Square className="w-3.5 h-3.5 fill-current" />
-                        <span>End & Settle Payouts</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleEndMatch(match)}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/30"
+                      id={`btn-end-settle-match-${match.id}`}
+                    >
+                      <Square className="w-3.5 h-3.5 fill-current" />
+                      <span>{match.status === 'COMPLETED' ? 'Review / Re-Settle' : 'End & Settle Payouts'}</span>
+                    </button>
 
                     {/* LOCK / UNLOCK BUTTON */}
                     {match.status === 'UPCOMING' && (
@@ -888,6 +894,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     >
                       <UserPlus className="w-3.5 h-3.5" />
                       <span>Squad Players</span>
+                    </button>
+
+                    {/* DELETE MATCH BUTTON */}
+                    <button
+                      onClick={() => handleDeleteMatch(match.id)}
+                      className="px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-bold flex items-center gap-1"
+                      title="Permanently delete this contest"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
                   </div>
                 </div>

@@ -117,9 +117,11 @@ export const api = {
     }
     return null;
   },
-  updateMatchAdmin: (id: string, payload: any) => fetch(`/api/admin/matches/${id}`, { method: 'PUT', body: JSON.stringify(payload) }).then(r => r.json()),
+  updateMatchAdmin: (id: string, payload: any) => fetch(`/api/admin/matches/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then(r => r.json()),
+  createMatchAdmin: (payload: any) => fetch('/api/admin/matches', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then(r => r.json()),
+  deleteMatchAdmin: (id: string) => fetch(`/api/admin/matches/${id}`, { method: 'DELETE' }).then(r => r.json()),
   
-  updateMatch: (payload: any) => fetch('/api/matches/update', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+  updateMatch: (payload: any) => fetch('/api/matches/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then(r => r.json()),
   
   // Question Bank
   getQuestionBank: () => fetch('/api/admin/questions', { method: 'GET' }).then(r => r.json()),
