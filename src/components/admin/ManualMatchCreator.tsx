@@ -1022,7 +1022,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
         {/* RIGHT COLUMN: Squad Builder, Admin Questions & Publish Action (5 Cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* Squad Management Card */}
-          <div className="p-6 rounded-3xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-xl">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
                 <Users className="w-4 h-4 text-purple-400" />
@@ -1042,7 +1042,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveSquadTab('team1')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
                   activeSquadTab === 'team1'
                     ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
                     : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
@@ -1051,15 +1051,15 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                 <img 
                   src={team1Logo || getTeamLogoUrl(team1Code, team1Name)} 
                   alt={team1Code} 
-                  className="w-4 h-4 object-contain rounded-sm"
+                  className="w-4 h-4 object-contain rounded-sm shrink-0"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
                 />
-                <span>{team1Code || 'Team 1'} ({squad1.length})</span>
+                <span className="truncate">{team1Code || 'Team 1'} ({squad1.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveSquadTab('team2')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                className={`py-2 px-2.5 sm:py-2.5 sm:px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
                   activeSquadTab === 'team2'
                     ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
                     : 'bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]'
@@ -1068,10 +1068,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                 <img 
                   src={team2Logo || getTeamLogoUrl(team2Code, team2Name)} 
                   alt={team2Code} 
-                  className="w-4 h-4 object-contain rounded-sm"
+                  className="w-4 h-4 object-contain rounded-sm shrink-0"
                   onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
                 />
-                <span>{team2Code || 'Team 2'} ({squad2.length})</span>
+                <span className="truncate">{team2Code || 'Team 2'} ({squad2.length})</span>
               </button>
             </div>
 
@@ -1091,39 +1091,42 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                 <button
                   type="button"
                   onClick={handleBulkAdd}
-                  className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition-colors"
+                  className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition-colors"
                 >
                   Import Players to {activeSquadTab === 'team1' ? team1Code : team2Code}
                 </button>
               </div>
             ) : (
-              /* Add Single Player Input */
-              <div className="flex gap-2">
+              /* Add Single Player Input - Fully Mobile Responsive */
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={newPlayerName}
                   onChange={(e) => setNewPlayerName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddPlayer(); }}
                   placeholder="Player Name (e.g. Hardik Pandya)"
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                  className="w-full sm:flex-1 min-w-0 px-3 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
                 />
-                <select
-                  value={newPlayerRole}
-                  onChange={(e) => setNewPlayerRole(e.target.value as any)}
-                  className="px-2 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold"
-                >
-                  <option value="BAT">BAT</option>
-                  <option value="BOWL">BOWL</option>
-                  <option value="AR">AR</option>
-                  <option value="WK">WK</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={handleAddPlayer}
-                  className="px-3 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#FF8800] text-slate-950 font-black text-xs"
-                >
-                  Add
-                </button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <select
+                    value={newPlayerRole}
+                    onChange={(e) => setNewPlayerRole(e.target.value as any)}
+                    className="flex-1 sm:w-20 px-2 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold cursor-pointer"
+                  >
+                    <option value="BAT">BAT</option>
+                    <option value="BOWL">BOWL</option>
+                    <option value="AR">AR</option>
+                    <option value="WK">WK</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAddPlayer}
+                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-[#FF8800] text-slate-950 font-black text-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1134,12 +1137,12 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   key={p.id || idx}
                   className="p-2 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between text-xs"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-lg bg-slate-800 text-slate-400 font-bold text-[10px] flex items-center justify-center">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-5 h-5 rounded-lg bg-slate-800 text-slate-400 font-bold text-[10px] flex items-center justify-center shrink-0">
                       {idx + 1}
                     </span>
-                    <span className="font-bold text-white">{p.name}</span>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${
+                    <span className="font-bold text-white truncate">{p.name}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black shrink-0 ${
                       p.role === 'BAT' ? 'bg-sky-500/20 text-sky-400' :
                       p.role === 'BOWL' ? 'bg-rose-500/20 text-rose-400' :
                       p.role === 'WK' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
@@ -1151,7 +1154,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemovePlayer(p.id, activeSquadTab)}
-                    className="p-1 text-slate-500 hover:text-rose-400 transition-colors"
+                    className="p-1 text-slate-500 hover:text-rose-400 transition-colors shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -1160,8 +1163,8 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
             </div>
 
             {/* 4. ADMIN CONTEST QUESTIONS WITH QUESTION BANK PICKER */}
-            <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div>
                   <span className="text-[11px] font-black text-[#FF8800] uppercase tracking-wider flex items-center gap-1.5">
                     <HelpCircle className="w-4 h-4 text-[#FFAA00]" />
@@ -1172,7 +1175,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={() => setCustomQuestions(DEFAULT_QUESTIONS)}
@@ -1202,33 +1205,35 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   const isTeam2 = titleLower.includes('team 2') || shortTitleLower.includes('team 2');
 
                   return (
-                    <div key={q.id || idx} className="p-3 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2 text-xs hover:border-[#FF6B00]/40 transition-colors">
-                      <div className="flex items-center justify-between gap-2">
+                    <div key={q.id || idx} className="p-3 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2.5 text-xs hover:border-[#FF6B00]/40 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-md bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] flex items-center justify-center border border-[#FF6B00]/30">
+                          <span className="w-5 h-5 rounded-md bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] flex items-center justify-center border border-[#FF6B00]/30 shrink-0">
                             #{idx + 1}
                           </span>
-                          <span className="text-[11px] font-black text-white">Select Question from Bank:</span>
+                          <span className="text-[11px] font-black text-white">Question #{idx + 1}:</span>
                         </div>
 
                         {/* Player / Team Scope Badge */}
-                        {isTeam1 ? (
-                          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                            🏏 {team1Code || 'Team 1'} Players Only
-                          </span>
-                        ) : isTeam2 ? (
-                          <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                            🏏 {team2Code || 'Team 2'} Players Only
-                          </span>
-                        ) : q.type === 'TEAM' ? (
-                          <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                            🏆 Team Selection
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                            👥 Both Teams Players
-                          </span>
-                        )}
+                        <div className="self-start sm:self-auto">
+                          {isTeam1 ? (
+                            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                              🏏 {team1Code || 'Team 1'} Players Only
+                            </span>
+                          ) : isTeam2 ? (
+                            <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                              🏏 {team2Code || 'Team 2'} Players Only
+                            </span>
+                          ) : q.type === 'TEAM' ? (
+                            <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                              🏆 Team Selection
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
+                              👥 Both Teams Players
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Dropdown Selector */}
