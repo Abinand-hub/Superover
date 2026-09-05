@@ -2154,6 +2154,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           onCreateMatch={onCreateMatch}
           onUpdateMatch={onUpdateMatch}
           onReloadData={onReloadData}
+          onGoToLifecycle={() => setAdminTab('matches')}
           onGoToSettle={(matchId) => {
             setSelectedMatchIdForSettlement(matchId);
             setAdminTab('settlement');
