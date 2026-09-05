@@ -23,7 +23,9 @@ import {
   Globe,
   Image as ImageIcon,
   HelpCircle,
-  RotateCcw
+  RotateCcw,
+  Database,
+  Plus
 } from 'lucide-react';
 import { formatINR } from '../../utils/payoutCalculator';
 import { getTeamLogoUrl, PRESET_LOGO_CATALOG, TEAM_LOGO_MAP } from '../../utils/teamLogoHelper';
@@ -38,6 +40,40 @@ interface ManualMatchCreatorProps {
   onGoToSettle?: (matchId: string) => void;
   onGoToSquads?: (matchId: string) => void;
 }
+
+// Full Master Question Bank for Cricket Contests
+export const MASTER_QUESTION_BANK = [
+  {
+    category: '🏏 Batting Categories',
+    questions: [
+      { shortTitle: 'Top Batter Match', title: 'Who will be the Top Batter in the match?', subtitle: 'Most runs scored in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT' },
+      { shortTitle: 'Best Striker', title: 'Who will be the Best Striker?', subtitle: 'Highest batting strike rate in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'STAR' },
+      { shortTitle: 'Most 6s', title: 'Which batter will hit the most 6s?', subtitle: 'Highest number of 6s by a batter', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'TICKET' },
+      { shortTitle: 'Most 4s', title: 'Which batter will hit the most 4s?', subtitle: 'Highest number of boundaries (4s) hit', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'TICKET' },
+      { shortTitle: 'Top Batter Team 1', title: 'Top Batter (Team 1)', subtitle: 'Most runs scored for Team 1', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT' },
+      { shortTitle: 'Top Batter Team 2', title: 'Top Batter (Team 2)', subtitle: 'Most runs scored for Team 2', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT' },
+    ]
+  },
+  {
+    category: '⚡ Bowling & Fielding Categories',
+    questions: [
+      { shortTitle: 'Top Bowler Match', title: 'Who will be the Top Bowler in the match?', subtitle: 'Most wickets taken in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL' },
+      { shortTitle: 'Most Economical Bowler', title: 'Most Economical Bowler', subtitle: 'Lowest bowling economy rate in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD' },
+      { shortTitle: 'Most Dot Balls', title: 'Who will bowl the most dot balls?', subtitle: 'Highest number of dot balls bowled', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD' },
+      { shortTitle: 'Most Catches', title: 'Most Catches / Dismissals', subtitle: 'Wicketkeeper or fielder with most catches', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD' },
+      { shortTitle: 'Top Bowler Team 1', title: 'Top Bowler (Team 1)', subtitle: 'Most wickets for Team 1', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL' },
+      { shortTitle: 'Top Bowler Team 2', title: 'Top Bowler (Team 2)', subtitle: 'Most wickets for Team 2', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL' },
+      { shortTitle: 'Most Expensive Bowler', title: 'Most Expensive Bowler', subtitle: 'Most runs conceded in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'ALERT' },
+    ]
+  },
+  {
+    category: '🏆 Match & Performance Outcomes',
+    questions: [
+      { shortTitle: 'Match Winner', title: 'Which team will win the match?', subtitle: 'Pick the winning team', type: 'TEAM' as const, criteria: 'TEAM', iconName: 'TROPHY' },
+      { shortTitle: 'Man of the Match', title: 'Who will be judged as the player of the match?', subtitle: 'Best performer of the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'STAR' },
+    ]
+  }
+];
 
 // Preset popular squads for fast 1-click setup
 const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string; squad: { name: string; shortName: string; role: PlayerRole }[] }> = {
@@ -343,6 +379,8 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   // 6 Questions Customizable by Admin
   const [customQuestions, setCustomQuestions] = useState<PredictionQuestion[]>(DEFAULT_QUESTIONS);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
+  const [questionBankModalIndex, setQuestionBankModalIndex] = useState<number | null>(null); // Index of question to swap/replace
+  const [questionBankSearch, setQuestionBankSearch] = useState('');
 
   const [activeSquadTab, setActiveSquadTab] = useState<'team1' | 'team2'>('team1');
   const [newPlayerName, setNewPlayerName] = useState('');
@@ -522,6 +560,46 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     setCustomQuestions(updated);
   };
 
+  // Select Question from Question Bank to slot into questions
+  const handleSelectFromBank = (bankQ: typeof MASTER_QUESTION_BANK[0]['questions'][0]) => {
+    if (questionBankModalIndex === null) {
+      // Add as new question if under 6
+      if (customQuestions.length >= 6) {
+        alert('Contests are standard 6 questions. Please swap an existing question or remove one.');
+        return;
+      }
+      const newQ: PredictionQuestion = {
+        id: `q_custom_${Date.now()}`,
+        number: customQuestions.length + 1,
+        title: bankQ.title,
+        shortTitle: bankQ.shortTitle,
+        subtitle: bankQ.subtitle,
+        type: bankQ.type as any,
+        optionsType: bankQ.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
+        options: [],
+        criteria: bankQ.criteria as any,
+        iconName: bankQ.iconName as any,
+        badgeColor: 'bg-purple-900 text-purple-400'
+      };
+      setCustomQuestions([...customQuestions, newQ]);
+    } else {
+      // Swap question at index
+      const updated = [...customQuestions];
+      updated[questionBankModalIndex] = {
+        ...updated[questionBankModalIndex],
+        title: bankQ.title,
+        shortTitle: bankQ.shortTitle,
+        subtitle: bankQ.subtitle,
+        type: bankQ.type as any,
+        optionsType: bankQ.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
+        criteria: bankQ.criteria as any,
+        iconName: bankQ.iconName as any
+      };
+      setCustomQuestions(updated);
+    }
+    setQuestionBankModalIndex(null);
+  };
+
   // Create & Publish Match to Database
   const handlePublishMatch = async () => {
     if (!team1Name.trim() || !team2Name.trim()) {
@@ -628,7 +706,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
             Create Match Manually
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Build your contest with custom team flags, squads, exact start time with live countdown, and custom admin questions.
+            Build your contest with custom team flags, squads, exact start time with live countdown, and custom admin questions from Question Bank.
           </p>
         </div>
 
@@ -990,7 +1068,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
             )}
 
             {/* Current Selected Squad Player List */}
-            <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
+            <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
               {(activeSquadTab === 'team1' ? squad1 : squad2).map((p, idx) => (
                 <div
                   key={p.id || idx}
@@ -1021,7 +1099,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               ))}
             </div>
 
-            {/* 4. ADMIN QUESTIONS CONFIGURATION (CUSTOMIZABLE) */}
+            {/* 4. ADMIN CONTEST QUESTIONS WITH QUESTION BANK PICKER */}
             <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black text-[#FF8800] uppercase tracking-wider flex items-center gap-1.5">
@@ -1029,29 +1107,58 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   4. Admin Contest Questions ({customQuestions.length})
                 </span>
                 
-                <button
-                  type="button"
-                  onClick={() => setShowQuestionEditor(!showQuestionEditor)}
-                  className="text-[11px] text-[#FFAA00] hover:underline font-bold flex items-center gap-1"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>{showQuestionEditor ? 'Close Editor' : 'Edit Questions'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuestionBankModalIndex(null)}
+                    className="px-2.5 py-1 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/40 text-[10px] font-black flex items-center gap-1 transition-all"
+                  >
+                    <Database className="w-3 h-3" />
+                    <span>Question Bank</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuestionEditor(!showQuestionEditor)}
+                    className="text-[11px] text-[#FFAA00] hover:underline font-bold flex items-center gap-1"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{showQuestionEditor ? 'Close' : 'Edit'}</span>
+                  </button>
+                </div>
               </div>
 
               {!showQuestionEditor ? (
-                <ul className="text-[11px] text-slate-300 space-y-1.5">
+                <ul className="text-[11px] text-slate-300 space-y-2">
                   {customQuestions.map((q, idx) => (
-                    <li key={q.id || idx} className="flex items-center justify-between">
-                      <span className="truncate">{idx + 1}. {q.title}</span>
-                      <span className="text-[10px] text-slate-500 font-mono uppercase">{q.type}</span>
+                    <li key={q.id || idx} className="p-2 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-white block truncate">{idx + 1}. {q.title}</span>
+                        <span className="text-[10px] text-slate-400 block truncate">{q.subtitle}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setQuestionBankModalIndex(idx)}
+                        className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[#FFAA00] text-[10px] font-bold border border-slate-700 flex-shrink-0"
+                        title="Swap from Question Bank"
+                      >
+                        Swap
+                      </button>
                     </li>
                   ))}
                 </ul>
               ) : (
                 /* Editable Questions List */
                 <div className="space-y-3 pt-2">
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={() => setQuestionBankModalIndex(null)}
+                      className="text-[10px] text-purple-400 hover:underline flex items-center gap-1 font-bold"
+                    >
+                      <Database className="w-3 h-3" />
+                      <span>+ Browse Question Bank</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setCustomQuestions(DEFAULT_QUESTIONS)}
@@ -1066,16 +1173,25 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                     <div key={q.id || idx} className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E] space-y-2 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-black text-[#FFAA00]">Question #{idx + 1}</span>
-                        <select
-                          value={q.type}
-                          onChange={(e) => handleUpdateQuestion(idx, 'type', e.target.value)}
-                          className="px-2 py-0.5 rounded bg-[#080C1D] border border-[#1A223E] text-slate-300 text-[10px]"
-                        >
-                          <option value="TEAM">TEAM Selection</option>
-                          <option value="PLAYER">PLAYER Selection</option>
-                          <option value="YES_NO">YES / NO</option>
-                          <option value="NUMBER">NUMBER / STAT</option>
-                        </select>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setQuestionBankModalIndex(idx)}
+                            className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-bold"
+                          >
+                            Swap from Bank
+                          </button>
+                          <select
+                            value={q.type}
+                            onChange={(e) => handleUpdateQuestion(idx, 'type', e.target.value)}
+                            className="px-2 py-0.5 rounded bg-[#080C1D] border border-[#1A223E] text-slate-300 text-[10px]"
+                          >
+                            <option value="TEAM">TEAM Selection</option>
+                            <option value="PLAYER">PLAYER Selection</option>
+                            <option value="YES_NO">YES / NO</option>
+                            <option value="NUMBER">NUMBER / STAT</option>
+                          </select>
+                        </div>
                       </div>
 
                       <div>
@@ -1117,6 +1233,98 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           </div>
         </div>
       </div>
+
+      {/* QUESTION BANK PICKER POPUP MODAL */}
+      {questionBankModalIndex !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050816]/90 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-[#0D122B] border border-[#1A223E] rounded-3xl shadow-2xl overflow-hidden my-auto p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-[#1A223E] pb-4">
+              <div>
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <Database className="w-5 h-5 text-purple-400" />
+                  Select Question from Bank for Slot #{questionBankModalIndex + 1}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Click any question to slot it directly into your match contest.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setQuestionBankModalIndex(null)}
+                className="p-1.5 rounded-xl bg-[#080C1D] text-slate-400 hover:text-white border border-[#1A223E]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Bank */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                value={questionBankSearch}
+                onChange={(e) => setQuestionBankSearch(e.target.value)}
+                placeholder="Search question bank (e.g. bowler, catches, striker, sixes, runs)..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-purple-400"
+              />
+            </div>
+
+            {/* Question Categories Grid */}
+            <div className="max-h-80 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+              {MASTER_QUESTION_BANK.map((cat) => {
+                const filteredQuestions = cat.questions.filter(q => 
+                  !questionBankSearch.trim() ||
+                  q.title.toLowerCase().includes(questionBankSearch.toLowerCase()) ||
+                  q.shortTitle.toLowerCase().includes(questionBankSearch.toLowerCase()) ||
+                  q.subtitle.toLowerCase().includes(questionBankSearch.toLowerCase())
+                );
+
+                if (filteredQuestions.length === 0) return null;
+
+                return (
+                  <div key={cat.category} className="space-y-2">
+                    <span className="text-[11px] font-black text-[#FFAA00] uppercase tracking-wider block">
+                      {cat.category}
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {filteredQuestions.map((q) => (
+                        <div
+                          key={q.shortTitle}
+                          onClick={() => handleSelectFromBank(q)}
+                          className="p-3 rounded-2xl bg-[#080C1D] hover:bg-[#131A38] border border-[#1A223E] hover:border-purple-500/50 cursor-pointer flex flex-col justify-between gap-2 transition-all group"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider">
+                                {q.shortTitle}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 text-[9px] font-mono uppercase">
+                                {q.type}
+                              </span>
+                            </div>
+                            <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                              {q.title}
+                            </h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {q.subtitle}
+                            </p>
+                          </div>
+
+                          <div className="pt-1.5 border-t border-[#1A223E] flex items-center justify-between">
+                            <span className="text-[9px] text-slate-500 font-bold">Options: {q.type === 'PLAYER' ? 'Squad Roster' : 'Team 1 / Team 2'}</span>
+                            <span className="text-[10px] font-black text-purple-400 group-hover:underline">Select →</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FLAG & LOGO PICKER POPUP MODAL */}
       {pickingLogoFor && (
