@@ -27,7 +27,7 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
   onEditSlip,
   onGoToLobby,
 }) => {
-  const [slipFilter, setSlipFilter] = useState<'ALL' | 'ACTIVE' | 'WON' | 'COMPLETED'>('ALL');
+  const [slipFilter, setSlipFilter] = useState<'ALL' | 'ACTIVE' | 'SETTLED'>('ALL');
 
   const matchMap = useMemo(() => {
     const map = new Map<string, CricketMatch>();
@@ -63,8 +63,7 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
 
   const filteredSlips = userSlips.filter((s) => {
     if (slipFilter === 'ACTIVE') return s.status === 'PENDING' || s.status === 'LIVE';
-    if (slipFilter === 'WON') return s.status === 'WON';
-    if (slipFilter === 'COMPLETED') return s.status === 'WON' || s.status === 'LOST';
+    if (slipFilter === 'SETTLED') return s.status === 'WON' || s.status === 'LOST';
     return true;
   });
 
@@ -76,8 +75,7 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
           {[
             { id: 'ALL', label: `All (${userSlips.length})` },
             { id: 'ACTIVE', label: `Active / Live (${userSlips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length})` },
-            { id: 'WON', label: `Won Cash (${userSlips.filter((s) => s.status === 'WON').length})` },
-            { id: 'COMPLETED', label: `Settled (${userSlips.filter((s) => s.status === 'WON' || s.status === 'LOST').length})` },
+            { id: 'SETTLED', label: `Settled (${userSlips.filter((s) => s.status === 'WON' || s.status === 'LOST').length})` },
           ].map((tab) => (
             <button
               key={tab.id}
