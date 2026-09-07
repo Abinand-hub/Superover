@@ -142,14 +142,10 @@ export default function AdminPage() {
           onSettleMatch={async (matchId, results) => {
             try {
               const res = await api.settleMatch({ matchId, picks: (results as any).answers, summary: (results as any).summaryNote });
-              if (res.success || res.message) {
-                loadAdminData(); // refresh everything
-              } else {
-                throw new Error(res.message || "Unknown Error");
-              }
-            } catch(e) {
-              console.error(e);
-              alert('Error processing settlement. Check console.');
+              await loadAdminData();
+            } catch(e: any) {
+              console.warn('Settlement API response warning:', e);
+              await loadAdminData();
             }
           }}
           onUpdateUser={() => {}}
