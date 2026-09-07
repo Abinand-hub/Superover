@@ -75,6 +75,26 @@ export function generateMatchWinnerSummary(match: any) {
   }
 }
 
+function extractUserAns(slip: any, qId: string, idx: number): string {
+  if (!slip.answers) return '';
+  if (slip.answers instanceof Map) {
+    if (slip.answers.has(qId)) return String(slip.answers.get(qId));
+    if (slip.answers.has(`q${idx + 1}`)) return String(slip.answers.get(`q${idx + 1}`));
+    if (slip.answers.has(String(idx + 1))) return String(slip.answers.get(String(idx + 1)));
+    for (const [k, v] of slip.answers.entries()) {
+      if (k.toLowerCase() === qId.toLowerCase()) return String(v);
+    }
+  } else if (typeof slip.answers === 'object') {
+    if (slip.answers[qId] !== undefined) return String(slip.answers[qId]);
+    if (slip.answers[`q${idx + 1}`] !== undefined) return String(slip.answers[`q${idx + 1}`]);
+    if (slip.answers[String(idx + 1)] !== undefined) return String(slip.answers[String(idx + 1)]);
+    for (const k of Object.keys(slip.answers)) {
+      if (k.toLowerCase() === qId.toLowerCase()) return String(slip.answers[k]);
+    }
+  }
+  return '';
+}
+
 /**
  * Settles a match, evaluates all fan slips, calculates streak points,
  * and disburses real cash winnings to winning users' wallets.
@@ -115,12 +135,14 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
   await match.save();
 
   // 2. Fetch and evaluate all user prediction slips
+  const matchIdList: any[] = [match._id, match._id.toString()];
+  if (match.apiId) matchIdList.push(match.apiId);
+  if (matchId) matchIdList.push(matchId);
+
   const slips = await Slip.find({
     $or: [
-      { matchId: match._id },
-      { matchId: match._id.toString() },
-      ...(match.apiId ? [{ matchId: match.apiId }] : []),
-      { matchId: matchId }
+      { matchId: { $in: matchIdList } },
+      { matchTitle: match.title }
     ]
   });
   let payoutsCount = 0;
@@ -135,24 +157,19 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
     const playerMap = new Map(combinedSquad.map(p => [p.id, p]));
 
     if (match.questions && Array.isArray(match.questions)) {
-      for (const q of match.questions) {
+      match.questions.forEach((q: any, idx: number) => {
         const qId = q.id;
-        let userAns: any = '';
-        if (slip.answers instanceof Map) {
-          userAns = slip.answers.get(qId);
-        } else if (typeof slip.answers === 'object' && slip.answers !== null) {
-          userAns = (slip.answers as any)[qId];
-        }
+        const userAns = extractUserAns(slip, qId, idx);
 
-        const officialPick = finalPicks[qId];
+        const officialPick = finalPicks[qId] || finalPicks[`q${idx + 1}`] || finalPicks[String(idx + 1)];
         const officialAnswerId = typeof officialPick === 'object' && officialPick !== null 
-          ? (officialPick.answerId || officialPick.answerText) 
-          : officialPick;
+          ? (officialPick.answerId || officialPick.answerText || '') 
+          : (officialPick || '');
         const officialAnswerText = typeof officialPick === 'object' && officialPick !== null 
-          ? (officialPick.answerText || officialPick.answerId) 
-          : officialPick;
+          ? (officialPick.answerText || officialPick.answerId || '') 
+          : (officialPick || '');
 
-        if (officialAnswerId && userAns) {
+        if ((officialAnswerId || officialAnswerText) && userAns) {
           const userAnsString = String(userAns).trim().toLowerCase();
           const officialAnsString = String(officialAnswerId).trim().toLowerCase();
           const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
@@ -177,7 +194,7 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
         } else {
           isStreakBroken = true;
         }
-      }
+      });
     }
 
     const entryFee = slip.entryFee || 50;

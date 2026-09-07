@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CricketMatch, SettlementDetail, UserPredictionSlip } from '../types';
-import { formatINR } from '../utils/payoutCalculator';
+import { formatINR, settlePredictionSlip, getUserAnswerFromSlip } from '../utils/payoutCalculator';
 
 interface SlipResultModalProps {
   match: CricketMatch;
@@ -65,11 +65,20 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
   onPlayAnother,
   onEditSlip,
 }) => {
-  const isSettled = match.status === 'COMPLETED' || slip?.status === 'WON' || slip?.status === 'LOST' || slip?.status === 'PENDING_APPROVAL';
-  const isWon = slip && slip.status === 'WON' && (slip.multiplierWon || 0) > 0;
-  const isPendingApproval = slip && slip.status === 'PENDING_APPROVAL';
-  const isLost = slip && slip.status === 'LOST';
-  const isActiveSlip = slip && !isSettled;
+  const currentSlip = React.useMemo(() => {
+    if (!slip) return undefined;
+    if (match.actualResults?.answers && Object.keys(match.actualResults.answers).length > 0) {
+      const { settledSlip } = settlePredictionSlip(slip, match, match.actualResults);
+      return settledSlip;
+    }
+    return slip;
+  }, [slip, match]);
+
+  const isSettled = match.status === 'COMPLETED' || currentSlip?.status === 'WON' || currentSlip?.status === 'LOST' || currentSlip?.status === 'PENDING_APPROVAL';
+  const isWon = currentSlip && currentSlip.status === 'WON' && (currentSlip.multiplierWon || 0) > 0;
+  const isPendingApproval = currentSlip && currentSlip.status === 'PENDING_APPROVAL';
+  const isLost = currentSlip && currentSlip.status === 'LOST';
+  const isActiveSlip = currentSlip && !isSettled;
 
   useEffect(() => {
     if (isWon) {
@@ -134,7 +143,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
         {/* Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
           {/* Slip Result Banner (if user entered) */}
-          {slip ? (
+          {currentSlip ? (
             <div
               className={`p-4 sm:p-5 rounded-2xl border ${
                 isActiveSlip
@@ -178,14 +187,14 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                         {isActiveSlip 
                           ? (match.status === 'LIVE' ? 'Match Live in Play 🔴' : 'Prediction Slip Confirmed ⚡') 
                           : isPendingApproval 
-                          ? `${slip.multiplierWon}X Jackpot Pending Approval ⏳` 
+                          ? `${currentSlip.multiplierWon}X Jackpot Pending Approval ⏳` 
                           : isWon 
-                          ? `${slip.multiplierWon}X Cash Prize Won! (${slip.streakCount ?? 0}/6 Streak)` 
-                          : `Streak: ${slip.streakCount ?? 0}/6 (Streak Broken)`}
+                          ? `${currentSlip.multiplierWon}X Cash Prize Won! (${currentSlip.streakCount ?? 0}/6 Streak)` 
+                          : `Streak: ${currentSlip.streakCount ?? 0}/6 (Streak Broken)`}
                       </span>
                       {isSettled ? (
                         <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
-                          {slip.streakCount ?? 0} / 6 Streak ({slip.correctCount ?? 0} Correct)
+                          {currentSlip.streakCount ?? 0} / 6 Streak ({currentSlip.correctCount ?? 0} Correct)
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black border border-emerald-500/30">
@@ -195,10 +204,10 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {isActiveSlip
-                        ? `Entry: ${formatINR(slip.entryFee)} • Placed at ${new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Results settle upon match end`
+                        ? `Entry: ${formatINR(currentSlip.entryFee || 50)} • Placed at ${new Date(currentSlip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Results settle upon match end`
                         : isPendingApproval 
                         ? 'Your win is undergoing standard security checks by the admin.'
-                        : `Entry: ${formatINR(slip.entryFee)} • Submitted ${new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : `Entry: ${formatINR(currentSlip.entryFee || 50)} • Submitted ${new Date(currentSlip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                       }
                     </p>
                   </div>
@@ -211,7 +220,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                   <span className={`text-2xl font-black font-display ${
                     isActiveSlip ? 'text-amber-400 font-mono' : isPendingApproval ? 'text-amber-400 animate-pulse' : isWon ? 'text-emerald-400' : 'text-slate-500'
                   }`}>
-                    {isActiveSlip ? formatINR(slip.entryFee * 100) : formatINR(slip.payoutAmount || 0)}
+                    {isActiveSlip ? formatINR((currentSlip.entryFee || 50) * 100) : formatINR(currentSlip.payoutAmount || 0)}
                   </span>
                 </div>
               </div>
@@ -272,7 +281,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
             {(() => {
               let runningStreakBroken = false;
               return match.questions?.map((q, idx) => {
-                const rawResult: any = results?.answers ? results.answers[q.id] : null;
+                const rawResult: any = results?.answers ? results.answers[q.id] || (results.answers as any)?.[`q${idx + 1}`] : null;
                 const officialAnswerId: string = typeof rawResult === 'object' && rawResult !== null
                   ? String(rawResult.answerId || rawResult.answerText || '')
                   : String(rawResult || '');
@@ -285,9 +294,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                   ? String(rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
                   : String(rawResult ? 'Official Verified Result' : 'Awaiting Result');
 
-                const userAnswerId = slip 
-                  ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 
-                  : null;
+                const userAnswerId = currentSlip ? getUserAnswerFromSlip(currentSlip.answers, q.id, idx) : null;
                 
                 const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
                 const officialAnsString = officialAnswerId ? String(officialAnswerId).trim().toLowerCase() : '';
@@ -296,7 +303,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                 const userName = (userAnswerId && playerMap.get(userAnswerId)?.name?.toLowerCase()) || '';
                 const officialName = (officialAnswerId && playerMap.get(officialAnswerId)?.name?.toLowerCase()) || '';
 
-                const isCorrect = !!(userAnsString && officialAnsString && (
+                const isCorrect = !!(userAnsString && (officialAnsString || officialTextString) && (
                   (userAnsString === officialAnsString) ||
                   (officialTextString && userAnsString === officialTextString) ||
                   (userName && (userName === officialAnsString || userName === officialTextString)) ||

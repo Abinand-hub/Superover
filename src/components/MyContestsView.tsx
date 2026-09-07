@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Trophy, 
   Clock, 
@@ -8,7 +8,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { CricketMatch, UserAccount, UserPredictionSlip } from '../types';
-import { formatINR } from '../utils/payoutCalculator';
+import { formatINR, settlePredictionSlip } from '../utils/payoutCalculator';
 
 interface MyContestsViewProps {
   user: UserAccount;
@@ -29,20 +29,37 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
 }) => {
   const [slipFilter, setSlipFilter] = useState<'ALL' | 'ACTIVE' | 'WON' | 'COMPLETED'>('ALL');
 
-  const matchMap = new Map<string, CricketMatch>();
-  matches.forEach((m) => {
-    if (m.id) matchMap.set(String(m.id), m);
-    if ((m as any)._id) matchMap.set(String((m as any)._id), m);
-    if ((m as any).apiId) matchMap.set(String((m as any).apiId), m);
-  });
+  const matchMap = useMemo(() => {
+    const map = new Map<string, CricketMatch>();
+    matches.forEach((m) => {
+      if (m.id) map.set(String(m.id), m);
+      if ((m as any)._id) map.set(String((m as any)._id), m);
+      if ((m as any).apiId) map.set(String((m as any).apiId), m);
+      if (m.title) map.set(m.title.toLowerCase().trim(), m);
+    });
+    return map;
+  }, [matches]);
 
-  // User-specific filtering
+  // User-specific filtering & dynamic settlement calculation
   const currentUserId = (user.id || (user as any)._id || '').toString();
-  const userSlips = slips.filter((s) => {
-    if (!currentUserId || currentUserId === 'u_guest') return true;
-    const slipUserId = (s.userId || (s as any).user || '').toString();
-    return !slipUserId || slipUserId === currentUserId;
-  });
+  const userSlips = useMemo(() => {
+    return slips
+      .filter((s) => {
+        if (!currentUserId || currentUserId === 'u_guest') return true;
+        const slipUserId = (s.userId || (s as any).user || '').toString();
+        return !slipUserId || slipUserId === currentUserId;
+      })
+      .map((s) => {
+        const match = matchMap.get(String(s.matchId)) || (s.matchTitle ? matchMap.get(s.matchTitle.toLowerCase().trim()) : undefined);
+        if (match && (match.status === 'COMPLETED' || (match.actualResults?.answers && Object.keys(match.actualResults.answers).length > 0))) {
+          if (s.status === 'PENDING' || s.status === 'LIVE' || s.streakCount === undefined) {
+            const { settledSlip } = settlePredictionSlip(s, match, match.actualResults || { answers: {} });
+            return settledSlip;
+          }
+        }
+        return s;
+      });
+  }, [slips, currentUserId, matchMap]);
 
   const filteredSlips = userSlips.filter((s) => {
     if (slipFilter === 'ACTIVE') return s.status === 'PENDING' || s.status === 'LIVE';

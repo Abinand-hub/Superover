@@ -33,6 +33,26 @@ export function calculatePotentialPayout(entryFee: number, streakCount: number, 
   return entryFee * multiplier;
 }
 
+export function getUserAnswerFromSlip(answers: any, qId: string, idx: number): string {
+  if (!answers) return '';
+  if (answers instanceof Map) {
+    if (answers.has(qId)) return String(answers.get(qId));
+    if (answers.has(`q${idx + 1}`)) return String(answers.get(`q${idx + 1}`));
+    if (answers.has(String(idx + 1))) return String(answers.get(String(idx + 1)));
+    for (const [k, v] of answers.entries()) {
+      if (k.toLowerCase() === qId.toLowerCase()) return String(v);
+    }
+  } else if (typeof answers === 'object') {
+    if (answers[qId] !== undefined) return String(answers[qId]);
+    if (answers[`q${idx + 1}`] !== undefined) return String(answers[`q${idx + 1}`]);
+    if (answers[String(idx + 1)] !== undefined) return String(answers[String(idx + 1)]);
+    for (const k of Object.keys(answers)) {
+      if (k.toLowerCase() === qId.toLowerCase()) return String(answers[k]);
+    }
+  }
+  return '';
+}
+
 export function settlePredictionSlip(
   slip: UserPredictionSlip,
   match: CricketMatch,
@@ -43,7 +63,7 @@ export function settlePredictionSlip(
   multiplier: number;
   correctCount: number;
 } {
-  const allPlayers = [...match.squadTeam1, ...match.squadTeam2];
+  const allPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
   const playerMap = new Map(allPlayers.map((p) => [p.id, p]));
 
   let correctCount = 0;
@@ -51,11 +71,18 @@ export function settlePredictionSlip(
   let isStreakBroken = false;
   const settlementDetails: SettlementDetail[] = [];
 
-  match.questions.forEach((q) => {
-    const userAnswerId = slip.answers[q.id];
-    const actualResult = results.answers?.[q.id];
-    const actualAnswerId = actualResult ? (actualResult.answerId || actualResult.answerText) : '';
-    const actualAnswerText = actualResult?.answerText || actualAnswerId;
+  const questions = match.questions || [];
+
+  questions.forEach((q, idx) => {
+    const userAnswerId = getUserAnswerFromSlip(slip.answers, q.id, idx);
+    const actualResult = results.answers?.[q.id] || (results.answers as any)?.[`q${idx + 1}`] || (results.answers as any)?.[String(idx + 1)];
+    
+    const actualAnswerId = typeof actualResult === 'object' && actualResult !== null
+      ? String(actualResult.answerId || actualResult.answerText || '')
+      : String(actualResult || '');
+    const actualAnswerText = typeof actualResult === 'object' && actualResult !== null
+      ? String(actualResult.answerText || actualResult.answerId || '')
+      : String(actualResult || '');
 
     const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
     const actualAnsString = actualAnswerId ? String(actualAnswerId).trim().toLowerCase() : '';
@@ -64,11 +91,11 @@ export function settlePredictionSlip(
     const userPlayer = userAnswerId ? playerMap.get(userAnswerId) : undefined;
     const winnerPlayer = actualAnswerId ? playerMap.get(actualAnswerId) : undefined;
     const userName = userPlayer?.name?.toLowerCase() || '';
-    const winnerName = (winnerPlayer?.name || (actualResult?.answerText ? playerMap.get(actualResult.answerText)?.name : undefined))?.toLowerCase() || '';
+    const winnerName = (winnerPlayer?.name || (actualAnswerText ? playerMap.get(actualAnswerText)?.name : undefined))?.toLowerCase() || '';
 
     const isCorrect = Boolean(
       userAnsString &&
-      actualAnsString &&
+      (actualAnsString || actualTextString) &&
       (
         userAnsString === actualAnsString ||
         (actualTextString && userAnsString === actualTextString) ||
@@ -90,9 +117,8 @@ export function settlePredictionSlip(
     let userAnswerText = userAnswerId;
     if (q.type === 'PLAYER' && userPlayer) userAnswerText = userPlayer.name;
 
-    let displayActualAnswerText = actualAnswerId || 'Pending';
+    let displayActualAnswerText = actualAnswerText || actualAnswerId || 'Pending';
     if (q.type === 'PLAYER' && winnerPlayer) displayActualAnswerText = winnerPlayer.name;
-    else if (actualResult?.answerText) displayActualAnswerText = actualResult.answerText;
 
     settlementDetails.push({
       questionId: q.id,
@@ -101,7 +127,7 @@ export function settlePredictionSlip(
       userAnswerText: userAnswerText || 'Unselected',
       actualAnswerId: actualAnswerId,
       actualAnswerText: displayActualAnswerText,
-      actualStatValue: actualResult?.statValue || 'N/A',
+      actualStatValue: (actualResult as any)?.statValue || 'Official Result',
       isCorrect,
     });
   });
@@ -117,7 +143,7 @@ export function settlePredictionSlip(
   else baseMultiplier = 0;
 
   const multiplier = baseMultiplier;
-  const payoutAmount = slip.entryFee * multiplier;
+  const payoutAmount = (slip.entryFee || 50) * multiplier;
   
   let status: 'WON' | 'LOST' | 'PENDING_APPROVAL' = 'LOST';
   if (multiplier > 0) {

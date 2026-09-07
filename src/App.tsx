@@ -58,6 +58,35 @@ export default function App({ initialMatches = [] }: AppProps) {
 
   const [activeTab, setActiveTab] = useState<'lobby' | 'my-contests' | 'profile' | 'payouts-rules'>('lobby');
 
+  const reloadUserData = React.useCallback(async () => {
+    try {
+      const [fetchedMatches, fetchedUser, fetchedWallet, fetchedSlips, fetchedTransactions] = await Promise.all([
+        api.getMatches(),
+        api.getCurrentUser(),
+        api.getWallet(),
+        api.getSlips(),
+        api.getTransactions()
+      ]);
+      if (Array.isArray(fetchedMatches) && fetchedMatches.length > 0) {
+        setMatches(fetchedMatches);
+      }
+      if (fetchedUser && !fetchedUser.error && fetchedUser.role !== 'ADMIN') {
+        setCurrentUser(fetchedUser);
+      }
+      if (fetchedWallet && !fetchedWallet.error) {
+        setWallet(fetchedWallet);
+      }
+      if (Array.isArray(fetchedSlips)) {
+        setSlips(fetchedSlips);
+      }
+      if (Array.isArray(fetchedTransactions)) {
+        setTransactions(fetchedTransactions);
+      }
+    } catch (e) {
+      // Background reload catch
+    }
+  }, []);
+
   useEffect(() => {
     async function loadInitialData() {
       try {
@@ -96,6 +125,21 @@ export default function App({ initialMatches = [] }: AppProps) {
     }
     loadInitialData();
   }, [initialMatches]);
+
+  // Auto-refresh when navigating tabs or returning to screen
+  useEffect(() => {
+    if (activeTab === 'my-contests' || activeTab === 'profile') {
+      reloadUserData();
+    }
+  }, [activeTab, reloadUserData]);
+
+  // Periodic background sync (every 6 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      reloadUserData();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [reloadUserData]);
 
   // Modals
   const [selectedMatchForPlay, setSelectedMatchForPlay] = useState<{ match: CricketMatch; fee: number } | null>(null);
@@ -260,7 +304,12 @@ export default function App({ initialMatches = [] }: AppProps) {
 
   // Handler: Admin Settle Match & Distribute Payouts
   const handleSettleMatch = (matchId: string, results: MatchResults) => {
-    const match = matches.find((m) => m.id === matchId);
+    const match = matches.find((m) => 
+      m.id === matchId || 
+      (m as any)._id === matchId || 
+      (m as any).apiId === matchId ||
+      (m.title && m.title.toLowerCase().trim() === matchId.toLowerCase().trim())
+    );
     if (!match) return;
 
     // 1. Mark match as completed with actual results
@@ -269,14 +318,20 @@ export default function App({ initialMatches = [] }: AppProps) {
       status: 'COMPLETED',
       actualResults: results,
     };
-    setMatches((prev) => prev.map((m) => (m.id === matchId ? updatedMatch : m)));
+    setMatches((prev) => prev.map((m) => 
+      (m.id === match.id || (m as any)._id === match.id) ? updatedMatch : m
+    ));
 
     // 2. Settle all user prediction slips for this match
     let totalPaidOutThisMatch = 0;
     let userPayoutAmountForCurrent = 0;
 
     const updatedSlips = slips.map((slip) => {
-      if (slip.matchId !== matchId) return slip;
+      const isMatchSlip = slip.matchId === match.id || 
+                          slip.matchId === matchId || 
+                          String(slip.matchId) === String((match as any)._id) ||
+                          (slip.matchTitle && match.title && slip.matchTitle.toLowerCase().trim() === match.title.toLowerCase().trim());
+      if (!isMatchSlip) return slip;
 
       const { settledSlip, payoutAmount } = settlePredictionSlip(slip, updatedMatch, results);
 

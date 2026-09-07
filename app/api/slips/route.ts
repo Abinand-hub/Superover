@@ -28,11 +28,69 @@ export async function GET(req: Request) {
 
     const slips = await Slip.find(query).sort({ submittedAt: -1 }).lean();
 
-    // Transform _id to id for frontend
-    const formattedSlips = slips.map((s: any) => ({
-      ...s,
-      id: s._id,
-    }));
+    // Fetch matches for any pending slips to ensure accurate completed status
+    const matchIds = slips.map((s: any) => s.matchId).filter(Boolean);
+    const completedMatches = await Match.find({ 
+      $or: [{ _id: { $in: matchIds } }, { status: 'COMPLETED' }] 
+    }).lean();
+    const matchMap = new Map();
+    completedMatches.forEach((m: any) => {
+      matchMap.set(String(m._id), m);
+      if (m.title) matchMap.set(m.title.toLowerCase().trim(), m);
+    });
+
+    // Transform _id to id for frontend and ensure evaluation consistency
+    const formattedSlips = slips.map((s: any) => {
+      let slipObj = {
+        ...s,
+        id: s._id ? String(s._id) : s.id,
+      };
+
+      const match = matchMap.get(String(s.matchId)) || (s.matchTitle ? matchMap.get(s.matchTitle.toLowerCase().trim()) : null);
+      if (match && (match.status === 'COMPLETED' || match.actualResults?.answers)) {
+        if (slipObj.status === 'PENDING' || slipObj.status === 'LIVE' || slipObj.streakCount === undefined) {
+          // If answers available, mark evaluated values
+          const answers = match.actualResults?.answers || {};
+          let streak = 0;
+          let broken = false;
+          let correct = 0;
+          const questions = match.questions || [];
+          
+          questions.forEach((q: any, idx: number) => {
+            const rawUser = s.answers ? (s.answers[q.id] || s.answers[`q${idx + 1}`] || s.answers[String(idx + 1)]) : '';
+            const rawOfficial = answers[q.id] || answers[`q${idx + 1}`] || answers[String(idx + 1)];
+            const officialAns = typeof rawOfficial === 'object' && rawOfficial !== null ? (rawOfficial.answerId || rawOfficial.answerText || '') : (rawOfficial || '');
+            const officialText = typeof rawOfficial === 'object' && rawOfficial !== null ? (rawOfficial.answerText || rawOfficial.answerId || '') : (rawOfficial || '');
+
+            const isMatch = rawUser && (officialAns || officialText) && (
+              String(rawUser).trim().toLowerCase() === String(officialAns).trim().toLowerCase() ||
+              String(rawUser).trim().toLowerCase() === String(officialText).trim().toLowerCase()
+            );
+
+            if (isMatch) {
+              correct++;
+              if (!broken) streak++;
+            } else {
+              broken = true;
+            }
+          });
+
+          let mult = 0;
+          if (streak >= 6) mult = s.freeHit ? (s.wheelMultiplier || 50) : 50;
+          else if (streak === 5) mult = 10;
+          else if (streak === 4) mult = 3;
+          else if (streak === 3) mult = 0.5;
+
+          slipObj.status = mult > 0 ? 'WON' : 'LOST';
+          slipObj.streakCount = streak;
+          slipObj.correctCount = correct;
+          slipObj.multiplierWon = mult;
+          slipObj.payoutAmount = (s.entryFee || 50) * mult;
+        }
+      }
+
+      return slipObj;
+    });
 
     return NextResponse.json(formattedSlips);
   } catch (error: any) {
