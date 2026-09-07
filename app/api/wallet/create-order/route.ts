@@ -11,35 +11,31 @@ export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
+    let userId: string | null = null;
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        userId = decoded.userId;
+      } catch (err) {
+        // Guest mode fallback
+      }
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
     const { amount } = await req.json();
 
     if (!amount || amount < 5) {
       return NextResponse.json({ error: 'Minimum deposit is ₹5' }, { status: 400 });
     }
 
-    await connectToDatabase();
-    
-    // Verify user exists
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Initialize Razorpay
-    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-       console.log('Razorpay keys missing or in test mode, using dummy payment order');
-       return NextResponse.json({
-         orderId: `dummy_order_${Date.now()}`,
-         amount: amount * 100,
-         currency: 'INR',
-         isDummy: true
-       });
+    // If Razorpay keys are not configured or in test mode, return dummy order immediately
+    if (!userId || !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return NextResponse.json({
+        orderId: `dummy_order_${Date.now()}`,
+        amount: amount * 100,
+        currency: 'INR',
+        isDummy: true
+      });
     }
 
     const razorpay = new Razorpay({
@@ -51,7 +47,7 @@ export async function POST(req: Request) {
     const options = {
       amount: amount * 100, // Razorpay works in subunits (paise)
       currency: 'INR',
-      receipt: `rcpt_${Date.now()}_${user._id.toString().substring(0, 5)}`,
+      receipt: `rcpt_${Date.now()}_${userId ? userId.substring(0, 5) : 'guest'}`,
     };
 
     const order = await razorpay.orders.create(options);
