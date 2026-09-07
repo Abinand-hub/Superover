@@ -4,13 +4,8 @@ import {
   Wallet as WalletIcon, 
   ShieldCheck, 
   User as UserIcon, 
-  Settings, 
-  Award, 
-  HelpCircle, 
   Trophy,
   PlusCircle,
-  Clock,
-  ArrowUpRight,
   LogOut
 } from 'lucide-react';
 import { UserAccount, Wallet } from '../types';
@@ -24,8 +19,6 @@ interface HeaderProps {
   openWalletModal: (mode?: 'deposit' | 'withdraw' | 'passbook') => void;
   openAuthModal: () => void;
   openKycModal: () => void;
-  openRulesModal: () => void;
-  openResponsibleModal: () => void;
   openPersonalDetailsModal: () => void;
   pendingSlipsCount: number;
   onSignOut: () => void;
@@ -39,8 +32,6 @@ export const Header: React.FC<HeaderProps> = ({
   openWalletModal,
   openAuthModal,
   openKycModal,
-  openRulesModal,
-  openResponsibleModal,
   openPersonalDetailsModal,
   pendingSlipsCount,
   onSignOut
@@ -62,12 +53,12 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-[#050816]/95 backdrop-blur-md border-b border-[#1A223E] shadow-xl shadow-black/40">
       {/* Main navigation header */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-1 sm:gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}
         <div className="flex items-center gap-2 sm:gap-4">
           <button 
             onClick={() => setActiveTab('lobby')}
-            className="flex items-center gap-2.5 text-left group focus:outline-none"
+            className="flex items-center gap-2 sm:gap-2.5 text-left group focus:outline-none"
             id="btn-brand-home"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-[#FF6B00] via-[#FF8800] to-[#FFAA00] p-0.5 shadow-lg shadow-[#FF6B00]/25 group-hover:scale-105 transition-transform flex items-center justify-center">
@@ -89,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </button>
 
-      {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 ml-4 pl-4 border-l border-[#1A223E]">
             <button
               onClick={() => setActiveTab('lobby')}
@@ -123,37 +114,35 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Section: Wallet & Profile */}
-        <div className="flex items-center gap-1 sm:gap-2.5">
-          {/* Quick Wallet Balance Pill */}
-          {user.id !== 'u_guest' && (
-            <div className="flex items-center bg-[#0D122B] rounded-xl p-0.5 sm:p-1 border border-[#1A223E] shadow-inner">
-              <button
-                onClick={() => openWalletModal('passbook')}
-                className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 text-left hover:bg-[#131A38] rounded-lg transition-colors group"
-                title="Click to view wallet details"
-                id="btn-wallet-balance"
-              >
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-[#4ADE80]/20 border border-[#4ADE80]/30 flex items-center justify-center text-[#4ADE80]">
-                  <WalletIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="hidden sm:block text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
-                  <span className="text-[10px] sm:text-xs font-extrabold text-white group-hover:text-[#4ADE80] transition-colors">
-                    {formatINR(wallet.totalBalance)}
-                  </span>
-                </div>
-              </button>
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Quick Wallet Balance Pill (Always visible in Top Header) */}
+          <div className="flex items-center bg-[#0D122B] rounded-xl p-0.5 sm:p-1 border border-[#1A223E] shadow-inner">
+            <button
+              onClick={() => openWalletModal('passbook')}
+              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 text-left hover:bg-[#131A38] rounded-lg transition-colors group"
+              title="Click to view wallet details"
+              id="btn-wallet-balance"
+            >
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-[#4ADE80]/20 border border-[#4ADE80]/30 flex items-center justify-center text-[#4ADE80]">
+                <WalletIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="hidden sm:block text-[10px] text-slate-400 uppercase tracking-wider font-bold leading-none">Wallet</span>
+                <span className="text-xs font-extrabold text-white group-hover:text-[#4ADE80] transition-colors">
+                  {formatINR(wallet.totalBalance)}
+                </span>
+              </div>
+            </button>
 
-              <button
-                onClick={() => openWalletModal('deposit')}
-                className="ml-0.5 sm:ml-1 px-2 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/30 flex items-center gap-1"
-                id="btn-quick-add-money"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Add ₹</span>
-              </button>
-            </div>
-          )}
+            <button
+              onClick={() => openWalletModal('deposit')}
+              className="ml-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/30 flex items-center gap-1"
+              id="btn-quick-add-money"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span className="inline">Add ₹</span>
+            </button>
+          </div>
 
           {/* Desktop User Account / KYC Profile Dropdown Pill */}
           <div className="relative hidden md:block" ref={profileRef}>
@@ -225,71 +214,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         </div>
       </div>
-
-      {/* Mobile Sticky Bottom Navigation Bar (WinZO/Gaming Style) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#080C1D]/95 backdrop-blur-xl border-t border-[#1A223E] px-4 py-2 shadow-2xl shadow-black flex items-center justify-around">
-        {/* Tab 1: Match Lobby */}
-        <button
-          onClick={() => setActiveTab('lobby')}
-          className={`flex flex-col items-center justify-center gap-1 transition-all ${
-            activeTab === 'lobby' ? 'text-[#FF6B00] scale-105' : 'text-slate-400 hover:text-slate-200'
-          }`}
-          id="mobile-bottom-lobby"
-        >
-          <div className={`p-1 rounded-xl transition-all ${activeTab === 'lobby' ? 'bg-[#FF6B00]/20 ring-1 ring-[#FF6B00]/40' : ''}`}>
-            <Zap className="w-5 h-5" />
-          </div>
-          <span className="text-[10px] font-black tracking-tight">Lobby</span>
-        </button>
-
-        {/* Tab 2: My Selections */}
-        <button
-          onClick={() => setActiveTab('my-contests')}
-          className={`flex flex-col items-center justify-center gap-1 relative transition-all ${
-            activeTab === 'my-contests' ? 'text-[#FF6B00] scale-105' : 'text-slate-400 hover:text-slate-200'
-          }`}
-          id="mobile-bottom-selections"
-        >
-          <div className={`p-1 rounded-xl relative transition-all ${activeTab === 'my-contests' ? 'bg-[#FF6B00]/20 ring-1 ring-[#FF6B00]/40' : ''}`}>
-            <Trophy className="w-5 h-5" />
-            {pendingSlipsCount > 0 && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-[#4ADE80] text-slate-950 text-[9px] font-black shadow-sm">
-                {pendingSlipsCount}
-              </span>
-            )}
-          </div>
-          <span className="text-[10px] font-black tracking-tight">Selections</span>
-        </button>
-
-        {/* Tab 3: Avatar / Personal Details */}
-        <button
-          onClick={() => {
-            if (user.id === 'u_guest') {
-              openAuthModal();
-            } else {
-              openPersonalDetailsModal();
-            }
-          }}
-          className="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-slate-200 transition-all active:scale-95"
-          id="mobile-bottom-avatar"
-        >
-          {user.id === 'u_guest' ? (
-            <div className="p-1 rounded-xl bg-[#131A38] text-slate-300">
-              <UserIcon className="w-5 h-5" />
-            </div>
-          ) : (
-            <div className="relative">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-7 h-7 rounded-xl object-cover ring-2 ring-[#FF6B00]/60 shadow-md"
-              />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#4ADE80] border-2 border-[#080C1D]" />
-            </div>
-          )}
-          <span className="text-[10px] font-black tracking-tight">Profile</span>
-        </button>
-      </nav>
     </header>
   );
 };

@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
+import { BottomNav } from './components/BottomNav';
 import { Target, Award, Crosshair, ShieldCheck, Zap, Flame, HelpCircle } from 'lucide-react';
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
@@ -526,6 +527,16 @@ export default function App({ initialMatches = [] }: AppProps) {
           </div>
         </div>
       </footer>
+
+      {/* Mobile Sticky Bottom Navigation Bar (WinZO Gaming Style) */}
+      <BottomNav
+        user={currentUser}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        pendingSlipsCount={pendingSlipsCount}
+        openAuthModal={() => setIsAuthModalOpen(true)}
+        openPersonalDetailsModal={() => setIsPersonalDetailsOpen(true)}
+      />
 
       {/* ALL MODALS (Lazy Loaded) */}
       <React.Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-[#050816]/50 backdrop-blur-sm z-50"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
