@@ -76,7 +76,7 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-black text-white">{user.name}</h2>
                 <span className="px-2 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] text-[10px] font-black border border-[#4ADE80]/30">
-                  {user.kycStatus === 'VERIFIED' ? 'Verified Fan' : 'Active Player'}
+                  Active Player
                 </span>
               </div>
               <p className="text-xs text-slate-400">Personal Details & Account Overview</p>

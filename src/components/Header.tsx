@@ -18,7 +18,6 @@ interface HeaderProps {
   setActiveTab: (tab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules') => void;
   openWalletModal: (mode?: 'deposit' | 'withdraw' | 'passbook') => void;
   openAuthModal: () => void;
-  openKycModal: () => void;
   pendingSlipsCount: number;
   onSignOut: () => void;
 }
@@ -30,7 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   openWalletModal,
   openAuthModal,
-  openKycModal,
   pendingSlipsCount,
   onSignOut
 }) => {
@@ -185,11 +183,6 @@ export const Header: React.FC<HeaderProps> = ({
                     <div className="px-4 py-2.5 border-b border-[#1A223E]">
                       <div className="flex items-center gap-1">
                         <span className="text-sm font-bold text-white truncate">{user.name}</span>
-                        {user.kycStatus === 'VERIFIED' ? (
-                          <span className="text-[#4ADE80] text-xs" title="KYC Verified">✓</span>
-                        ) : (
-                          <span className="text-[#FFAA00] text-xs" title="KYC Pending">⚠️</span>
-                        )}
                       </div>
                       <div className="text-[11px] text-slate-400 mt-0.5">{user.phone}</div>
                       {user.refId && (
@@ -203,13 +196,6 @@ export const Header: React.FC<HeaderProps> = ({
                       id="btn-profile-personal-details"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-[#FF6B00]" /> Personal Details
-                    </button>
-
-                    <button
-                      onClick={() => { setIsProfileOpen(false); openKycModal(); }}
-                      className="w-full text-left px-4 py-2 text-xs font-bold text-slate-300 hover:bg-[#131A38] hover:text-white transition-colors flex items-center gap-2"
-                    >
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Complete KYC
                     </button>
 
                     <button

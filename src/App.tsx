@@ -11,7 +11,6 @@ const SlipResultModal = React.lazy(() => import('./components/SlipResultModal').
 const MyContestsView = React.lazy(() => import('./components/MyContestsView').then(m => ({ default: m.MyContestsView })));
 const WalletModal = React.lazy(() => import('./components/WalletModal').then(m => ({ default: m.WalletModal })));
 const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
-const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
 const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
 const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
 const PersonalDetailsView = React.lazy(() => import('./components/PersonalDetailsView').then(m => ({ default: m.PersonalDetailsView })));
@@ -226,7 +225,6 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [editingSlipState, setEditingSlipState] = useState<{ match: CricketMatch; slip: UserPredictionSlip } | null>(null);
   const [walletModalState, setWalletModalState] = useState<{ open: boolean; tab: 'deposit' | 'withdraw' | 'passbook' }>({ open: false, tab: 'deposit' });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
 
@@ -550,7 +548,6 @@ export default function App({ initialMatches = [] }: AppProps) {
         setActiveTab={setActiveTab}
         openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
         openAuthModal={() => setIsAuthModalOpen(true)}
-        openKycModal={() => setIsKycModalOpen(true)}
         pendingSlipsCount={pendingSlipsCount}
         onSignOut={handleSignOut}
       />
@@ -608,7 +605,6 @@ export default function App({ initialMatches = [] }: AppProps) {
               slips={slips}
               transactions={transactions}
               onSignOut={handleSignOut}
-              onOpenKyc={() => setIsKycModalOpen(true)}
               onGoToLobby={() => setActiveTab('lobby')}
             />
           </React.Suspense>
@@ -743,10 +739,6 @@ export default function App({ initialMatches = [] }: AppProps) {
             onClose={() => setWalletModalState({ open: false, tab: 'deposit' })}
             onDeposit={handleDepositCash}
             onWithdraw={handleWithdrawWinnings}
-            onOpenKyc={() => {
-              setWalletModalState({ open: false, tab: 'deposit' });
-              setIsKycModalOpen(true);
-            }}
           />
         )}
 
@@ -758,7 +750,6 @@ export default function App({ initialMatches = [] }: AppProps) {
               const enrichedUser = {
                 ...user,
                 avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.name}&backgroundColor=FF6B00`,
-                kycStatus: 'PENDING',
                 isBlocked: false,
                 joinedDate: new Date().toISOString().split('T')[0],
                 dailyDepositLimit: 10000,
@@ -770,23 +761,6 @@ export default function App({ initialMatches = [] }: AppProps) {
               setWallet(user.wallet);
               // We no longer manage allUsers here
               setIsAuthModalOpen(false);
-            }}
-          />
-        )}
-
-        {/* MODAL 5: KYC Verification */}
-        {isKycModalOpen && (
-          <KYCModal
-            user={currentUser}
-            onClose={() => setIsKycModalOpen(false)}
-            onCompleteKyc={(pan) => {
-              const updated: UserAccount = {
-                ...currentUser,
-                kycStatus: 'VERIFIED',
-                panNumber: pan,
-              };
-              setCurrentUser(updated);
-              setWallet((prev) => ({ ...prev, kycVerified: true }));
             }}
           />
         )}

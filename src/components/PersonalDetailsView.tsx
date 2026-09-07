@@ -25,7 +25,6 @@ interface PersonalDetailsViewProps {
   slips: UserPredictionSlip[];
   transactions: WalletTransaction[];
   onSignOut: () => void;
-  onOpenKyc: () => void;
   onGoToLobby: () => void;
 }
 
@@ -34,7 +33,6 @@ export const PersonalDetailsView: React.FC<PersonalDetailsViewProps> = ({
   slips,
   transactions,
   onSignOut,
-  onOpenKyc,
   onGoToLobby,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +78,7 @@ export const PersonalDetailsView: React.FC<PersonalDetailsViewProps> = ({
                 {user.name}
               </h1>
               <span className="px-2.5 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] text-xs font-black border border-[#4ADE80]/30">
-                {user.kycStatus === 'VERIFIED' ? 'Verified Fan' : 'Active Player'}
+                Active Player
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
@@ -92,15 +90,6 @@ export const PersonalDetailsView: React.FC<PersonalDetailsViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          {user.kycStatus !== 'VERIFIED' && (
-            <button
-              onClick={onOpenKyc}
-              className="px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/20 flex items-center gap-1.5 transition-colors"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Complete KYC</span>
-            </button>
-          )}
           <button
             onClick={onSignOut}
             className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/20 flex items-center gap-1.5 transition-colors"

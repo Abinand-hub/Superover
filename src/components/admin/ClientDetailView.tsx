@@ -119,7 +119,7 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
         </div>
       </div>
 
-      {/* KYC & Identity Card */}
+      {/* User Identity Card */}
       <div className="bg-[#131A38] rounded-2xl border border-[#1A223E] overflow-hidden">
         <div className="p-6 flex flex-col md:flex-row gap-6 md:items-center">
           <img 
@@ -144,7 +144,7 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
                 })()}
               </span>
               <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded text-xs font-bold border border-emerald-400/20">
-                KYC {user.kycStatus}
+                Active Member
               </span>
             </div>
           </div>

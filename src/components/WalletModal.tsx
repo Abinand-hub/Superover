@@ -28,7 +28,6 @@ interface WalletModalProps {
   onClose: () => void;
   onDeposit: (payload: any, method: string) => void;
   onWithdraw: (amount: number, upiId: string) => void;
-  onOpenKyc: () => void;
 }
 
 export const WalletModal: React.FC<WalletModalProps> = ({
@@ -39,7 +38,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   onClose,
   onDeposit,
   onWithdraw,
-  onOpenKyc,
 }) => {
   const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw' | 'passbook'>(initialTab);
 
@@ -440,22 +438,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                       <span className="text-xs font-bold text-white">₹5</span>
                     </div>
                   </div>
-
-                  {/* KYC check alert */}
-                  {user.kycStatus !== 'VERIFIED' && (
-                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                        <span>KYC Verification speeds up instant payouts</span>
-                      </div>
-                      <button
-                        onClick={onOpenKyc}
-                        className="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-bold text-[11px]"
-                      >
-                        Verify PAN
-                      </button>
-                    </div>
-                  )}
 
                   {/* Amount input */}
                   <div>
