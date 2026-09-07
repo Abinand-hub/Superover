@@ -3,6 +3,7 @@ import connectToDatabase from '@/lib/mongodb';
 import Slip from '@/models/Slip';
 import User from '@/models/User';
 import Match from '@/models/Match';
+import Transaction from '@/models/Transaction';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
@@ -40,7 +41,7 @@ export async function GET(req: Request) {
     });
 
     // Transform _id to id for frontend and ensure evaluation consistency
-    const formattedSlips = slips.map((s: any) => {
+    const formattedSlips = await Promise.all(slips.map(async (s: any) => {
       let slipObj = {
         ...s,
         id: s._id ? String(s._id) : s.id,
@@ -98,16 +99,64 @@ export async function GET(req: Request) {
           else if (streak === 4) mult = 3;
           else if (streak === 3) mult = 0.5;
 
+          const payout = (s.entryFee || 50) * mult;
           slipObj.status = mult > 0 ? 'WON' : 'LOST';
           slipObj.streakCount = streak;
           slipObj.correctCount = correct;
           slipObj.multiplierWon = mult;
-          slipObj.payoutAmount = (s.entryFee || 50) * mult;
+          slipObj.payoutAmount = payout;
+
+          // Persist evaluation to DB asynchronously
+          try {
+            await Slip.updateOne(
+              { _id: s._id },
+              {
+                $set: {
+                  status: slipObj.status,
+                  streakCount: streak,
+                  correctCount: correct,
+                  multiplierWon: mult,
+                  payoutAmount: payout
+                }
+              }
+            );
+
+            if (mult > 0 && payout > 0 && s.userId) {
+              // Ensure payout transaction exists
+              const existingTx = await Transaction.findOne({
+                userId: s.userId,
+                referenceId: String(s._id),
+                type: 'CONTEST_PAYOUT'
+              });
+
+              if (!existingTx) {
+                await Transaction.create({
+                  userId: s.userId,
+                  type: 'CONTEST_PAYOUT',
+                  amount: payout,
+                  status: 'SUCCESS',
+                  referenceId: String(s._id),
+                  description: `Won ${mult}X Cash Prize for ${match.title || s.matchTitle || 'Contest'} (${streak}/6 Streak)`
+                });
+
+                // Credit user wallet
+                const user = await User.findById(s.userId);
+                if (user) {
+                  if (!user.wallet) user.wallet = { depositBalance: 0, winningsBalance: 0, bonusBalance: 0 };
+                  user.wallet.winningsBalance = (user.wallet.winningsBalance || 0) + payout;
+                  user.totalWon = (user.totalWon || 0) + payout;
+                  await user.save();
+                }
+              }
+            }
+          } catch (dbErr) {
+            console.error('Failed to persist slip evaluation in DB:', dbErr);
+          }
         }
       }
 
       return slipObj;
-    });
+    }));
 
     return NextResponse.json(formattedSlips);
   } catch (error: any) {

@@ -141,6 +141,85 @@ export default function App({ initialMatches = [] }: AppProps) {
     return () => clearInterval(interval);
   }, [reloadUserData]);
 
+  // Auto-reconcile won prediction slips with wallet winnings balance & passbook transactions
+  useEffect(() => {
+    if (!currentUser) return;
+    const currentUserId = (currentUser.id || (currentUser as any)._id || '').toString();
+
+    const matchMap = new Map<string, CricketMatch>();
+    matches.forEach((m) => {
+      if (m.id) matchMap.set(String(m.id), m);
+      if ((m as any)._id) matchMap.set(String((m as any)._id), m);
+      if ((m as any).apiId) matchMap.set(String((m as any).apiId), m);
+      if (m.title) matchMap.set(m.title.toLowerCase().trim(), m);
+    });
+
+    let calculatedTotalWinnings = 0;
+    const missingTxs: WalletTransaction[] = [];
+
+    slips.forEach((slip) => {
+      const slipUserId = (slip.userId || (slip as any).user || '').toString();
+      const isForUser = !slipUserId || !currentUserId || slipUserId === currentUserId || currentUserId === 'u_guest';
+      if (!isForUser) return;
+
+      const match = matchMap.get(String(slip.matchId)) || (slip.matchTitle ? matchMap.get(slip.matchTitle.toLowerCase().trim()) : undefined);
+
+      let effectiveSlip = slip;
+      if (match && (match.status === 'COMPLETED' || (match.actualResults?.answers && Object.keys(match.actualResults.answers).length > 0))) {
+        if (slip.status === 'PENDING' || slip.status === 'LIVE' || slip.streakCount === undefined) {
+          const { settledSlip } = settlePredictionSlip(slip, match, match.actualResults || { answers: {} });
+          effectiveSlip = settledSlip;
+        }
+      }
+
+      if (effectiveSlip.status === 'WON' && (effectiveSlip.payoutAmount || 0) > 0) {
+        calculatedTotalWinnings += (effectiveSlip.payoutAmount || 0);
+
+        const txExists = transactions.some((t) => 
+          String(t.referenceId) === String(effectiveSlip.id) ||
+          String(t.referenceId) === String((effectiveSlip as any)._id) ||
+          (t.type === 'CONTEST_PAYOUT' && t.description?.includes(effectiveSlip.matchTitle || ''))
+        );
+
+        if (!txExists) {
+          missingTxs.push({
+            id: `tx_pay_${effectiveSlip.id || Date.now()}`,
+            userId: currentUser.id,
+            type: 'CONTEST_PAYOUT',
+            amount: effectiveSlip.payoutAmount || 0,
+            status: 'SUCCESS',
+            timestamp: effectiveSlip.submittedAt || new Date().toISOString(),
+            description: `Won ${effectiveSlip.multiplierWon}X Cash Prize for ${effectiveSlip.matchTitle || match?.title || 'Cricket Contest'} (${effectiveSlip.streakCount || effectiveSlip.correctCount || 3}/6 Streak)`,
+            referenceId: String(effectiveSlip.id),
+            payoutMultiplier: effectiveSlip.multiplierWon,
+          });
+        }
+      }
+    });
+
+    if (missingTxs.length > 0) {
+      setTransactions((prev) => [...missingTxs, ...prev]);
+    }
+
+    // Check if wallet winnings balance needs updating
+    if (calculatedTotalWinnings > 0 && calculatedTotalWinnings > wallet.winningsBalance) {
+      setWallet((prev) => ({
+        ...prev,
+        winningsBalance: calculatedTotalWinnings,
+        totalBalance: prev.depositBalance + calculatedTotalWinnings + prev.bonusBalance,
+      }));
+      setCurrentUser((prev) => ({
+        ...prev,
+        totalWon: Math.max(prev.totalWon || 0, calculatedTotalWinnings),
+        wallet: prev.wallet ? {
+          ...prev.wallet,
+          winningsBalance: calculatedTotalWinnings,
+          totalBalance: (prev.wallet.depositBalance || 0) + calculatedTotalWinnings + (prev.wallet.bonusBalance || 0),
+        } : undefined
+      }));
+    }
+  }, [slips, matches, currentUser?.id, transactions.length, wallet.winningsBalance]);
+
   // Modals
   const [selectedMatchForPlay, setSelectedMatchForPlay] = useState<{ match: CricketMatch; fee: number } | null>(null);
   const [selectedMatchForResults, setSelectedMatchForResults] = useState<{ match: CricketMatch; slip?: UserPredictionSlip } | null>(null);
