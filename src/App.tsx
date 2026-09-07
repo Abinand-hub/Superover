@@ -497,42 +497,9 @@ export default function App({ initialMatches = [] }: AppProps) {
 
       </main>
 
-      {/* Main Footer - With moved top banner information */}
-      <footer className="mt-auto bg-[#080C1D] border-t border-[#1A223E]">
-        {/* Compliance and quick info bar (moved from top to bottom) */}
-        <div className="bg-[#03050D] px-4 py-2.5 border-b border-[#1A223E]/70 text-xs text-slate-400">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-              <span className="flex items-center gap-1.5 font-bold text-[#4ADE80]">
-                <ShieldCheck className="w-3.5 h-3.5" /> Where stats meet instincts
-              </span>
-              <span className="hidden sm:inline-block text-slate-700">•</span>
-              <span className="inline-flex items-center gap-1.5 text-slate-300 font-medium text-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></span>
-                Crack 6 match stats and gain upto 500X rewards
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsResponsibleModalOpen(true)}
-                className="hover:text-[#FFAA00] transition-colors flex items-center gap-1 text-[11px]"
-              >
-                <span className="px-1.5 py-0.2 rounded bg-[#FF6B00]/15 text-[#FF6B00] font-bold border border-[#FF6B00]/30 text-[10px]">18+</span>
-                Responsible Gaming
-              </button>
-              <span className="text-slate-700">|</span>
-              <button 
-                onClick={() => setIsRulesModalOpen(true)}
-                className="hover:text-slate-200 transition-colors flex items-center gap-1 text-[11px]"
-              >
-                <HelpCircle className="w-3 h-3 text-[#FF6B00]" /> FAQs & Rules
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
+      {/* Main Footer */}
+      <footer className="mt-auto bg-[#080C1D] border-t border-[#1A223E] py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col gap-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#FF6B00] flex items-center justify-center font-black text-slate-950 text-xs shadow-md shadow-[#FF6B00]/30">
