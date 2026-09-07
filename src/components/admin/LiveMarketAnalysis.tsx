@@ -17,10 +17,14 @@ import {
   Check, 
   Sparkles,
   ArrowDownRight,
-  Filter
+  Filter,
+  Trophy,
+  Award,
+  Wallet,
+  ArrowUpRight
 } from 'lucide-react';
 import { CricketMatch, UserPredictionSlip, UserAccount } from '../../types';
-import { calculatePotentialPayout } from '../../utils/payoutCalculator';
+import { calculatePotentialPayout, checkAnswerMatch } from '../../utils/payoutCalculator';
 
 interface LiveMarketAnalysisProps {
   matches: CricketMatch[];
@@ -33,6 +37,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
   const [funnelFilters, setFunnelFilters] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
+  // Winnings Table Filter State
+  const [winningsFilter, setWinningsFilter] = useState<'ALL' | 'WINNERS_ONLY' | 'TOP_TIER'>('ALL');
+  const [winningsSearch, setWinningsSearch] = useState<string>('');
+
   // User Inspector Modal State
   const [inspectorData, setInspectorData] = useState<{
     questionId: string;
@@ -47,6 +55,26 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
     navigator.clipboard.writeText(text);
     setCopiedId(text);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Helper: Normalize answer strings for robust comparison
+  const normalizeAnswer = (ans: any): string => {
+    if (ans === undefined || ans === null) return '';
+    if (typeof ans === 'object') return (ans.answerText || ans.answerId || '').trim().toLowerCase();
+    return String(ans).trim().toLowerCase();
+  };
+
+  // Multipliers according to PRD V8:
+  const getMultiplierForStreak = (streak: number): number => {
+    switch (streak) {
+      case 1: return 0;
+      case 2: return 0;
+      case 3: return 0.5;
+      case 4: return 3;
+      case 5: return 10;
+      case 6: return 50;
+      default: return 0;
+    }
   };
 
   // -------------------------------------------------------------------------
@@ -64,7 +92,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
-                ⚡ ORGANIZER RISK INTELLIGENCE
+                ⚡ ORGANIZER RISK & WINNINGS INTELLIGENCE
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display">
@@ -72,7 +100,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               Live Market Analysis
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Select a match to inspect prediction funnels, user picks distribution, and simulate real-time platform liability.
+              Select a match to inspect prediction funnels, user picks distribution, and simulate real-time platform liability & user winnings.
             </p>
           </div>
 
@@ -200,13 +228,6 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
     const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
     const avgEntry = totalEntries > 0 ? totalCollection / totalEntries : 0;
 
-    // Helper: Normalize answer strings for robust comparison
-    const normalizeAnswer = (ans: any): string => {
-      if (ans === undefined || ans === null) return '';
-      if (typeof ans === 'object') return (ans.answerText || ans.answerId || '').trim().toLowerCase();
-      return String(ans).trim().toLowerCase();
-    };
-
     // Calculate remaining slips that matched the filters up to question index `qIndex`
     const getRemainingSlipsAtQuestion = (qIndex: number): UserPredictionSlip[] => {
       return matchSlips.filter(slip => {
@@ -221,61 +242,65 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
       });
     };
 
-    // Multipliers according to PRD V8:
-    // Streak 1: 0X
-    // Streak 2: 0X
-    // Streak 3: 0.5X
-    // Streak 4: 3X
-    // Streak 5: 10X
-    // Streak 6: 50X (or wheelMultiplier)
-    const getMultiplierForStreak = (streak: number): number => {
-      switch (streak) {
-        case 1: return 0;
-        case 2: return 0;
-        case 3: return 0.5;
-        case 4: return 3;
-        case 5: return 10;
-        case 6: return 50;
-        default: return 0;
-      }
-    };
+    // Calculate each slip's effective streak and winnings (in ₹ Rupees)
+    // If funnelFilters has selections, evaluate against simulated path; else evaluate against official results if settled
+    const evaluatedSlipsWithWinnings = matchSlips.map(slip => {
+      let streak = 0;
+      const questionsCount = match.questions.length;
+      const answersToCompareAgainst: Record<string, string> = {};
 
-    // Calculate Grand Simulated Liability Payout
-    let grandPayout = 0;
-    
-    // For each slip, determine how many consecutive questions from Q1 it matches under current funnelFilters
-    matchSlips.forEach(slip => {
-      let currentStreak = 0;
-      for (let i = 0; i < match.questions.length; i++) {
+      for (let i = 0; i < questionsCount; i++) {
         const q = match.questions[i];
-        const selectedFilter = funnelFilters[q.id];
-        if (!selectedFilter) break; // Filter path ended
+        const filterVal = funnelFilters[q.id];
+        const officialVal = match.actualResults?.answers?.[q.id];
         
-        const userAns = slip.answers?.[q.id];
-        if (normalizeAnswer(userAns) === normalizeAnswer(selectedFilter)) {
-          currentStreak++;
-        } else {
-          break; // Strict consecutive streak broken
+        // Priority: Funnel Filter > Official Settled Answer
+        if (filterVal) {
+          answersToCompareAgainst[q.id] = filterVal;
+        } else if (officialVal) {
+          answersToCompareAgainst[q.id] = typeof officialVal === 'object' ? (officialVal.answerText || officialVal.answerId) : officialVal;
         }
       }
 
-      if (currentStreak >= 3) {
-        const payout = calculatePotentialPayout(
-          slip.entryFee || 50,
-          currentStreak,
-          slip.wheelMultiplier || 50,
-          !!slip.freeHit
-        );
-        grandPayout += payout;
+      // Check consecutive streak from Q1
+      for (let i = 0; i < questionsCount; i++) {
+        const q = match.questions[i];
+        const benchmarkAns = answersToCompareAgainst[q.id];
+        if (!benchmarkAns) break;
+
+        const userAns = slip.answers?.[q.id];
+        if (normalizeAnswer(userAns) === normalizeAnswer(benchmarkAns)) {
+          streak++;
+        } else {
+          break; // Consecutive streak broken
+        }
       }
+
+      const mult = getMultiplierForStreak(streak);
+      const calculatedPayout = streak >= 3 
+        ? calculatePotentialPayout(slip.entryFee || 50, streak, slip.wheelMultiplier || 50, !!slip.freeHit)
+        : 0;
+
+      const finalPayout = (match.status === 'COMPLETED' && Object.keys(funnelFilters).length === 0 && slip.payoutAmount !== undefined)
+        ? slip.payoutAmount
+        : calculatedPayout;
+
+      return {
+        slip,
+        streak,
+        multiplier: mult,
+        winningsINR: finalPayout,
+        hasWon: finalPayout > 0,
+      };
     });
 
+    // Grand Simulated / Settled Payout
+    const grandPayout = evaluatedSlipsWithWinnings.reduce((sum, item) => sum + item.winningsINR, 0);
+    const totalWinnersCount = evaluatedSlipsWithWinnings.filter(item => item.hasWon).length;
+    const highestPayoutINR = evaluatedSlipsWithWinnings.reduce((max, item) => Math.max(max, item.winningsINR), 0);
     const netProfit = totalCollection - grandPayout;
 
     // AUTO RISK ALERT SYSTEM (Per PRD)
-    // 🟢 GREEN SAFE: Net Profit > 0
-    // 🟡 YELLOW WARNING: Total Payout > 70% of Collection
-    // 🔴 RED HIGH RISK: Net Profit < 0 (Loss Alert)
     let riskStatus: 'SAFE' | 'WARNING' | 'HIGH_RISK' = 'SAFE';
     let riskLabel = 'SAFE';
     let riskMessage = `SAFE - Profit ₹${netProfit.toLocaleString()}`;
@@ -294,22 +319,19 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
       riskMessage = `SAFE - Profit margin is healthy (+₹${netProfit.toLocaleString()}).`;
     }
 
-    // Export Final Qualifying Users / Winners CSV
-    const handleExportFinalWinners = () => {
-      const qCount = match.questions.length;
-      const finalSlips = getRemainingSlipsAtQuestion(qCount);
-
+    // Export User Winnings & Slips CSV
+    const handleExportUserWinnings = () => {
       const csvContent = "data:text/csv;charset=utf-8," 
-        + "Slip_ID,User_Name,Phone,Entry_Fee_INR,Wheel_Multiplier,Free_Hit,Consecutive_Streak,Calculated_Payout_INR,Submitted_At\n"
-        + finalSlips.map(s => {
-          const payout = calculatePotentialPayout(s.entryFee || 50, qCount, s.wheelMultiplier || 50, !!s.freeHit);
-          return `${s.id},${s.userName || 'User'},${s.userPhone || 'N/A'},${s.entryFee || 50},${s.wheelMultiplier || 50}X,${s.freeHit ? 'YES' : 'NO'},${qCount},${payout},${s.submittedAt || 'N/A'}`;
+        + "Slip_ID,User_Name,Phone,User_ID,Entry_Fee_INR,Consecutive_Streak,Multiplier_Tier,Winnings_Won_INR,Wheel_Multiplier,Free_Hit,Status,Submitted_At\n"
+        + evaluatedSlipsWithWinnings.map(item => {
+          const s = item.slip;
+          return `${s.id},${s.userName || 'User'},${s.userPhone || 'N/A'},${s.userId || 'N/A'},${s.entryFee || 50},${item.streak}/6,${item.multiplier}X,${item.winningsINR},${s.wheelMultiplier || 50}X,${s.freeHit ? 'YES' : 'NO'},${item.hasWon ? 'WON' : 'NO_WIN'},${s.submittedAt || 'N/A'}`;
         }).join("\n");
       
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `winners_${match.team1?.code}_vs_${match.team2?.code}_Q${qCount}.csv`);
+      link.setAttribute("download", `user_winnings_${match.team1?.code}_vs_${match.team2?.code}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -334,7 +356,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black tracking-wider uppercase border border-indigo-500/30">
-                  LIVE FUNNEL ANALYSIS
+                  LIVE FUNNEL & USER WINNINGS ANALYSIS
                 </span>
                 <span className="text-xs text-slate-400 font-mono">ID: {match.id.substring(0, 10)}...</span>
               </div>
@@ -354,16 +376,14 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               <span>Reset Filters</span>
             </button>
 
-            {Object.keys(funnelFilters).length > 0 && (
-              <button 
-                onClick={handleExportFinalWinners}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30"
-                id="btn-export-winners-csv"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export Qualifying Users</span>
-              </button>
-            )}
+            <button 
+              onClick={handleExportUserWinnings}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30"
+              id="btn-export-winnings-csv"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export User Winnings (CSV)</span>
+            </button>
           </div>
         </div>
 
@@ -388,9 +408,9 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           </div>
 
           <div className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-sm">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Simulated Liability</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Total User Winnings</span>
             <span className="text-xl sm:text-2xl font-black text-[#FFAA00] font-mono">₹{grandPayout.toLocaleString()}</span>
-            <span className="text-[10px] text-slate-400 block mt-0.5">Total Potential Payout</span>
+            <span className="text-[10px] text-emerald-400 font-bold block mt-0.5">{totalWinnersCount} Users Won Cash</span>
           </div>
         </div>
 
@@ -416,7 +436,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
             <div className="p-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-xs font-mono text-slate-300 flex items-center justify-between">
               <span>Collection: <strong className="text-emerald-400">₹{totalCollection.toLocaleString()}</strong></span>
               <span className="text-slate-500">-</span>
-              <span>Payout: <strong className="text-[#FFAA00]">₹{grandPayout.toLocaleString()}</strong></span>
+              <span>User Winnings: <strong className="text-[#FFAA00]">₹{grandPayout.toLocaleString()}</strong></span>
               <span className="text-slate-500">=</span>
               <span>Net: <strong className={netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}>₹{netProfit.toLocaleString()}</strong></span>
             </div>
@@ -469,6 +489,198 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 <span>Multipliers locked. Admin locking recommended to prevent further liability exposure.</span>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* NEW SECTION: INDIVIDUAL USER WINNINGS BREAKDOWN (WHICH USER GOT HOW MUCH)  */}
+        {/* ========================================================================= */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-[#0D122B] border border-emerald-500/40 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1A223E]">
+            <div>
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-[#FFAA00]" />
+                <h3 className="text-base font-black text-white font-display">
+                  User Winnings & Cash Payouts Breakdown
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
+                  {totalWinnersCount} / {matchSlips.length} Users Won Cash
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Detailed list showing exactly which user achieved what streak and won how many rupees (₹).
+              </p>
+            </div>
+
+            {/* Filter Tabs & Search */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex rounded-xl bg-[#080C1D] border border-[#1A223E] p-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setWinningsFilter('ALL')}
+                  className={`px-3 py-1 rounded-lg transition-colors ${
+                    winningsFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All Users ({matchSlips.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWinningsFilter('WINNERS_ONLY')}
+                  className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                    winningsFilter === 'WINNERS_ONLY' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Award className="w-3 h-3" />
+                  <span>Winners Only ({totalWinnersCount})</span>
+                </button>
+              </div>
+
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={winningsSearch}
+                  onChange={(e) => setWinningsSearch(e.target.value)}
+                  placeholder="Search user name/phone..."
+                  className="pl-8 pr-3 py-1.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 w-44 sm:w-56"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* User Winnings Table */}
+          <div className="overflow-x-auto border border-[#1A223E] rounded-xl">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+              <thead className="bg-[#131A38] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#1A223E]">
+                <tr>
+                  <th className="px-4 py-3.5 font-bold">User Name & Identity</th>
+                  <th className="px-4 py-3.5 font-bold">Entry Stake</th>
+                  <th className="px-4 py-3.5 font-bold">Consecutive Streak</th>
+                  <th className="px-4 py-3.5 font-bold">Multiplier Tier</th>
+                  <th className="px-4 py-3.5 font-bold">Free Hit Status</th>
+                  <th className="px-4 py-3.5 font-bold text-right">Rupees Won (₹ Cash Payout)</th>
+                  <th className="px-4 py-3.5 font-bold text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1A223E] font-mono text-[11px]">
+                {(() => {
+                  const filtered = evaluatedSlipsWithWinnings.filter(item => {
+                    if (winningsFilter === 'WINNERS_ONLY' && !item.hasWon) return false;
+                    if (winningsSearch) {
+                      const q = winningsSearch.toLowerCase();
+                      const s = item.slip;
+                      return (
+                        (s.userName || '').toLowerCase().includes(q) ||
+                        (s.userPhone || '').toLowerCase().includes(q) ||
+                        (s.userId || '').toLowerCase().includes(q)
+                      );
+                    }
+                    return true;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-sans">
+                          No users found matching current filters.
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return filtered.map((item) => {
+                    const s = item.slip;
+                    const hasWon = item.hasWon;
+
+                    return (
+                      <tr 
+                        key={s.id} 
+                        className={`transition-colors ${
+                          hasWon 
+                            ? 'bg-emerald-950/15 hover:bg-emerald-950/30' 
+                            : 'hover:bg-[#131A38]/40'
+                        }`}
+                      >
+                        {/* User identity */}
+                        <td className="px-4 py-3 font-sans">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs font-mono ${
+                              hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {(s.userName || 'U')[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-bold text-white block">{s.userName || 'SuperOver Fan'}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">{s.userPhone || s.userId || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Entry Stake */}
+                        <td className="px-4 py-3 text-slate-200">
+                          ₹{s.entryFee || 50}
+                        </td>
+
+                        {/* Streak */}
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-black ${
+                            item.streak === 6 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+                            item.streak >= 3 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                            'bg-slate-800 text-slate-400'
+                          }`}>
+                            {item.streak} / 6 Streak
+                          </span>
+                        </td>
+
+                        {/* Multiplier */}
+                        <td className="px-4 py-3">
+                          <span className={`font-bold ${item.multiplier > 0 ? 'text-[#FFAA00]' : 'text-slate-500'}`}>
+                            {item.multiplier > 0 ? `${item.multiplier}X` : '0X'}
+                          </span>
+                        </td>
+
+                        {/* Free Hit */}
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            s.freeHit ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-500'
+                          }`}>
+                            {s.freeHit ? `ACTIVE (${s.wheelMultiplier || 50}X)` : 'NO'}
+                          </span>
+                        </td>
+
+                        {/* Rupees Won (Prominent Payout Column) */}
+                        <td className="px-4 py-3 text-right">
+                          {hasWon ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-sm font-black text-emerald-400 font-mono">
+                                +₹{item.winningsINR.toLocaleString()}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-500 font-mono">
+                              ₹0
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Status badge */}
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase font-sans ${
+                            hasWon 
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm' 
+                              : 'bg-slate-800 text-slate-500'
+                          }`}>
+                            {hasWon ? `WON ₹${item.winningsINR}` : 'NO WIN'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -786,42 +998,51 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                       <table className="w-full text-left text-xs whitespace-nowrap">
                         <thead className="bg-[#131A38] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#1A223E]">
                           <tr>
-                            <th className="px-4 py-3">User Name & Phone</th>
-                            <th className="px-4 py-3">Selected Pick</th>
-                            <th className="px-4 py-3">Entry Fee</th>
-                            <th className="px-4 py-3">Wheel Mult</th>
-                            <th className="px-4 py-3">Free Hit</th>
-                            <th className="px-4 py-3 text-right">Slip ID</th>
+                            <th className="px-4 py-3 font-bold">User Name & Phone</th>
+                            <th className="px-4 py-3 font-bold">Selected Pick</th>
+                            <th className="px-4 py-3 font-bold">Entry Fee</th>
+                            <th className="px-4 py-3 font-bold">Wheel Mult</th>
+                            <th className="px-4 py-3 font-bold">Free Hit</th>
+                            <th className="px-4 py-3 font-bold text-right">Potential Payout (₹)</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1A223E] font-mono text-[11px]">
-                          {filteredList.map((s) => (
-                            <tr key={s.id} className="hover:bg-[#131A38]/40 transition-colors">
-                              <td className="px-4 py-3 font-sans">
-                                <span className="font-bold text-white block">{s.userName || 'Anonymous Fan'}</span>
-                                <span className="text-[10px] text-slate-400 font-mono">{s.userPhone || s.userId || 'N/A'}</span>
-                              </td>
-                              <td className="px-4 py-3 text-emerald-400 font-sans font-bold">
-                                {inspectorData.optionValue}
-                              </td>
-                              <td className="px-4 py-3 text-slate-200">
-                                ₹{s.entryFee || 50}
-                              </td>
-                              <td className="px-4 py-3 text-[#FFAA00] font-bold">
-                                {s.wheelMultiplier || 50}X
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  s.freeHit ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500'
-                                }`}>
-                                  {s.freeHit ? 'ACTIVE' : 'NO'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right text-slate-500 text-[10px]">
-                                {s.id.substring(0, 8)}...
-                              </td>
-                            </tr>
-                          ))}
+                          {filteredList.map((s) => {
+                            const currentStreak = inspectorData.questionNumber;
+                            const potentialINR = currentStreak >= 3 
+                              ? calculatePotentialPayout(s.entryFee || 50, currentStreak, s.wheelMultiplier || 50, !!s.freeHit)
+                              : 0;
+
+                            return (
+                              <tr key={s.id} className="hover:bg-[#131A38]/40 transition-colors">
+                                <td className="px-4 py-3 font-sans">
+                                  <span className="font-bold text-white block">{s.userName || 'Anonymous Fan'}</span>
+                                  <span className="text-[10px] text-slate-400 font-mono">{s.userPhone || s.userId || 'N/A'}</span>
+                                </td>
+                                <td className="px-4 py-3 text-emerald-400 font-sans font-bold">
+                                  {inspectorData.optionValue}
+                                </td>
+                                <td className="px-4 py-3 text-slate-200">
+                                  ₹{s.entryFee || 50}
+                                </td>
+                                <td className="px-4 py-3 text-[#FFAA00] font-bold">
+                                  {s.wheelMultiplier || 50}X
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    s.freeHit ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500'
+                                  }`}>
+                                    {s.freeHit ? 'ACTIVE' : 'NO'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <span className={`font-bold ${potentialINR > 0 ? 'text-emerald-400 text-xs' : 'text-slate-500'}`}>
+                                    {potentialINR > 0 ? `+₹${potentialINR.toLocaleString()}` : '₹0'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
