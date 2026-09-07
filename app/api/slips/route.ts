@@ -210,7 +210,6 @@ export async function PUT(req: Request) {
     }
 
     slip.answers = answers;
-    slip.updatedAt = new Date();
     await slip.save();
 
     return NextResponse.json({

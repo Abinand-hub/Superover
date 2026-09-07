@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       for (const defQ of DEFAULT_BANK) {
         const exists = questions.some((q: any) => q.shortTitle === defQ.shortTitle);
         if (!exists) {
-          await QuestionBank.create(defQ);
+          await QuestionBank.create(defQ as any);
         }
       }
       questions = await QuestionBank.find().sort({ createdAt: 1 }).lean();

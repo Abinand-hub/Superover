@@ -15,7 +15,7 @@ export default async function Page() {
     const past = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
     const future = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
-    const query = {
+    const query: any = {
       status: { $in: ['UPCOMING', 'LOCKED', 'LIVE', 'COMPLETED'] },
       matchStartTime: {
         $gte: past.toISOString(),

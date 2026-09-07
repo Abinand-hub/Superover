@@ -12,6 +12,7 @@ export interface Player {
   country: string;
   recentForm: string[]; // e.g. ['45', '78*', '12', '89', '34'] or ['2/24', '1/18', '3/15']
   careerStatHighlight: string; // e.g. "SR: 154.2 • Avg: 39.4" or "Econ: 6.8 • Wkts: 142"
+  isPlaying?: boolean;
 }
 
 export type MatchStatus = 'FETCHED' | 'DRAFT' | 'UPCOMING' | 'LOCKED' | 'LIVE' | 'COMPLETED';
@@ -31,6 +32,8 @@ export interface QuestionDefinition {
   optionsType: 'FIXED' | 'DYNAMIC_SQUAD';
   options?: string[]; // For YES_NO, TEAM, or MULTIPLE_CHOICE (e.g. ['Team A', 'Team B'], ['Yes', 'No'])
 }
+
+export type PredictionQuestion = QuestionDefinition;
 
 export interface QuestionBankItem {
   _id?: string;
@@ -71,7 +74,7 @@ export interface CricketMatch {
   startTime: string; // ISO string
   lockTime: string; // ISO string (10 mins before match start)
   status: MatchStatus;
-  format: 'T20' | 'ODI' | 'TEST';
+  format: 'T20' | 'ODI' | 'TEST' | 'T10';
   totalPool: number;
   totalEntries: number;
   entryFees: number[]; // [25, 50, 100]
@@ -118,6 +121,7 @@ export interface UserPredictionSlip {
   correctCount?: number;
   multiplierWon?: number;
   payoutAmount?: number;
+  potentialPayout?: number;
   settlementDetails?: SettlementDetail[];
 }
 
@@ -125,12 +129,13 @@ export interface Wallet {
   depositBalance: number;
   winningsBalance: number;
   bonusBalance: number;
-  totalBalance: number;
+  totalBalance?: number;
+  balance?: number;
   kycVerified: boolean;
   upiId?: string;
 }
 
-export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'CONTEST_ENTRY' | 'CONTEST_PAYOUT' | 'BONUS_REWARD';
+export type TransactionType = 'DEPOSIT' | 'WITHDRAWAL' | 'CONTEST_ENTRY' | 'CONTEST_PAYOUT' | 'BONUS_REWARD' | 'PAYOUT';
 export type TransactionStatus = 'SUCCESS' | 'PENDING' | 'REJECTED';
 
 export interface WalletTransaction {
@@ -146,6 +151,8 @@ export interface WalletTransaction {
   payoutMultiplier?: number;
 }
 
+export type Transaction = WalletTransaction;
+
 export interface UserAccount {
   id: string;
   refId?: string;
@@ -153,17 +160,18 @@ export interface UserAccount {
   name: string;
   phone: string;
   email?: string;
-  role: 'USER' | 'ADMIN';
-  avatar: string;
-  wallet: Wallet;
-  isBlocked: boolean;
-  kycStatus: 'UNVERIFIED' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+  role?: 'USER' | 'ADMIN' | 'FAN';
+  avatar?: string;
+  wallet?: Wallet;
+  isBlocked?: boolean;
+  kycStatus?: 'UNVERIFIED' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
   panNumber?: string;
   upiId?: string;
-  joinedDate: string;
-  dailyDepositLimit: number;
-  totalContestsJoined: number;
-  totalWon: number;
+  joinedDate?: string;
+  dateJoined?: string;
+  dailyDepositLimit?: number;
+  totalContestsJoined?: number;
+  totalWon?: number;
   
   // Aggregated Admin Stats
   totalDeposits?: number;

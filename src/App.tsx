@@ -545,7 +545,6 @@ export default function App({ initialMatches = [] }: AppProps) {
         setActiveTab={setActiveTab}
         pendingSlipsCount={pendingSlipsCount}
         openAuthModal={() => setIsAuthModalOpen(true)}
-        openPersonalDetailsModal={() => setIsPersonalDetailsOpen(true)}
       />
 
       {/* ALL MODALS (Lazy Loaded) */}

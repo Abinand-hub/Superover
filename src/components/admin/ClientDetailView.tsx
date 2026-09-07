@@ -150,7 +150,9 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
           </div>
           <div className="bg-[#0D122B] p-4 rounded-xl border border-[#1A223E] min-w-[200px]">
             <p className="text-sm text-slate-400 mb-1">Current Balance</p>
-            <p className="text-3xl font-black text-white">{formatINR(user.wallet?.balance || 0)}</p>
+            <p className="text-3xl font-black text-white">
+              {formatINR((user.wallet?.depositBalance || 0) + (user.wallet?.winningsBalance || 0) + (user.wallet?.bonusBalance || 0))}
+            </p>
           </div>
         </div>
       </div>
@@ -219,7 +221,7 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
                   <td className="p-4">{new Date(slip.submittedAt).toLocaleString()}</td>
                   <td className="p-4 font-mono text-xs text-indigo-400">{slip.matchId}</td>
                   <td className="p-4">{formatINR(slip.entryFee)}</td>
-                  <td className="p-4 text-yellow-400 font-bold">{formatINR(slip.potentialPayout)}</td>
+                  <td className="p-4 text-yellow-400 font-bold">{formatINR(slip.payoutAmount || slip.potentialPayout || (slip.entryFee * (slip.multiplierWon || 50)))}</td>
                   <td className="p-4">
                     <span className={`text-xs px-2 py-1 rounded border ${
                       slip.status === 'WON' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :

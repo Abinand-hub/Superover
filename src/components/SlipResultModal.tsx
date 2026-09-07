@@ -272,18 +272,18 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
             {(() => {
               let runningStreakBroken = false;
               return match.questions?.map((q, idx) => {
-                const rawResult = results?.answers ? results.answers[q.id] : null;
-                const officialAnswerId = typeof rawResult === 'object' && rawResult !== null
-                  ? (rawResult.answerId || rawResult.answerText)
-                  : rawResult;
+                const rawResult: any = results?.answers ? results.answers[q.id] : null;
+                const officialAnswerId: string = typeof rawResult === 'object' && rawResult !== null
+                  ? String(rawResult.answerId || rawResult.answerText || '')
+                  : String(rawResult || '');
 
-                const officialAnswerText = typeof rawResult === 'object' && rawResult !== null
-                  ? (rawResult.answerText || playerMap.get(officialAnswerId)?.name || officialAnswerId)
-                  : (playerMap.get(officialAnswerId)?.name || officialAnswerId || 'TBD');
+                const officialAnswerText: string = typeof rawResult === 'object' && rawResult !== null
+                  ? String(rawResult.answerText || playerMap.get(officialAnswerId)?.name || officialAnswerId)
+                  : String(playerMap.get(officialAnswerId)?.name || officialAnswerId || 'TBD');
 
-                const statDetailText = typeof rawResult === 'object' && rawResult !== null
-                  ? (rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
-                  : (rawResult ? 'Official Verified Result' : 'Awaiting Result');
+                const statDetailText: string = typeof rawResult === 'object' && rawResult !== null
+                  ? String(rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
+                  : String(rawResult ? 'Official Verified Result' : 'Awaiting Result');
 
                 const userAnswerId = slip 
                   ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 

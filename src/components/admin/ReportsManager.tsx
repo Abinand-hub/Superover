@@ -73,7 +73,7 @@ export const ReportsManager: React.FC<ReportsManagerProps> = ({
 
   const handleExportBonus = () => {
     // Only bonus/promo transactions
-    const data = allTransactions.filter(t => t.type === 'PROMO_BONUS' || t.description.toLowerCase().includes('bonus')).map(t => ({
+    const data = allTransactions.filter(t => t.type === 'BONUS_REWARD' || (t.type as string) === 'PROMO_BONUS' || t.description?.toLowerCase().includes('bonus')).map(t => ({
       'Transaction ID': t.id,
       'User ID': t.userId,
       'Bonus Amount': t.amount,

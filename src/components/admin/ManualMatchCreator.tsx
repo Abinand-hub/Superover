@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CricketMatch, Player, PlayerRole, PredictionQuestion } from '../../types';
+import { CricketMatch, Player, PlayerRole, PredictionQuestion, QuestionDefinition } from '../../types';
 import { 
   PlusCircle, 
   Trash2, 
@@ -724,14 +724,14 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
         startTime: startTimeIso,
         lockTime: lockTimeIso,
         status: 'UPCOMING',
-        format: format || 'T20',
+        format: (format || 'T20') as any,
         totalPool: 100000,
         totalEntries: 0,
         entryFees: [25, 50, 100],
         maxEntriesPerUser: 1,
         squadTeam1: squad1.map(p => ({ ...p, team: team1Code.trim(), teamName: team1Name.trim() })),
         squadTeam2: squad2.map(p => ({ ...p, team: team2Code.trim(), teamName: team2Name.trim() })),
-        questions: configuredQuestions,
+        questions: configuredQuestions as QuestionDefinition[],
       };
 
       await onCreateMatch(newMatch);

@@ -2127,7 +2127,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     startTime: startTimeIso,
                     lockTime: lockTimeIso,
                     status: 'UPCOMING',
-                    format: newMatchFormat || 'T20',
+                    format: (newMatchFormat || 'T20') as any,
                     totalPool: 100000,
                     totalEntries: 50,
                     entryFees: [25, 50, 100],
