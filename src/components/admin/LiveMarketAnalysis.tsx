@@ -57,6 +57,34 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Auto-initialize official settled path if match is completed and no custom filters are chosen
+  React.useEffect(() => {
+    if (selectedMatchId) {
+      const m = matches.find(x => x.id === selectedMatchId);
+      if (m?.status === 'COMPLETED' && m.actualResults?.answers) {
+        const autoFilters: Record<string, string> = {};
+        const allPlayers = [...(m.squadTeam1 || []), ...(m.squadTeam2 || [])];
+        const pMap = new Map(allPlayers.map((p) => [p.id, p]));
+
+        m.questions?.forEach((q, idx) => {
+          const actualResult = m.actualResults?.answers?.[q.id] || (m.actualResults?.answers as any)?.[`q${idx + 1}`] || (m.actualResults?.answers as any)?.[String(idx + 1)];
+          if (actualResult) {
+            const val = typeof actualResult === 'object' && actualResult !== null
+              ? (actualResult.answerText || actualResult.answerId)
+              : actualResult;
+            if (val) {
+              const p = pMap.get(String(val));
+              autoFilters[q.id] = p ? p.name : String(val);
+            }
+          }
+        });
+        setFunnelFilters(autoFilters);
+      } else {
+        setFunnelFilters({});
+      }
+    }
+  }, [selectedMatchId]);
+
   // Helper: Normalize answer strings for robust comparison
   const normalizeAnswer = (ans: any): string => {
     if (ans === undefined || ans === null) return '';
@@ -230,6 +258,34 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
     const allPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
     const playerMap = new Map(allPlayers.map((p) => [p.id, p]));
+
+    const resolveDisplayName = (rawAns: string, qType?: string): string => {
+      if (!rawAns || rawAns === 'Unanswered') return 'Unanswered';
+      
+      const p = playerMap.get(rawAns);
+      if (p) return `${p.name} (${p.team || ''})`;
+
+      for (const [id, player] of playerMap.entries()) {
+        if (id.toLowerCase() === rawAns.toLowerCase()) {
+          return `${player.name} (${player.team || ''})`;
+        }
+      }
+
+      const matchSquad = rawAns.match(/^p_([a-z0-9]+)_(\d+)$/i);
+      if (matchSquad) {
+        const tCode = matchSquad[1].toUpperCase();
+        const idx = parseInt(matchSquad[2], 10) - 1;
+        const squad = tCode === match.team1?.code?.toUpperCase() ? match.squadTeam1 : match.squadTeam2;
+        if (squad && squad[idx]) {
+          return `${squad[idx].name} (${squad[idx].team || tCode})`;
+        }
+      }
+
+      if (match.team1 && rawAns.toUpperCase() === match.team1.code?.toUpperCase()) return match.team1.name;
+      if (match.team2 && rawAns.toUpperCase() === match.team2.code?.toUpperCase()) return match.team2.name;
+
+      return rawAns;
+    };
 
     // Calculate remaining slips that matched the filters up to question index `qIndex`
     const getRemainingSlipsAtQuestion = (qIndex: number): UserPredictionSlip[] => {
@@ -699,13 +755,23 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 Live Prediction Funnel Flow (Q1 to Q6)
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Click any option to simulate official question outcomes and watch user qualification drop-offs and streak payouts.
+                Simulate match outcomes question-by-question to see how many users survive each streak tier and calculate platform liability.
               </p>
             </div>
             
-            <span className="text-xs text-slate-400 font-mono">
-              Rule: Q1 &ge; Q2 &ge; Q3 &ge; Q4 &ge; Q5 &ge; Q6
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-mono">
+                Rule: Q1 &ge; Q2 &ge; Q3 &ge; Q4 &ge; Q5 &ge; Q6
+              </span>
+            </div>
+          </div>
+
+          {/* Explanation Info Box */}
+          <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/30 text-xs flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+            <div className="text-slate-300 leading-relaxed">
+              <strong className="text-white">What is this Funnel?</strong> In SuperOver, users only win cash by scoring consecutive right answers from Q1 onwards. Clicking any answer below simulates that match result and shows how many users qualify for that tier (Q1 $\rightarrow$ Q2 $\rightarrow$ Q3 $\rightarrow$ Q4 $\rightarrow$ Q5 $\rightarrow$ Q6) and how much cash winnings they receive.
+            </div>
           </div>
 
           <div className="space-y-5">
@@ -713,25 +779,6 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               const qIndex = i;
               const isFirstQuestion = i === 0;
               const hasPreviousFilter = isFirstQuestion || !!funnelFilters[match.questions[i - 1].id];
-
-              // If previous question not selected, this stage is locked until admin picks path
-              if (!hasPreviousFilter) {
-                return (
-                  <div key={q.id} className="p-4 rounded-xl bg-[#080C1D]/60 border border-[#1A223E] opacity-60 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 flex items-center justify-center text-xs font-black">
-                        Q{i + 1}
-                      </span>
-                      <span className="text-xs font-bold text-slate-400">
-                        {q.title} ({q.shortTitle})
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 font-bold">
-                      Select Q{i} answer above to unlock funnel
-                    </span>
-                  </div>
-                );
-              }
 
               // Filtered slips entering this question stage
               const eligibleSlipsForStage = getRemainingSlipsAtQuestion(qIndex);
@@ -741,8 +788,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               const optionSlipsMap: Record<string, UserPredictionSlip[]> = {};
               eligibleSlipsForStage.forEach(slip => {
                 const rawAns = getUserAnswerFromSlip(slip.answers, q.id, i);
-                const player = playerMap.get(rawAns);
-                const ans = player ? player.name : (rawAns || 'Unanswered');
+                const ans = resolveDisplayName(rawAns, q.type);
                 if (!optionSlipsMap[ans]) optionSlipsMap[ans] = [];
                 optionSlipsMap[ans].push(slip);
               });
