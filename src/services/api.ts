@@ -126,6 +126,7 @@ export const api = {
   // Question Bank
   getQuestionBank: () => fetch('/api/admin/questions', { method: 'GET' }).then(r => r.json()),
   createQuestionBank: (payload: any) => fetch('/api/admin/questions', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+  checkAdminAuth: () => fetch('/api/admin/auth-check', { method: 'GET' }).then(r => r.json()),
   
   // User Data
   getCurrentUser: () => fetch('/api/user/current', { method: 'GET' }).then(r => r.json()),

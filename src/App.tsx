@@ -81,8 +81,8 @@ export default function App({ initialMatches = [] }: AppProps) {
         if (initialMatches.length === 0) {
           setMatches(fetchedMatches);
         }
-        setCurrentUser(fetchedUser.error ? INITIAL_USER : fetchedUser);
-        setWallet(fetchedWallet.error ? INITIAL_WALLET : fetchedWallet);
+        setCurrentUser((fetchedUser?.error || fetchedUser?.role === 'ADMIN') ? INITIAL_USER : fetchedUser);
+        setWallet(fetchedWallet?.error ? INITIAL_WALLET : fetchedWallet);
         setSlips(fetchedSlips);
         setTransactions(fetchedTransactions);
         setMetrics(fetchedMetrics);

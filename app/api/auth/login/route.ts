@@ -45,13 +45,13 @@ export async function POST(req: Request) {
         user: {
           id: adminUser._id,
           username: 'admin',
-          name: adminUser.name,
+          name: 'Admin',
           role: 'ADMIN',
           wallet: adminUser.wallet
         }
       });
 
-      response.cookies.set('auth_token', token, {
+      response.cookies.set('admin_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

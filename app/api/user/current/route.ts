@@ -17,10 +17,14 @@ export async function GET(req: Request) {
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     
+    if (decoded.role === 'ADMIN') {
+      return NextResponse.json({ error: 'Admin session is not a player account' }, { status: 401 });
+    }
+
     await connectToDatabase();
     
     const user = await User.findById(decoded.userId).lean();
-    if (!user) {
+    if (!user || user.role === 'ADMIN') {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

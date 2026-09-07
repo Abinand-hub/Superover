@@ -21,9 +21,9 @@ export default function AdminPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const user = await api.getCurrentUser();
+        const res = await api.checkAdminAuth();
         // If they already have a real admin cookie session, let them in automatically
-        if (user && user.role === 'ADMIN') {
+        if (res && res.authenticated) {
           setIsAdminAuthenticated(true);
           loadAdminData();
         } else {
