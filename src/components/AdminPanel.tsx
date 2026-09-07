@@ -335,6 +335,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isSettling, setIsSettling] = useState<boolean>(false);
   const [settledResultInfo, setSettledResultInfo] = useState<{ matchTitle: string; summary: string; settledAt: string } | null>(null);
   const [showSettledModal, setShowSettledModal] = useState<boolean>(false);
+  const [reopenSettlementId, setReopenSettlementId] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedMatchForSettlement) {
@@ -552,6 +553,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       const matchTitle = selectedMatchForSettlement.title;
       const successMsg = `Match ${matchTitle} ended and settled! All user payouts distributed.`;
       
+      setReopenSettlementId(null);
       setSettlementSuccessMessage(successMsg);
       setSettledResultInfo({
         matchTitle,
@@ -1396,7 +1398,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <span className="text-[10px] text-slate-400 font-bold">
                             {isSelected ? '👉 Selected for Payout' : 'Click to Settle'}
                           </span>
-                          <span className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
+                  <span className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
                             isSelected ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30' : 'bg-slate-800 text-slate-300'
                           }`}>
                             {isCompleted ? 'Review & Settle' : 'Settle Questions'}
@@ -1408,282 +1410,320 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               </div>
 
-              {/* Questions Winners Form */}
-              <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-md">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-black text-white">Enter Official Question Answers</h3>
-                    <p className="text-xs text-slate-400">Match: {selectedMatchForSettlement?.title}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!selectedMatchForSettlement) return;
-                      const s1 = selectedMatchForSettlement.squadTeam1 || [];
-                      const s2 = selectedMatchForSettlement.squadTeam2 || [];
-                      const squads = [...s1, ...s2];
-
-                      const batters = squads.filter(p => p.role === 'BAT' || p.role === 'WK' || p.role === 'AR');
-                      const bowlers = squads.filter(p => p.role === 'BOWL' || p.role === 'AR');
-
-                      const topBatter = batters[0] || squads[0];
-                      const topBowler = bowlers[0] || squads[1] || squads[0];
-                      const topStriker = batters[1] || squads[2] || squads[0];
-                      const econBowler = bowlers[1] || squads[3] || squads[0];
-                      const most6s = batters[2] || squads[4] || squads[0];
-                      const winnerTeam = selectedMatchForSettlement.team1?.name || selectedMatchForSettlement.team1?.code || 'Team 1';
-
-                      const newPicks: Record<string, { answerId: string; answerText: string; statValue: string }> = {};
-
-                      selectedMatchForSettlement.questions?.forEach((q, idx) => {
-                        const titleLower = (q.title || '').toLowerCase();
-                        const shortLower = (q.shortTitle || '').toLowerCase();
-
-                        if (q.type === 'YES_NO') {
-                          newPicks[q.id] = { answerId: 'YES', answerText: 'YES', statValue: 'Verified Yes' };
-                        } else if (q.type === 'TEAM' || titleLower.includes('winner') || shortLower.includes('win')) {
-                          newPicks[q.id] = { answerId: winnerTeam, answerText: winnerTeam, statValue: 'Match Winner' };
-                        } else if (titleLower.includes('dot ball') || shortLower.includes('dot')) {
-                          const p = bowlers[0] || squads[0];
-                          newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: '18 Dot Balls' };
-                        } else if (titleLower.includes('batter') || shortLower.includes('batter') || titleLower.includes('run')) {
-                          const p = idx % 2 === 0 ? topBatter : topStriker;
-                          newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: '78 Runs (44b)' };
-                        } else if (titleLower.includes('bowler') || shortLower.includes('bowler') || titleLower.includes('wicket')) {
-                          const p = idx % 2 === 0 ? topBowler : econBowler;
-                          newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: '3/22 (4.0 ov)' };
-                        } else if (titleLower.includes('6') || shortLower.includes('6') || titleLower.includes('six')) {
-                          newPicks[q.id] = { answerId: most6s?.id || '', answerText: most6s?.name || '', statValue: '5 Sixes' };
-                        } else {
-                          const p = squads[idx % squads.length];
-                          newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: 'Official Top Performer' };
-                        }
-                      });
-
-                      setSettlementPicks(newPicks);
-                      setSettlementSummaryNote(`${winnerTeam} won by 24 runs (${selectedMatchForSettlement.title}). Official score & stats verified.`);
-                    }}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25 transition-all"
-                    id="btn-auto-fill-answers"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>⚡ Auto-Fill Winning Answers</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedMatchForSettlement?.questions?.map((q) => {
-                    const currentPick = settlementPicks[q.id] || { answerId: '', answerText: '', statValue: '' };
-
-                    return (
-                      <div key={q.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[#FFAA00]">
-                            {q.number}. {q.title} ({q.shortTitle})
+              {/* Conditional Rendering: Settled Summary Card vs Questions Input Form */}
+              {selectedMatchForSettlement?.status === 'COMPLETED' && reopenSettlementId !== selectedMatchForSettlement?.id ? (
+                /* ========================================================================= */
+                /* LOCKED & SETTLED COMPLETED CARD (No Question Inputs, No Settle Button)     */
+                /* ========================================================================= */
+                <div className="p-5 rounded-2xl bg-[#0D122B] border border-emerald-500/40 space-y-5 shadow-lg shadow-emerald-500/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1A223E]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-black text-white">Match Settled & Payouts Disbursed</h3>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
+                            ✓ COMPLETED
                           </span>
                         </div>
-
-                        <div>
-                          <label className="text-[10px] text-slate-400 block mb-1">Official Winner Answer/Player ID:</label>
-                          {q.type === 'PLAYER' ? (
-                            <select
-                              value={currentPick.answerId}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                const combinedSquad = [...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])];
-                                const player = combinedSquad.find(p => p.id === val);
-                                setSettlementPicks((prev) => ({
-                                  ...prev,
-                                  [q.id]: { ...currentPick, answerId: val, answerText: player ? player.name : val },
-                                }));
-                              }}
-                              className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
-                            >
-                              <option value="">Select a player...</option>
-                              {squadForSettlement.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.name} ({p.team}) - {p.role}
-                                </option>
-                              ))}
-                            </select>
-                          ) : q.type === 'YES_NO' ? (
-                            <div className="flex gap-2">
-                              {['Yes', 'No'].map((opt) => (
-                                <button
-                                  key={opt}
-                                  type="button"
-                                  onClick={() => {
-                                    setSettlementPicks((prev) => ({
-                                      ...prev,
-                                      [q.id]: { ...currentPick, answerId: opt, answerText: opt },
-                                    }));
-                                  }}
-                                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
-                                    currentPick.answerId === opt
-                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
-                                      : 'bg-[#0D122B] text-slate-400 border-[#1A223E]'
-                                  }`}
-                                >
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          ) : q.type === 'TEAM' ? (
-                            <div className="flex gap-2">
-                              {[
-                                { id: selectedMatchForSettlement.team1.code, name: selectedMatchForSettlement.team1.name },
-                                { id: selectedMatchForSettlement.team2.code, name: selectedMatchForSettlement.team2.name }
-                              ].map((t) => (
-                                <button
-                                  key={t.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setSettlementPicks((prev) => ({
-                                      ...prev,
-                                      [q.id]: { ...currentPick, answerId: t.id, answerText: t.name },
-                                    }));
-                                  }}
-                                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors truncate px-2 ${
-                                    currentPick.answerId === t.id
-                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
-                                      : 'bg-[#0D122B] text-slate-400 border-[#1A223E]'
-                                  }`}
-                                >
-                                  {t.name}
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <input
-                              type="text"
-                              value={currentPick.answerText}
-                              onChange={(e) => {
-                                setSettlementPicks((prev) => ({
-                                  ...prev,
-                                  [q.id]: { ...currentPick, answerId: e.target.value, answerText: e.target.value },
-                                }));
-                              }}
-                              placeholder="e.g., Over 185.5 or Team Name"
-                              className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
-                            />
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] text-slate-400 block mb-1">Official Stat Value / Score / Notes:</label>
-                          <input
-                            type="text"
-                            value={currentPick.statValue}
-                            onChange={(e) => {
-                              setSettlementPicks((prev) => ({
-                                ...prev,
-                                [q.id]: { ...currentPick, statValue: e.target.value },
-                              }));
-                            }}
-                            placeholder="e.g. 78 runs (45 balls) or 4/22"
-                            className="w-full px-3 py-1 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-xs focus:outline-none"
-                          />
-                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {selectedMatchForSettlement.title} • {selectedMatchForSettlement.series}
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-400 block mb-1">Official Summary Note / Match Commentary:</label>
-                  <textarea
-                    value={settlementSummaryNote}
-                    onChange={(e) => setSettlementSummaryNote(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none"
-                    rows={2}
-                  />
-                </div>
-
-                {/* In-Place Settlement Visual Feedback Card */}
-                {settledResultInfo && (
-                  <div className="p-4 rounded-2xl bg-emerald-950/40 border-2 border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)] space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
-                          <CheckCircle2 className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-black text-white flex items-center gap-2">
-                            <span>Match Settled & Cash Payouts Disbursed!</span>
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
-                              COMPLETED
-                            </span>
-                          </h4>
-                          <p className="text-[11px] text-slate-400">
-                            Settled at {settledResultInfo.settledAt} • {settledResultInfo.matchTitle}
-                          </p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setSettledResultInfo(null)} 
-                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 text-xs transition-colors"
-                        title="Dismiss"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#080C1D] border border-emerald-500/20 text-xs space-y-1.5">
-                      <div className="flex items-center justify-between text-slate-300">
-                        <span className="text-slate-400 font-medium">Match Lifecycle:</span>
-                        <span className="font-bold text-emerald-400 flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5" /> MARKED COMPLETED & LOCKED
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-slate-300">
-                        <span className="text-slate-400 font-medium">Streak Rule Evaluation:</span>
-                        <span className="font-bold text-slate-200">Strict PRD V8 (Consecutive Q1-Q6)</span>
-                      </div>
-                      <div className="flex items-center justify-between text-slate-300">
-                        <span className="text-slate-400 font-medium">Payout Disbursal:</span>
-                        <span className="font-black text-emerald-400">₹ Credited Directly to User Wallets</span>
-                      </div>
-                      {settledResultInfo.summary && (
-                        <div className="pt-2 mt-2 border-t border-white/5 text-[11px] text-slate-300">
-                          <span className="text-slate-400 font-bold block mb-0.5">Match Commentary:</span>
-                          <span className="text-emerald-300/90">{settledResultInfo.summary}</span>
-                        </div>
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => setReopenSettlementId(selectedMatchForSettlement.id)}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs border border-slate-700 transition-colors flex items-center gap-1.5 self-start sm:self-center"
+                      id="btn-reopen-settlement"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Re-Open / Modify Answers</span>
+                    </button>
+                  </div>
+
+                  {/* Settlement Overview & Commentary */}
+                  <div className="p-3.5 rounded-xl bg-[#080C1D] border border-emerald-500/20 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Match Outcome / Score:</span>
+                      <span className="font-bold text-emerald-400">
+                        {selectedMatchForSettlement.actualResults?.summaryNote || settlementSummaryNote}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Payout Status:</span>
+                      <span className="font-black text-emerald-400 flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> All Winning Slips Disbursed Directly to User Wallets
+                      </span>
                     </div>
                   </div>
-                )}
 
-                {/* Settle Match Action Button with Loading & Done States */}
-                <button
-                  onClick={handleSettleSubmit}
-                  disabled={isSettling}
-                  className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg active:scale-[0.99] ${
-                    isSettling
-                      ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-90'
-                      : settledResultInfo
-                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 text-white shadow-emerald-500/30'
-                      : 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 shadow-[#FF6B00]/30'
-                  }`}
-                  id="btn-confirm-settlement"
-                >
-                  {isSettling ? (
-                    <>
-                      <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
-                      <span>Evaluating Slips & Disbursing Cash Payouts...</span>
-                    </>
-                  ) : settledResultInfo ? (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 text-white" />
-                      <span>✅ MATCH SETTLED & DISBURSED (Click to Re-Settle)</span>
-                    </>
-                  ) : (
-                    <>
+                  {/* Read-Only Official Answers List */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                      Verified Official Question Answers:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedMatchForSettlement?.questions?.map((q) => {
+                        const pick = settlementPicks[q.id] || { answerId: '', answerText: '', statValue: '' };
+                        const rawAns = selectedMatchForSettlement.actualResults?.answers?.[q.id];
+                        const displayAns = pick.answerText || pick.answerId || (typeof rawAns === 'object' ? rawAns?.answerText || rawAns?.answerId : rawAns) || 'Not Set';
+                        const displayStat = pick.statValue || (typeof rawAns === 'object' ? rawAns?.statValue : '') || '';
+
+                        return (
+                          <div key={q.id} className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-[11px] font-bold text-[#FFAA00] block truncate">
+                                {q.number}. {q.title}
+                              </span>
+                              <span className="text-xs font-black text-emerald-300 block mt-0.5 truncate flex items-center gap-1">
+                                <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                                <span>{displayAns}</span>
+                              </span>
+                              {displayStat && (
+                                <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
+                                  Stat: {displayStat}
+                                </span>
+                              )}
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold flex-shrink-0">
+                              Verified
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Locked Status Notice */}
+                  <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-center">
+                    <p className="text-[11px] text-slate-400">
+                      🔒 Contest is locked and completed. Questions form is hidden to protect payout integrity.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* ========================================================================= */
+                /* EDITABLE QUESTIONS WINNERS FORM & SETTLE BUTTON                           */
+                /* ========================================================================= */
+                <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-black text-white">Enter Official Question Answers</h3>
+                      <p className="text-xs text-slate-400">Match: {selectedMatchForSettlement?.title}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!selectedMatchForSettlement) return;
+                        const s1 = selectedMatchForSettlement.squadTeam1 || [];
+                        const s2 = selectedMatchForSettlement.squadTeam2 || [];
+                        const squads = [...s1, ...s2];
+
+                        const batters = squads.filter(p => p.role === 'BAT' || p.role === 'WK' || p.role === 'AR');
+                        const bowlers = squads.filter(p => p.role === 'BOWL' || p.role === 'AR');
+
+                        const topBatter = batters[0] || squads[0];
+                        const topBowler = bowlers[0] || squads[1] || squads[0];
+                        const topStriker = batters[1] || squads[2] || squads[0];
+                        const econBowler = bowlers[1] || squads[3] || squads[0];
+                        const most6s = batters[2] || squads[4] || squads[0];
+                        const winnerTeam = selectedMatchForSettlement.team1?.name || selectedMatchForSettlement.team1?.code || 'Team 1';
+
+                        const newPicks: Record<string, { answerId: string; answerText: string; statValue: string }> = {};
+
+                        selectedMatchForSettlement.questions?.forEach((q, idx) => {
+                          const titleLower = (q.title || '').toLowerCase();
+                          const shortLower = (q.shortTitle || '').toLowerCase();
+
+                          if (q.type === 'YES_NO') {
+                            newPicks[q.id] = { answerId: 'YES', answerText: 'YES', statValue: 'Verified Yes' };
+                          } else if (q.type === 'TEAM' || titleLower.includes('winner') || shortLower.includes('win')) {
+                            newPicks[q.id] = { answerId: winnerTeam, answerText: winnerTeam, statValue: 'Match Winner' };
+                          } else if (titleLower.includes('dot ball') || shortLower.includes('dot')) {
+                            const p = bowlers[0] || squads[0];
+                            newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: '18 Dot Balls' };
+                          } else if (titleLower.includes('batter') || shortLower.includes('batter') || titleLower.includes('run')) {
+                            const p = idx % 2 === 0 ? topBatter : topStriker;
+                            newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: '78 Runs (44b)' };
+                          } else if (titleLower.includes('bowler') || shortLower.includes('bowler') || titleLower.includes('wicket')) {
+                            const p = idx % 2 === 0 ? topBowler : econBowler;
+                            newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: '3/22 (4.0 ov)' };
+                          } else if (titleLower.includes('6') || shortLower.includes('6') || titleLower.includes('six')) {
+                            newPicks[q.id] = { answerId: most6s?.id || '', answerText: most6s?.name || '', statValue: '5 Sixes' };
+                          } else {
+                            const p = squads[idx % squads.length];
+                            newPicks[q.id] = { answerId: p?.id || '', answerText: p?.name || '', statValue: 'Official Top Performer' };
+                          }
+                        });
+
+                        setSettlementPicks(newPicks);
+                        setSettlementSummaryNote(`${winnerTeam} won by 24 runs (${selectedMatchForSettlement.title}). Official score & stats verified.`);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/25 transition-all"
+                      id="btn-auto-fill-answers"
+                    >
                       <Sparkles className="w-4 h-4" />
-                      <span>Settle Match & Disburse Cash Payouts</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                      <span>⚡ Auto-Fill Winning Answers</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedMatchForSettlement?.questions?.map((q) => {
+                      const currentPick = settlementPicks[q.id] || { answerId: '', answerText: '', statValue: '' };
+
+                      return (
+                        <div key={q.id} className="p-3.5 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#FFAA00]">
+                              {q.number}. {q.title} ({q.shortTitle})
+                            </span>
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-slate-400 block mb-1">Official Winner Answer/Player ID:</label>
+                            {q.type === 'PLAYER' ? (
+                              <select
+                                value={currentPick.answerId}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const combinedSquad = [...(selectedMatchForSettlement.squadTeam1 || []), ...(selectedMatchForSettlement.squadTeam2 || [])];
+                                  const player = combinedSquad.find(p => p.id === val);
+                                  setSettlementPicks((prev) => ({
+                                    ...prev,
+                                    [q.id]: { ...currentPick, answerId: val, answerText: player ? player.name : val },
+                                  }));
+                                }}
+                                className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                              >
+                                <option value="">Select a player...</option>
+                                {squadForSettlement.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.name} ({p.team}) - {p.role}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : q.type === 'YES_NO' ? (
+                              <div className="flex gap-2">
+                                {['Yes', 'No'].map((opt) => (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => {
+                                      setSettlementPicks((prev) => ({
+                                        ...prev,
+                                        [q.id]: { ...currentPick, answerId: opt, answerText: opt },
+                                      }));
+                                    }}
+                                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                                      currentPick.answerId === opt
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
+                                        : 'bg-[#0D122B] text-slate-400 border-[#1A223E]'
+                                    }`}
+                                  >
+                                    {opt}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : q.type === 'TEAM' ? (
+                              <div className="flex gap-2">
+                                {[
+                                  { id: selectedMatchForSettlement.team1.code, name: selectedMatchForSettlement.team1.name },
+                                  { id: selectedMatchForSettlement.team2.code, name: selectedMatchForSettlement.team2.name }
+                                ].map((t) => (
+                                  <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSettlementPicks((prev) => ({
+                                        ...prev,
+                                        [q.id]: { ...currentPick, answerId: t.id, answerText: t.name },
+                                      }));
+                                    }}
+                                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold border transition-colors truncate px-2 ${
+                                      currentPick.answerId === t.id
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500'
+                                        : 'bg-[#0D122B] text-slate-400 border-[#1A223E]'
+                                    }`}
+                                  >
+                                    {t.name}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <input
+                                type="text"
+                                value={currentPick.answerText}
+                                onChange={(e) => {
+                                  setSettlementPicks((prev) => ({
+                                    ...prev,
+                                    [q.id]: { ...currentPick, answerId: e.target.value, answerText: e.target.value },
+                                  }));
+                                }}
+                                placeholder="e.g., Over 185.5 or Team Name"
+                                className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-xs focus:outline-none"
+                              />
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-slate-400 block mb-1">Official Stat Value / Score / Notes:</label>
+                            <input
+                              type="text"
+                              value={currentPick.statValue}
+                              onChange={(e) => {
+                                setSettlementPicks((prev) => ({
+                                  ...prev,
+                                  [q.id]: { ...currentPick, statValue: e.target.value },
+                                }));
+                              }}
+                              placeholder="e.g. 78 runs (45 balls) or 4/22"
+                              className="w-full px-3 py-1 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-xs focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 block mb-1">Official Summary Note / Match Commentary:</label>
+                    <textarea
+                      value={settlementSummaryNote}
+                      onChange={(e) => setSettlementSummaryNote(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Settle Match Action Button with Loading & Done States */}
+                  <button
+                    onClick={handleSettleSubmit}
+                    disabled={isSettling}
+                    className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg active:scale-[0.99] ${
+                      isSettling
+                        ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-90'
+                        : 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 shadow-[#FF6B00]/30'
+                    }`}
+                    id="btn-confirm-settlement"
+                  >
+                    {isSettling ? (
+                      <>
+                        <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
+                        <span>Evaluating Slips & Disbursing Cash Payouts...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Settle Match & Disburse Cash Payouts</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </>
           )}
 
