@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { 
   BarChart3, 
   Trophy, 
@@ -331,6 +332,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [settlementPicks, setSettlementPicks] = useState<Record<string, { answerId: string; answerText: string; statValue: string }>>({});
   const [settlementSummaryNote, setSettlementSummaryNote] = useState<string>('Match concluded. Official stats verified.');
   const [settlementSuccessMessage, setSettlementSuccessMessage] = useState<string>('');
+  const [isSettling, setIsSettling] = useState<boolean>(false);
+  const [settledResultInfo, setSettledResultInfo] = useState<{ matchTitle: string; summary: string; settledAt: string } | null>(null);
+  const [showSettledModal, setShowSettledModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedMatchForSettlement) {
@@ -507,33 +511,63 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // Settlement Submission
-  const handleSettleSubmit = () => {
+  const handleSettleSubmit = async () => {
     if (!selectedMatchForSettlement) return;
 
-    const answers: Record<string, { answerId: string; answerText: string; statValue: string }> = {};
-    selectedMatchForSettlement.questions?.forEach((q) => {
-      const pick = settlementPicks[q.id];
-      if (pick) {
-        answers[q.id] = {
-          answerId: pick.answerId,
-          answerText: pick.answerText,
-          statValue: pick.statValue,
-        };
+    try {
+      setIsSettling(true);
+
+      const answers: Record<string, { answerId: string; answerText: string; statValue: string }> = {};
+      selectedMatchForSettlement.questions?.forEach((q) => {
+        const pick = settlementPicks[q.id];
+        if (pick) {
+          answers[q.id] = {
+            answerId: pick.answerId,
+            answerText: pick.answerText,
+            statValue: pick.statValue,
+          };
+        }
+      });
+
+      const results: MatchResults = {
+        answers,
+        settledAt: new Date().toISOString(),
+        summaryNote: settlementSummaryNote,
+      };
+
+      await onSettleMatch(selectedMatchForSettlement.id, results);
+
+      // Instant celebratory confetti right in viewport
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.8 },
+          colors: ['#22C55E', '#FF6B00', '#F59E0B', '#3B82F6', '#EC4899']
+        });
+      } catch (e) {
+        // Confetti optional
       }
-    });
 
-    const results: MatchResults = {
-      answers,
-      settledAt: new Date().toISOString(),
-      summaryNote: settlementSummaryNote,
-    };
+      const matchTitle = selectedMatchForSettlement.title;
+      const successMsg = `Match ${matchTitle} ended and settled! All user payouts distributed.`;
+      
+      setSettlementSuccessMessage(successMsg);
+      setSettledResultInfo({
+        matchTitle,
+        summary: settlementSummaryNote,
+        settledAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      });
+      setShowSettledModal(true);
 
-    onSettleMatch(selectedMatchForSettlement.id, results);
-    setSettlementSuccessMessage(`Match ${selectedMatchForSettlement.title} ended and settled! All user payouts distributed.`);
-
-    setTimeout(() => {
-      setSettlementSuccessMessage('');
-    }, 4000);
+      setTimeout(() => {
+        setSettlementSuccessMessage('');
+      }, 6000);
+    } catch (e: any) {
+      console.error('Settlement error:', e);
+    } finally {
+      setIsSettling(false);
+    }
   };
 
   const handleExportCSV = () => {
@@ -1565,16 +1599,151 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   />
                 </div>
 
+                {/* In-Place Settlement Visual Feedback Card */}
+                {settledResultInfo && (
+                  <div className="p-4 rounded-2xl bg-emerald-950/40 border-2 border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)] space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white flex items-center gap-2">
+                            <span>Match Settled & Cash Payouts Disbursed!</span>
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
+                              COMPLETED
+                            </span>
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            Settled at {settledResultInfo.settledAt} • {settledResultInfo.matchTitle}
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setSettledResultInfo(null)} 
+                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 text-xs transition-colors"
+                        title="Dismiss"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-[#080C1D] border border-emerald-500/20 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-400 font-medium">Match Lifecycle:</span>
+                        <span className="font-bold text-emerald-400 flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> MARKED COMPLETED & LOCKED
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-400 font-medium">Streak Rule Evaluation:</span>
+                        <span className="font-bold text-slate-200">Strict PRD V8 (Consecutive Q1-Q6)</span>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-300">
+                        <span className="text-slate-400 font-medium">Payout Disbursal:</span>
+                        <span className="font-black text-emerald-400">₹ Credited Directly to User Wallets</span>
+                      </div>
+                      {settledResultInfo.summary && (
+                        <div className="pt-2 mt-2 border-t border-white/5 text-[11px] text-slate-300">
+                          <span className="text-slate-400 font-bold block mb-0.5">Match Commentary:</span>
+                          <span className="text-emerald-300/90">{settledResultInfo.summary}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Settle Match Action Button with Loading & Done States */}
                 <button
                   onClick={handleSettleSubmit}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B00]/30 transition-all"
+                  disabled={isSettling}
+                  className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg active:scale-[0.99] ${
+                    isSettling
+                      ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-90'
+                      : settledResultInfo
+                      ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 text-white shadow-emerald-500/30'
+                      : 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 shadow-[#FF6B00]/30'
+                  }`}
                   id="btn-confirm-settlement"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Settle Match & Disburse Cash Payouts</span>
+                  {isSettling ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 animate-spin text-amber-400" />
+                      <span>Evaluating Slips & Disbursing Cash Payouts...</span>
+                    </>
+                  ) : settledResultInfo ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                      <span>✅ MATCH SETTLED & DISBURSED (Click to Re-Settle)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Settle Match & Disburse Cash Payouts</span>
+                    </>
+                  )}
                 </button>
               </div>
             </>
+          )}
+
+          {/* Settled Confirmation Modal Popup */}
+          {showSettledModal && settledResultInfo && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="w-full max-w-md bg-[#0D122B] border-2 border-emerald-500/50 rounded-3xl p-6 shadow-2xl shadow-emerald-500/20 space-y-5 animate-in zoom-in-95 duration-200 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mx-auto text-3xl shadow-lg shadow-emerald-500/25">
+                  🎉
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black text-white">
+                    Match Settled & Disbursed!
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {settledResultInfo.matchTitle}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#080C1D] border border-emerald-500/20 text-left space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-slate-400">Status:</span>
+                    <span className="font-bold text-emerald-400">COMPLETED & LOCKED</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-slate-400">Streak Calculation:</span>
+                    <span className="font-bold text-slate-200">Consecutive Q1-Q6 Streak</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-300">
+                    <span className="text-slate-400">Cash Payouts:</span>
+                    <span className="font-black text-emerald-400">Distributed to User Wallets</span>
+                  </div>
+                  {settledResultInfo.summary && (
+                    <div className="pt-2 border-t border-white/5 text-[11px] text-slate-300">
+                      <span className="text-slate-400 font-bold block mb-0.5">Commentary:</span>
+                      <span className="text-emerald-300/90">{settledResultInfo.summary}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowSettledModal(false);
+                      setAdminTab('market');
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-[#1A223E] hover:bg-[#253055] text-white font-bold text-xs transition-colors"
+                  >
+                    View Market Analytics
+                  </button>
+                  <button
+                    onClick={() => setShowSettledModal(false)}
+                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 text-white font-black text-xs shadow-lg shadow-emerald-500/30 transition-all"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
