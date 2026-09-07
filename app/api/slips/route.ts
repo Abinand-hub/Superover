@@ -56,16 +56,33 @@ export async function GET(req: Request) {
           let correct = 0;
           const questions = match.questions || [];
           
+          const combinedSquad = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
+          const playerMap = new Map(combinedSquad.map((p: any) => [p.id, p]));
+          
           questions.forEach((q: any, idx: number) => {
             const rawUser = s.answers ? (s.answers[q.id] || s.answers[`q${idx + 1}`] || s.answers[String(idx + 1)]) : '';
             const rawOfficial = answers[q.id] || answers[`q${idx + 1}`] || answers[String(idx + 1)];
             const officialAns = typeof rawOfficial === 'object' && rawOfficial !== null ? (rawOfficial.answerId || rawOfficial.answerText || '') : (rawOfficial || '');
             const officialText = typeof rawOfficial === 'object' && rawOfficial !== null ? (rawOfficial.answerText || rawOfficial.answerId || '') : (rawOfficial || '');
 
-            const isMatch = rawUser && (officialAns || officialText) && (
-              String(rawUser).trim().toLowerCase() === String(officialAns).trim().toLowerCase() ||
-              String(rawUser).trim().toLowerCase() === String(officialText).trim().toLowerCase()
-            );
+            const uClean = String(rawUser || '').trim().toLowerCase();
+            const oClean = String(officialAns || '').trim().toLowerCase();
+            const oTextClean = String(officialText || '').trim().toLowerCase();
+
+            let isMatch = false;
+            if (uClean && (oClean || oTextClean)) {
+              if (oClean && uClean === oClean) isMatch = true;
+              else if (oTextClean && uClean === oTextClean) isMatch = true;
+              else {
+                const uPlayer = playerMap.get(rawUser);
+                const uName = uPlayer?.name?.toLowerCase().trim();
+                const oPlayer = playerMap.get(officialAns) || (officialText ? playerMap.get(officialText) : undefined);
+                const oName = oPlayer?.name?.toLowerCase().trim();
+
+                if (uName && (uName === oClean || uName === oTextClean || (oName && uName === oName))) isMatch = true;
+                else if (oName && uClean === oName) isMatch = true;
+              }
+            }
 
             if (isMatch) {
               correct++;

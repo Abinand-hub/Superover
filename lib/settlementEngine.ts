@@ -95,6 +95,52 @@ function extractUserAns(slip: any, qId: string, idx: number): string {
   return '';
 }
 
+function checkAnswerMatch(
+  userAns: string,
+  officialAns: string,
+  officialText: string,
+  playerMap: Map<string, any>
+): boolean {
+  if (!userAns) return false;
+  if (!officialAns && !officialText) return false;
+
+  const uClean = userAns.trim().toLowerCase();
+  const oClean = (officialAns || '').trim().toLowerCase();
+  const oTextClean = (officialText || '').trim().toLowerCase();
+
+  // 1. Direct string match
+  if (oClean && uClean === oClean) return true;
+  if (oTextClean && uClean === oTextClean) return true;
+
+  // 2. Resolve user player name if userAns is an ID
+  const uPlayer = playerMap.get(userAns);
+  const uName = uPlayer?.name?.toLowerCase().trim();
+  const uShort = uPlayer?.shortName?.toLowerCase().trim();
+
+  // 3. Resolve official player name if officialAns is an ID
+  const oPlayer = playerMap.get(officialAns) || (officialText ? playerMap.get(officialText) : undefined);
+  const oName = oPlayer?.name?.toLowerCase().trim();
+  const oShort = oPlayer?.shortName?.toLowerCase().trim();
+
+  // Compare user player name/shortName with official answer
+  if (uName) {
+    if (oClean && uName === oClean) return true;
+    if (oTextClean && uName === oTextClean) return true;
+    if (oName && uName === oName) return true;
+  }
+  if (uShort) {
+    if (oClean && uShort === oClean) return true;
+    if (oTextClean && uShort === oTextClean) return true;
+    if (oShort && uShort === oShort) return true;
+  }
+
+  // Compare official player name/shortName with user answer
+  if (oName && uClean === oName) return true;
+  if (oShort && uClean === oShort) return true;
+
+  return false;
+}
+
 /**
  * Settles a match, evaluates all fan slips, calculates streak points,
  * and disburses real cash winnings to winning users' wallets.
@@ -169,27 +215,12 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
           ? (officialPick.answerText || officialPick.answerId || '') 
           : (officialPick || '');
 
-        if ((officialAnswerId || officialAnswerText) && userAns) {
-          const userAnsString = String(userAns).trim().toLowerCase();
-          const officialAnsString = String(officialAnswerId).trim().toLowerCase();
-          const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
-          
-          const userName = playerMap.get(userAns)?.name?.toLowerCase() || '';
-          const officialName = (playerMap.get(officialAnswerId)?.name || playerMap.get(officialAnswerText)?.name)?.toLowerCase() || '';
+        const isMatch = checkAnswerMatch(userAns, officialAnswerId, officialAnswerText, playerMap);
 
-          const isMatch = (userAnsString === officialAnsString) ||
-                          (officialTextString && userAnsString === officialTextString) ||
-                          (userName && (userName === officialAnsString || userName === officialTextString)) ||
-                          (officialName && (officialName === userAnsString || officialName === officialTextString)) ||
-                          (userName && officialName && userName === officialName);
-
-          if (isMatch) {
-            correctAnswers++;
-            if (!isStreakBroken) {
-              streakCount++;
-            }
-          } else {
-            isStreakBroken = true;
+        if (isMatch) {
+          correctAnswers++;
+          if (!isStreakBroken) {
+            streakCount++;
           }
         } else {
           isStreakBroken = true;

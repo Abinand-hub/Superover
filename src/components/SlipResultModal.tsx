@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CricketMatch, SettlementDetail, UserPredictionSlip } from '../types';
-import { formatINR, settlePredictionSlip, getUserAnswerFromSlip } from '../utils/payoutCalculator';
+import { formatINR, settlePredictionSlip, getUserAnswerFromSlip, checkAnswerMatch } from '../utils/payoutCalculator';
 
 interface SlipResultModalProps {
   match: CricketMatch;
@@ -310,24 +310,7 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                   userPickDisplayName = match.team2.name || 'Australia';
                 }
 
-                const userAnsClean = (userAnswerId || '').trim().toLowerCase();
-                const officialAnsClean = (officialAnswerId || '').trim().toLowerCase();
-                const officialTextClean = (officialAnswerText || '').trim().toLowerCase();
-
-                let isCorrect = false;
-                if (userAnsClean && (officialAnsClean || officialTextClean)) {
-                  if (userAnsClean === officialAnsClean) {
-                    isCorrect = true;
-                  } else if (userName && officialName && userName === officialName) {
-                    isCorrect = true;
-                  } else if (userName && (userName === officialAnsClean || userName === officialTextClean)) {
-                    isCorrect = true;
-                  } else if (officialName && (officialName === userAnsClean || officialName === officialTextClean)) {
-                    isCorrect = true;
-                  } else if (userAnsClean === officialTextClean) {
-                    isCorrect = true;
-                  }
-                }
+                const isCorrect = checkAnswerMatch(userAnswerId || '', officialAnswerId, officialAnswerText, playerMap);
 
                 const isStrictStreak = isCorrect && !runningStreakBroken;
                 if (!isCorrect && rawResult) {
