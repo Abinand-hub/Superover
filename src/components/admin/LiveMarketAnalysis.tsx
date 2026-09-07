@@ -24,7 +24,7 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 import { CricketMatch, UserPredictionSlip, UserAccount } from '../../types';
-import { calculatePotentialPayout, checkAnswerMatch } from '../../utils/payoutCalculator';
+import { calculatePotentialPayout, checkAnswerMatch, settlePredictionSlip, getUserAnswerFromSlip } from '../../utils/payoutCalculator';
 
 interface LiveMarketAnalysisProps {
   matches: CricketMatch[];
@@ -228,6 +228,9 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
     const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
     const avgEntry = totalEntries > 0 ? totalCollection / totalEntries : 0;
 
+    const allPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];
+    const playerMap = new Map(allPlayers.map((p) => [p.id, p]));
+
     // Calculate remaining slips that matched the filters up to question index `qIndex`
     const getRemainingSlipsAtQuestion = (qIndex: number): UserPredictionSlip[] => {
       return matchSlips.filter(slip => {
@@ -235,8 +238,8 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           const pastQ = match.questions[i];
           const filterAns = funnelFilters[pastQ.id];
           if (!filterAns) return false; 
-          const userAns = slip.answers?.[pastQ.id];
-          if (normalizeAnswer(userAns) !== normalizeAnswer(filterAns)) return false;
+          const userAns = getUserAnswerFromSlip(slip.answers, pastQ.id, i);
+          if (!checkAnswerMatch(userAns, filterAns, filterAns, playerMap)) return false;
         }
         return true;
       });
@@ -244,35 +247,42 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
     // Calculate each slip's effective streak and winnings (in ₹ Rupees)
     // If funnelFilters has selections, evaluate against simulated path; else evaluate against official results if settled
+    const isCustomFunnelActive = Object.keys(funnelFilters).length > 0;
+
     const evaluatedSlipsWithWinnings = matchSlips.map(slip => {
+      if (!isCustomFunnelActive && match.status === 'COMPLETED' && match.actualResults) {
+        const settled = settlePredictionSlip(slip, match, match.actualResults);
+        const payout = (slip.payoutAmount !== undefined && slip.payoutAmount > 0) ? slip.payoutAmount : settled.payoutAmount;
+        return {
+          slip,
+          streak: settled.settledSlip.streakCount || 0,
+          multiplier: settled.multiplier || 0,
+          winningsINR: payout,
+          hasWon: payout > 0,
+        };
+      }
+
+      // Live or Custom Funnel Simulation:
       let streak = 0;
+      let isStreakBroken = false;
       const questionsCount = match.questions.length;
-      const answersToCompareAgainst: Record<string, string> = {};
 
       for (let i = 0; i < questionsCount; i++) {
         const q = match.questions[i];
         const filterVal = funnelFilters[q.id];
         const officialVal = match.actualResults?.answers?.[q.id];
+        const targetAns = filterVal || (typeof officialVal === 'object' ? (officialVal?.answerText || officialVal?.answerId) : officialVal);
         
-        // Priority: Funnel Filter > Official Settled Answer
-        if (filterVal) {
-          answersToCompareAgainst[q.id] = filterVal;
-        } else if (officialVal) {
-          answersToCompareAgainst[q.id] = typeof officialVal === 'object' ? (officialVal.answerText || officialVal.answerId) : officialVal;
-        }
-      }
+        if (!targetAns) break;
 
-      // Check consecutive streak from Q1
-      for (let i = 0; i < questionsCount; i++) {
-        const q = match.questions[i];
-        const benchmarkAns = answersToCompareAgainst[q.id];
-        if (!benchmarkAns) break;
+        const userAns = getUserAnswerFromSlip(slip.answers, q.id, i);
+        const isCorrect = checkAnswerMatch(userAns, String(targetAns), String(targetAns), playerMap);
 
-        const userAns = slip.answers?.[q.id];
-        if (normalizeAnswer(userAns) === normalizeAnswer(benchmarkAns)) {
-          streak++;
+        if (isCorrect) {
+          if (!isStreakBroken) streak++;
         } else {
-          break; // Consecutive streak broken
+          isStreakBroken = true;
+          break;
         }
       }
 
@@ -281,16 +291,12 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
         ? calculatePotentialPayout(slip.entryFee || 50, streak, slip.wheelMultiplier || 50, !!slip.freeHit)
         : 0;
 
-      const finalPayout = (match.status === 'COMPLETED' && Object.keys(funnelFilters).length === 0 && slip.payoutAmount !== undefined)
-        ? slip.payoutAmount
-        : calculatedPayout;
-
       return {
         slip,
         streak,
         multiplier: mult,
-        winningsINR: finalPayout,
-        hasWon: finalPayout > 0,
+        winningsINR: calculatedPayout,
+        hasWon: calculatedPayout > 0,
       };
     });
 
@@ -734,7 +740,9 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               // Group counts by distinct answers
               const optionSlipsMap: Record<string, UserPredictionSlip[]> = {};
               eligibleSlipsForStage.forEach(slip => {
-                const ans = slip.answers?.[q.id] || 'Unanswered';
+                const rawAns = getUserAnswerFromSlip(slip.answers, q.id, i);
+                const player = playerMap.get(rawAns);
+                const ans = player ? player.name : (rawAns || 'Unanswered');
                 if (!optionSlipsMap[ans]) optionSlipsMap[ans] = [];
                 optionSlipsMap[ans].push(slip);
               });
