@@ -14,7 +14,7 @@ const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({
 const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
 const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
 const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
-const PersonalDetailsModal = React.lazy(() => import('./components/PersonalDetailsModal').then(m => ({ default: m.PersonalDetailsModal })));
+const PersonalDetailsView = React.lazy(() => import('./components/PersonalDetailsView').then(m => ({ default: m.PersonalDetailsView })));
 
 
 import { 
@@ -56,7 +56,7 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [metrics, setMetrics] = useState<PlatformMetrics>(INITIAL_PLATFORM_METRICS);
 
-  const [activeTab, setActiveTab] = useState<'lobby' | 'my-contests' | 'payouts-rules'>('lobby');
+  const [activeTab, setActiveTab] = useState<'lobby' | 'my-contests' | 'profile' | 'payouts-rules'>('lobby');
 
   useEffect(() => {
     async function loadInitialData() {
@@ -106,7 +106,6 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
-  const [isPersonalDetailsOpen, setIsPersonalDetailsOpen] = useState<boolean>(false);
 
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
@@ -408,9 +407,6 @@ export default function App({ initialMatches = [] }: AppProps) {
         openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
         openAuthModal={() => setIsAuthModalOpen(true)}
         openKycModal={() => setIsKycModalOpen(true)}
-        openRulesModal={() => setIsRulesModalOpen(true)}
-        openResponsibleModal={() => setIsResponsibleModalOpen(true)}
-        openPersonalDetailsModal={() => setIsPersonalDetailsOpen(true)}
         pendingSlipsCount={pendingSlipsCount}
         onSignOut={handleSignOut}
       />
@@ -460,7 +456,21 @@ export default function App({ initialMatches = [] }: AppProps) {
           </React.Suspense>
         )}
 
-        {/* VIEW 3: 100X PAYOUTS & RULES */}
+        {/* VIEW 3: PERSONAL DETAILS & PROFILE TAB */}
+        {activeTab === 'profile' && (
+          <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
+            <PersonalDetailsView
+              user={currentUser}
+              slips={slips}
+              transactions={transactions}
+              onSignOut={handleSignOut}
+              onOpenKyc={() => setIsKycModalOpen(true)}
+              onGoToLobby={() => setActiveTab('lobby')}
+            />
+          </React.Suspense>
+        )}
+
+        {/* VIEW 4: 100X PAYOUTS & RULES */}
         {activeTab === 'payouts-rules' && (
           <div className="space-y-6">
             <PayoutRuleBanner 
@@ -654,17 +664,6 @@ export default function App({ initialMatches = [] }: AppProps) {
             onUpdateLimit={(limit) => {
               setCurrentUser((prev) => ({ ...prev, dailyDepositLimit: limit }));
             }}
-          />
-        )}
-
-        {/* MODAL 8: Personal Details */}
-        {isPersonalDetailsOpen && (
-          <PersonalDetailsModal
-            user={currentUser}
-            slips={slips}
-            transactions={transactions}
-            onClose={() => setIsPersonalDetailsOpen(false)}
-            onSignOut={handleSignOut}
           />
         )}
 

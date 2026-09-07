@@ -4,11 +4,10 @@ import { UserAccount } from '../types';
 
 interface BottomNavProps {
   user: UserAccount;
-  activeTab: 'lobby' | 'my-contests' | 'payouts-rules';
-  setActiveTab: (tab: 'lobby' | 'my-contests' | 'payouts-rules') => void;
+  activeTab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules';
+  setActiveTab: (tab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules') => void;
   pendingSlipsCount: number;
   openAuthModal: () => void;
-  openPersonalDetailsModal: () => void;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
@@ -17,10 +16,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   setActiveTab,
   pendingSlipsCount,
   openAuthModal,
-  openPersonalDetailsModal,
 }) => {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#080C1D]/95 backdrop-blur-xl border-t border-[#1A223E] px-6 py-2 shadow-2xl shadow-black flex items-center justify-around safe-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#080C1D]/95 backdrop-blur-xl border-t border-[#1A223E] px-6 py-2 shadow-2xl shadow-black flex items-center justify-around">
       {/* Tab 1: Match Lobby */}
       <button
         onClick={() => setActiveTab('lobby')}
@@ -54,16 +52,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <span className="text-[10px] font-black tracking-tight">Selections</span>
       </button>
 
-      {/* Tab 3: Avatar / Personal Details */}
+      {/* Tab 3: Avatar / Profile Tab */}
       <button
         onClick={() => {
           if (user.id === 'u_guest') {
             openAuthModal();
           } else {
-            openPersonalDetailsModal();
+            setActiveTab('profile');
           }
         }}
-        className="flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-slate-200 transition-all active:scale-95"
+        className={`flex flex-col items-center justify-center gap-1 transition-all ${
+          activeTab === 'profile' ? 'text-[#FF6B00] scale-105' : 'text-slate-400 hover:text-slate-200'
+        }`}
         id="mobile-nav-profile"
       >
         {user.id === 'u_guest' ? (
@@ -71,11 +71,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <UserIcon className="w-5 h-5" />
           </div>
         ) : (
-          <div className="relative">
+          <div className={`relative p-0.5 rounded-xl transition-all ${activeTab === 'profile' ? 'bg-[#FF6B00]/20 ring-2 ring-[#FF6B00]' : ''}`}>
             <img
               src={user.avatar}
               alt={user.name}
-              className="w-7 h-7 rounded-xl object-cover ring-2 ring-[#FF6B00]/60 shadow-md"
+              className="w-7 h-7 rounded-lg object-cover"
             />
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#4ADE80] border-2 border-[#080C1D]" />
           </div>

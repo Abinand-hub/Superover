@@ -14,12 +14,11 @@ import { formatINR } from '../utils/payoutCalculator';
 interface HeaderProps {
   user: UserAccount;
   wallet: Wallet;
-  activeTab: 'lobby' | 'my-contests' | 'payouts-rules';
-  setActiveTab: (tab: 'lobby' | 'my-contests' | 'payouts-rules') => void;
+  activeTab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules';
+  setActiveTab: (tab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules') => void;
   openWalletModal: (mode?: 'deposit' | 'withdraw' | 'passbook') => void;
   openAuthModal: () => void;
   openKycModal: () => void;
-  openPersonalDetailsModal: () => void;
   pendingSlipsCount: number;
   onSignOut: () => void;
 }
@@ -32,7 +31,6 @@ export const Header: React.FC<HeaderProps> = ({
   openWalletModal,
   openAuthModal,
   openKycModal,
-  openPersonalDetailsModal,
   pendingSlipsCount,
   onSignOut
 }) => {
@@ -110,6 +108,20 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               )}
             </button>
+            {user.id !== 'u_guest' && (
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'profile'
+                    ? 'bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/40 shadow-sm shadow-[#FF6B00]/10'
+                    : 'text-slate-300 hover:text-white hover:bg-[#0D122B]'
+                }`}
+                id="nav-profile-tab"
+              >
+                <UserIcon className="w-3.5 h-3.5" />
+                Personal Details
+              </button>
+            )}
           </nav>
         </div>
 
@@ -186,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </div>
 
                     <button
-                      onClick={() => { setIsProfileOpen(false); openPersonalDetailsModal(); }}
+                      onClick={() => { setIsProfileOpen(false); setActiveTab('profile'); }}
                       className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-200 hover:bg-[#131A38] hover:text-[#FF6B00] transition-colors flex items-center gap-2"
                       id="btn-profile-personal-details"
                     >
