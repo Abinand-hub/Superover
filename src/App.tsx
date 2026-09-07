@@ -148,6 +148,11 @@ export default function App({ initialMatches = [] }: AppProps) {
       // Update state with response from backend
       if (response && response.slip) {
         setWallet(response.wallet);
+        setCurrentUser((prev) => ({
+          ...prev,
+          wallet: response.wallet,
+          totalContestsJoined: (prev.totalContestsJoined || 0) + 1,
+        }));
         setSlips((prev) => [response.slip as any, ...prev]);
         
         // Add local transaction history log
@@ -212,6 +217,11 @@ export default function App({ initialMatches = [] }: AppProps) {
       if (data.success) {
         // Update local wallet state
         setWallet(data.wallet);
+        setCurrentUser((prev) => ({
+          ...prev,
+          wallet: data.wallet,
+          totalDeposits: (prev.totalDeposits || 0) + (payload.amount || 0)
+        }));
         // Update transactions
         if (data.transaction) {
           setTransactions((prev) => [data.transaction, ...prev]);
