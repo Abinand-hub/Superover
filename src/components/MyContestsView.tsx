@@ -191,7 +191,7 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                         <div>
                           <span className="px-2.5 py-1 rounded-full bg-[#FF6B00] text-slate-950 text-xs font-black inline-flex items-center gap-1 shadow-sm">
                             <Trophy className="w-3.5 h-3.5 text-slate-950" />
-                            {slip.multiplierWon}X Cash Won ({slip.correctCount}/6 Correct)
+                            {slip.multiplierWon}X Cash Won ({slip.streakCount ?? 0}/6 Streak)
                           </span>
                           <span className="text-base font-black text-[#4ADE80] block mt-0.5">
                             +{formatINR(slip.payoutAmount || 0)} Credited
@@ -200,10 +200,10 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                       ) : (
                         <div>
                           <span className="px-2.5 py-1 rounded-full bg-[#131A38] text-slate-400 text-xs font-bold border border-[#1A223E]">
-                            {slip.correctCount ?? 0}/6 Correct
+                            {slip.streakCount ?? 0}/6 Streak ({slip.correctCount ?? 0} Correct)
                           </span>
                           <span className="text-[10px] text-slate-500 block mt-0.5">
-                            No Payout (Min 3 needed)
+                            {slip.streakCount && slip.streakCount >= 3 ? `${slip.multiplierWon}X Payout` : 'No Payout (Streak < 3)'}
                           </span>
                         </div>
                       )}

@@ -180,12 +180,12 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                           : isPendingApproval 
                           ? `${slip.multiplierWon}X Jackpot Pending Approval ⏳` 
                           : isWon 
-                          ? `${slip.multiplierWon}X Cash Prize Won!` 
-                          : 'Better Luck Next SuperOver'}
+                          ? `${slip.multiplierWon}X Cash Prize Won! (${slip.streakCount ?? 0}/6 Streak)` 
+                          : `Streak: ${slip.streakCount ?? 0}/6 (Streak Broken)`}
                       </span>
                       {isSettled ? (
                         <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-xs font-bold border border-slate-700">
-                          {slip.correctCount ?? 0} / 6 Correct
+                          {slip.streakCount ?? 0} / 6 Streak ({slip.correctCount ?? 0} Correct)
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-black border border-emerald-500/30">
@@ -265,127 +265,146 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
           {/* 6 Stats Breakdown List */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
-              <span>Stat Category</span>
+              <span>Stat Category (Q1 → Q6 Streak)</span>
               <span>{isSettled ? 'Official Result vs Your Pick' : 'Your Selected Pick'}</span>
             </div>
 
-            {match.questions?.map((q) => {
-              const rawResult = results?.answers ? results.answers[q.id] : null;
-              const officialAnswerId = typeof rawResult === 'object' && rawResult !== null
-                ? (rawResult.answerId || rawResult.answerText)
-                : rawResult;
+            {(() => {
+              let runningStreakBroken = false;
+              return match.questions?.map((q, idx) => {
+                const rawResult = results?.answers ? results.answers[q.id] : null;
+                const officialAnswerId = typeof rawResult === 'object' && rawResult !== null
+                  ? (rawResult.answerId || rawResult.answerText)
+                  : rawResult;
 
-              const officialAnswerText = typeof rawResult === 'object' && rawResult !== null
-                ? (rawResult.answerText || playerMap.get(officialAnswerId)?.name || officialAnswerId)
-                : (playerMap.get(officialAnswerId)?.name || officialAnswerId || 'TBD');
+                const officialAnswerText = typeof rawResult === 'object' && rawResult !== null
+                  ? (rawResult.answerText || playerMap.get(officialAnswerId)?.name || officialAnswerId)
+                  : (playerMap.get(officialAnswerId)?.name || officialAnswerId || 'TBD');
 
-              const statDetailText = typeof rawResult === 'object' && rawResult !== null
-                ? (rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
-                : (rawResult ? 'Official Verified Result' : 'Awaiting Result');
+                const statDetailText = typeof rawResult === 'object' && rawResult !== null
+                  ? (rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
+                  : (rawResult ? 'Official Verified Result' : 'Awaiting Result');
 
-              const userAnswerId = slip 
-                ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 
-                : null;
-              
-              const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
-              const officialAnsString = officialAnswerId ? String(officialAnswerId).trim().toLowerCase() : '';
-              const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
-              
-              const userName = (userAnswerId && playerMap.get(userAnswerId)?.name?.toLowerCase()) || '';
-              const officialName = (officialAnswerId && playerMap.get(officialAnswerId)?.name?.toLowerCase()) || '';
+                const userAnswerId = slip 
+                  ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 
+                  : null;
+                
+                const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
+                const officialAnsString = officialAnswerId ? String(officialAnswerId).trim().toLowerCase() : '';
+                const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
+                
+                const userName = (userAnswerId && playerMap.get(userAnswerId)?.name?.toLowerCase()) || '';
+                const officialName = (officialAnswerId && playerMap.get(officialAnswerId)?.name?.toLowerCase()) || '';
 
-              const isCorrect = !!(userAnsString && officialAnsString && (
-                (userAnsString === officialAnsString) ||
-                (officialTextString && userAnsString === officialTextString) ||
-                (userName && (userName === officialAnsString || userName === officialTextString)) ||
-                (officialName && (officialName === userAnsString || officialName === officialTextString)) ||
-                (userName && officialName && userName === officialName)
-              ));
+                const isCorrect = !!(userAnsString && officialAnsString && (
+                  (userAnsString === officialAnsString) ||
+                  (officialTextString && userAnsString === officialTextString) ||
+                  (userName && (userName === officialAnsString || userName === officialTextString)) ||
+                  (officialName && (officialName === userAnsString || officialName === officialTextString)) ||
+                  (userName && officialName && userName === officialName)
+                ));
 
-              // For player questions, look up player details
-              let userPickDisplayName = userAnswerId || 'Unselected';
-              if (userAnswerId) {
-                const p = playerMap.get(userAnswerId);
-                if (p) userPickDisplayName = p.name || p.shortName;
-              }
+                const isStrictStreak = isCorrect && !runningStreakBroken;
+                if (!isCorrect && rawResult) {
+                  runningStreakBroken = true;
+                }
 
-              return (
-                <div
-                  key={q.id}
-                  className={`p-3.5 rounded-xl border transition-colors ${
-                    slip && rawResult
-                      ? isCorrect
-                        ? 'bg-emerald-500/15 border-emerald-500/50 shadow-sm'
-                        : 'bg-rose-500/10 border-rose-500/30'
-                      : 'bg-slate-950/60 border-slate-800'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                    {/* Left: Category info */}
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-slate-800 text-amber-400 flex items-center justify-center flex-shrink-0">
-                        {getQuestionIcon(q.iconName)}
+                // For player questions, look up player details
+                let userPickDisplayName = userAnswerId || 'Unselected';
+                if (userAnswerId) {
+                  const p = playerMap.get(userAnswerId);
+                  if (p) userPickDisplayName = p.name || p.shortName;
+                }
+
+                return (
+                  <div
+                    key={q.id}
+                    className={`p-3.5 rounded-xl border transition-colors ${
+                      slip && rawResult
+                        ? isStrictStreak
+                          ? 'bg-emerald-500/15 border-emerald-500/50 shadow-sm'
+                          : isCorrect
+                          ? 'bg-slate-800/60 border-slate-700/60 opacity-80'
+                          : 'bg-rose-500/10 border-rose-500/30'
+                        : 'bg-slate-950/60 border-slate-800'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      {/* Left: Category info */}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-slate-800 text-amber-400 flex items-center justify-center flex-shrink-0 text-xs font-black">
+                          Q{idx + 1}
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-white">{q.title}</div>
+                          <div className="text-[10px] text-slate-400">{q.shortTitle}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs font-black text-white">{q.title}</div>
-                        <div className="text-[10px] text-slate-400">{q.shortTitle}</div>
-                      </div>
-                    </div>
 
-                    {/* Right: Winner info & comparison */}
-                    <div className="flex items-center gap-3 justify-between sm:justify-end">
-                      {isSettled ? (
-                        <>
-                          {/* Actual Official Winner */}
-                          <div className="text-right">
-                            <div className="text-xs font-bold text-amber-300">
-                              {officialAnswerText}
+                      {/* Right: Winner info & comparison */}
+                      <div className="flex items-center gap-3 justify-between sm:justify-end">
+                        {isSettled ? (
+                          <>
+                            {/* Actual Official Winner */}
+                            <div className="text-right">
+                              <div className="text-xs font-bold text-amber-300">
+                                {officialAnswerText}
+                              </div>
+                              <div className="text-[11px] font-mono text-slate-400">
+                                {statDetailText}
+                              </div>
                             </div>
-                            <div className="text-[11px] font-mono text-slate-400">
-                              {statDetailText}
-                            </div>
-                          </div>
 
-                          {/* User Pick Badge */}
-                          {slip && (
-                            <div className="pl-2 border-l border-slate-800">
-                              {isCorrect ? (
-                                <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/40">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Match ✅</span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-end">
-                                  <span className="text-[10px] text-slate-400 line-through">
-                                    Pick: {userPickDisplayName}
-                                  </span>
-                                  <span className="text-[10px] text-rose-400 font-black">
-                                    Missed ❌
-                                  </span>
-                                </div>
-                              )}
+                            {/* User Pick Badge */}
+                            {slip && (
+                              <div className="pl-2 border-l border-slate-800">
+                                {isStrictStreak ? (
+                                  <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/40">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Match ✅ (Streak +1)</span>
+                                  </div>
+                                ) : isCorrect ? (
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-[10px] text-slate-300 font-bold">
+                                      Pick: {userPickDisplayName}
+                                    </span>
+                                    <span className="text-[10px] text-amber-400/90 font-medium">
+                                      Correct (Post-Break) ⚠️
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-[10px] text-slate-400 line-through">
+                                      Pick: {userPickDisplayName}
+                                    </span>
+                                    <span className="text-[10px] text-rose-400 font-black">
+                                      Missed ❌ (Streak End)
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          /* Active Slip State */
+                          <div className="flex items-center gap-2">
+                            <div className="text-right">
+                              <span className="text-[10px] text-slate-400 uppercase font-bold block">Your Pick</span>
+                              <span className="text-xs font-bold text-amber-300">
+                                {userPickDisplayName}
+                              </span>
                             </div>
-                          )}
-                        </>
-                      ) : (
-                        /* Active Slip State */
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
-                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Your Pick</span>
-                            <span className="text-xs font-bold text-amber-300">
-                              {userPickDisplayName}
+                            <span className="px-2 py-1 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                              Locked ⏳
                             </span>
                           </div>
-                          <span className="px-2 py-1 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
-                            Locked ⏳
-                          </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
 
           {/* Match Summary Note */}

@@ -54,12 +54,28 @@ export function settlePredictionSlip(
   match.questions.forEach((q) => {
     const userAnswerId = slip.answers[q.id];
     const actualResult = results.answers?.[q.id];
-    const actualAnswerId = actualResult ? actualResult.answerId : '';
+    const actualAnswerId = actualResult ? (actualResult.answerId || actualResult.answerText) : '';
+    const actualAnswerText = actualResult?.answerText || actualAnswerId;
+
+    const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
+    const actualAnsString = actualAnswerId ? String(actualAnswerId).trim().toLowerCase() : '';
+    const actualTextString = actualAnswerText ? String(actualAnswerText).trim().toLowerCase() : '';
+
+    const userPlayer = userAnswerId ? playerMap.get(userAnswerId) : undefined;
+    const winnerPlayer = actualAnswerId ? playerMap.get(actualAnswerId) : undefined;
+    const userName = userPlayer?.name?.toLowerCase() || '';
+    const winnerName = (winnerPlayer?.name || (actualResult?.answerText ? playerMap.get(actualResult.answerText)?.name : undefined))?.toLowerCase() || '';
 
     const isCorrect = Boolean(
-      userAnswerId &&
-      actualAnswerId &&
-      userAnswerId.toLowerCase() === actualAnswerId.toLowerCase()
+      userAnsString &&
+      actualAnsString &&
+      (
+        userAnsString === actualAnsString ||
+        (actualTextString && userAnsString === actualTextString) ||
+        (userName && (userName === actualAnsString || userName === actualTextString)) ||
+        (winnerName && (winnerName === userAnsString || winnerName === actualTextString)) ||
+        (userName && winnerName && userName === winnerName)
+      )
     );
 
     if (isCorrect) {
@@ -71,16 +87,12 @@ export function settlePredictionSlip(
       isStreakBroken = true;
     }
 
-    // Try to resolve names if it's a player
-    const userPlayer = userAnswerId ? playerMap.get(userAnswerId) : undefined;
-    const winnerPlayer = actualAnswerId ? playerMap.get(actualAnswerId) : undefined;
-
     let userAnswerText = userAnswerId;
     if (q.type === 'PLAYER' && userPlayer) userAnswerText = userPlayer.name;
 
-    let actualAnswerText = actualAnswerId || 'Pending';
-    if (q.type === 'PLAYER' && winnerPlayer) actualAnswerText = winnerPlayer.name;
-    else if (actualResult?.answerText) actualAnswerText = actualResult.answerText;
+    let displayActualAnswerText = actualAnswerId || 'Pending';
+    if (q.type === 'PLAYER' && winnerPlayer) displayActualAnswerText = winnerPlayer.name;
+    else if (actualResult?.answerText) displayActualAnswerText = actualResult.answerText;
 
     settlementDetails.push({
       questionId: q.id,
@@ -88,20 +100,21 @@ export function settlePredictionSlip(
       userAnswerId: userAnswerId || '',
       userAnswerText: userAnswerText || 'Unselected',
       actualAnswerId: actualAnswerId,
-      actualAnswerText: actualAnswerText,
+      actualAnswerText: displayActualAnswerText,
       actualStatValue: actualResult?.statValue || 'N/A',
       isCorrect,
     });
   });
 
   const wheelMult = slip.wheelMultiplier || 50;
-  const score = Math.max(streakCount, correctCount);
   
+  // STRICT STREAK RULE: Multiplier is strictly based on consecutive correct answers from Q1
   let baseMultiplier = 0;
-  if (score >= 6) baseMultiplier = slip.freeHit ? wheelMult : 50;
-  else if (score === 5) baseMultiplier = 10;
-  else if (score === 4) baseMultiplier = 3;
-  else if (score === 3) baseMultiplier = 0.5;
+  if (streakCount >= 6) baseMultiplier = slip.freeHit ? wheelMult : 50;
+  else if (streakCount === 5) baseMultiplier = 10;
+  else if (streakCount === 4) baseMultiplier = 3;
+  else if (streakCount === 3) baseMultiplier = 0.5;
+  else baseMultiplier = 0;
 
   const multiplier = baseMultiplier;
   const payoutAmount = slip.entryFee * multiplier;

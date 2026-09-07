@@ -177,22 +177,20 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
     let slipStatus = 'LOST';
     let multiplierWon = 0;
 
-    // Evaluate based on score (correct answers count)
-    const score = Math.max(streakCount, correctAnswers);
-
-    if (score >= 6) {
+    // STRICT STREAK RULE: Multiplier is strictly based on consecutive correct answers from Q1
+    if (streakCount >= 6) {
       multiplierWon = slip.freeHit ? wheelMult : 50;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
-    } else if (score === 5) {
+    } else if (streakCount === 5) {
       multiplierWon = 10;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
-    } else if (score === 4) {
+    } else if (streakCount === 4) {
       multiplierWon = 3;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
-    } else if (score === 3) {
+    } else if (streakCount === 3) {
       multiplierWon = 0.5;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
@@ -228,7 +226,7 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
         amount: wonAmount,
         status: 'SUCCESS',
         referenceId: slip._id.toString(),
-        description: `Contest Winnings: ${score}/6 (${correctAnswers} Correct) on ${match.title}`
+        description: `Contest Winnings: ${streakCount}/6 Streak (${multiplierWon}X) on ${match.title}`
       });
 
       payoutsCount++;
