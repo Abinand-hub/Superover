@@ -110,8 +110,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
   // Columns: Match ID | Match Name | Total Entries | Total Collection | Status | Action
   // -------------------------------------------------------------------------
   const renderMatchList = () => {
-    const totalPlatformEntries = slips.length;
-    const totalPlatformCollection = slips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
+    const activeMatchIds = new Set(matches.map(m => m.id));
+    const relevantSlips = slips.filter(s => activeMatchIds.has(s.matchId));
+    const totalPlatformEntries = relevantSlips.length;
+    const totalPlatformCollection = relevantSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
 
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
