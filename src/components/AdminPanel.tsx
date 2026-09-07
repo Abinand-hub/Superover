@@ -264,7 +264,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onCloseAdmin,
   onReloadData,
 }) => {
-  const [adminTab, setAdminTab] = useState<'overview' | 'publishing' | 'questionBank' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials' | 'market' | 'settings'>('overview');
+  const [adminTab, setAdminTab] = useState<'overview' | 'publishing' | 'questionBank' | 'matches' | 'squads' | 'settlement' | 'jackpots' | 'users' | 'withdrawals' | 'financials' | 'market' | 'settings'>('market');
   
   const [loadedUsers, setLoadedUsers] = useState<UserAccount[]>(allUsers);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -645,6 +645,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* Admin Nav Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-[#1A223E]">
         {[
+          { id: 'market', label: 'Live Market Analysis', icon: TrendingUp },
           { id: 'overview', label: 'Platform KPI', icon: BarChart3 },
           { id: 'publishing', label: 'Create Match (Manual)', icon: PlusCircle },
           { id: 'questionBank', label: 'Question Bank', icon: Database },
@@ -655,7 +656,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           { id: 'users', label: `User Inspector (${metrics.totalUsers})`, icon: Users },
           { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL' && t.status === 'PENDING').length})`, icon: ArrowUpRight },
           { id: 'financials', label: 'Financial Audit & CSV', icon: FileSpreadsheet },
-          { id: 'market', label: 'Live Market Analysis', icon: TrendingUp },
           { id: 'settings', label: 'Platform Settings', icon: Settings },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -2415,7 +2415,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {adminTab === 'market' && (
-        <LiveMarketAnalysis matches={matches} slips={allSlips} />
+        <LiveMarketAnalysis matches={matches} slips={allSlips} users={allUsers} />
       )}
 
       {adminTab === 'settings' && (
