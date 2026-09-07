@@ -2051,42 +2051,85 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </button>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-3">
-            <div className="grid grid-cols-3 gap-3 text-xs">
+          <div className="p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="p-3 bg-[#080C1D] rounded-xl border border-[#1A223E]">
-                <span className="text-slate-400 block">Total Pool Volume</span>
-                <span className="text-base font-black text-white mt-0.5 block">{formatINR(metrics.totalPoolCollected)}</span>
+                <span className="text-slate-400 block text-[11px]">Total Pool Volume</span>
+                <span className="text-base font-black text-white mt-0.5 block font-mono">{formatINR(metrics.totalPoolCollected)}</span>
               </div>
               <div className="p-3 bg-[#080C1D] rounded-xl border border-[#1A223E]">
-                <span className="text-slate-400 block">Total Paid Out</span>
-                <span className="text-base font-black text-[#FFAA00] mt-0.5 block">{formatINR(metrics.totalPayoutsDisbursed)}</span>
+                <span className="text-slate-400 block text-[11px]">Total Paid Out</span>
+                <span className="text-base font-black text-[#FFAA00] mt-0.5 block font-mono">{formatINR(metrics.totalPayoutsDisbursed)}</span>
               </div>
               <div className="p-3 bg-[#080C1D] rounded-xl border border-[#1A223E]">
-                <span className="text-slate-400 block">Platform Net Commission</span>
-                <span className="text-base font-black text-[#4ADE80] mt-0.5 block">{formatINR(metrics.platformProfit)}</span>
+                <span className="text-slate-400 block text-[11px]">Platform Net Commission</span>
+                <span className="text-base font-black text-[#4ADE80] mt-0.5 block font-mono">{formatINR(metrics.platformProfit)}</span>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile-Friendly Transaction Cards (Zero Horizontal Scroll) */}
+            <div className="block md:hidden space-y-2.5">
+              {allTransactions.slice(0, 15).map((tx) => (
+                <div 
+                  key={tx.id} 
+                  className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                        tx.type === 'DEPOSIT' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        tx.type === 'CONTEST_PAYOUT' || tx.type === 'PAYOUT' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                        tx.type === 'WITHDRAWAL' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                        'bg-slate-800 text-slate-300'
+                      }`}>
+                        {tx.type}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {String(tx.id).substring(0, 8)}...
+                      </span>
+                    </div>
+                    <span className={`text-sm font-black font-mono ${
+                      tx.type === 'DEPOSIT' || tx.type === 'CONTEST_PAYOUT' || tx.type === 'BONUS_REWARD' ? 'text-emerald-400' : 'text-slate-200'
+                    }`}>
+                      {formatINR(tx.amount)}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-300 font-medium">
+                    {tx.description}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-[#131A38]">
+                    <span>{new Date(tx.timestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 font-bold uppercase">
+                      {tx.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#1A223E] text-slate-400">
-                    <th className="py-2">Tx ID</th>
-                    <th className="py-2">Type</th>
-                    <th className="py-2">Description</th>
-                    <th className="py-2">Amount</th>
-                    <th className="py-2">Status</th>
+                  <tr className="border-b border-[#1A223E] text-slate-400 uppercase text-[10px] tracking-wider">
+                    <th className="py-2.5 px-3">Tx ID</th>
+                    <th className="py-2.5 px-3">Type</th>
+                    <th className="py-2.5 px-3">Description</th>
+                    <th className="py-2.5 px-3">Amount</th>
+                    <th className="py-2.5 px-3">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1A223E]">
-                  {allTransactions.slice(0, 10).map((tx) => (
-                    <tr key={tx.id}>
-                      <td className="py-2.5 font-mono text-[11px] text-slate-400">{tx.id}</td>
-                      <td className="py-2.5 font-bold text-slate-300">{tx.type}</td>
-                      <td className="py-2.5 text-slate-300">{tx.description}</td>
-                      <td className="py-2.5 font-black text-white">{formatINR(tx.amount)}</td>
-                      <td className="py-2.5">
-                        <span className="px-1.5 py-0.2 rounded bg-[#131A38] text-slate-300 text-[10px]">
+                  {allTransactions.slice(0, 15).map((tx) => (
+                    <tr key={tx.id} className="hover:bg-[#131A38]/40 transition-colors">
+                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-400">{tx.id}</td>
+                      <td className="py-2.5 px-3 font-bold text-slate-300">{tx.type}</td>
+                      <td className="py-2.5 px-3 text-slate-300">{tx.description}</td>
+                      <td className="py-2.5 px-3 font-black text-white font-mono">{formatINR(tx.amount)}</td>
+                      <td className="py-2.5 px-3">
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase">
                           {tx.status}
                         </span>
                       </td>

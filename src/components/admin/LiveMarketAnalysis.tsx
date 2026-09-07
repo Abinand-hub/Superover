@@ -147,9 +147,93 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           </div>
         </div>
 
-        {/* Matches Table as per PRD Screen 1 */}
+        {/* Matches Table / Cards as per PRD Screen 1 */}
         <div className="bg-[#0D122B] border border-[#1A223E] rounded-2xl overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
+          {/* Mobile Card List (Zero Horizontal Scroll / Swipe Needed) */}
+          <div className="block md:hidden p-3.5 space-y-3">
+            {matches.length === 0 ? (
+              <div className="p-8 text-center text-slate-500 text-xs">
+                No active or published matches available.
+              </div>
+            ) : (
+              matches.map((match) => {
+                const matchSlips = slips.filter(s => s.matchId === match.id);
+                const totalEntries = matchSlips.length;
+                const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
+                const isLive = match.status === 'LIVE';
+                const isCompleted = match.status === 'COMPLETED';
+                const isLocked = match.status === 'LOCKED';
+
+                return (
+                  <div 
+                    key={match.id}
+                    className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-white text-base font-display">
+                            {match.team1?.code || 'T1'} vs {match.team2?.code || 'T2'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 ${
+                            isLive ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
+                            isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                            isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                            'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                          }`}>
+                            {isLive && <span className="w-1 h-1 rounded-full bg-red-400 animate-ping"></span>}
+                            {isCompleted && '✓ '}
+                            {match.status}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                          {match.title} • {match.series}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => copyToClipboard(match.id)}
+                        className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300 font-mono bg-[#131A38] px-2 py-1 rounded-lg border border-[#1A223E]"
+                        title="Copy Match ID"
+                      >
+                        <span>{match.id.substring(0, 6)}...</span>
+                        {copiedId === match.id ? (
+                          <Check className="w-3 h-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3 h-3 text-slate-400" />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-[#131A38]">
+                      <div className="p-2 bg-[#0D122B] rounded-lg border border-[#1A223E]/80">
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Total Slips</span>
+                        <span className="text-sm font-black text-white font-mono">{totalEntries.toLocaleString()}</span>
+                      </div>
+                      <div className="p-2 bg-[#0D122B] rounded-lg border border-[#1A223E]/80">
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Collection</span>
+                        <span className="text-sm font-black text-emerald-400 font-mono">₹{totalCollection.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedMatchId(match.id);
+                        setFunnelFilters({});
+                      }}
+                      className="w-full py-2.5 px-3 bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 active:scale-[0.98] text-slate-950 font-black text-xs rounded-xl transition-all shadow-md shadow-[#FF6B00]/25 flex items-center justify-center gap-1.5"
+                    >
+                      <TrendingUp className="w-4 h-4 text-slate-950" />
+                      <span>View Funnel Analysis</span>
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Data Table (Hidden on Mobile) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead className="bg-[#131A38] text-slate-400 border-b border-[#1A223E] uppercase text-[10px] tracking-wider">
                 <tr>
@@ -613,8 +697,102 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
             </div>
           </div>
 
-          {/* User Winnings Table */}
-          <div className="overflow-x-auto border border-[#1A223E] rounded-xl">
+          {/* Mobile User Winnings Card List (Zero Horizontal Scroll / Swipe Needed) */}
+          <div className="block md:hidden p-3.5 space-y-2.5">
+            {(() => {
+              const filtered = evaluatedSlipsWithWinnings.filter(item => {
+                if (winningsFilter === 'WINNERS_ONLY' && !item.hasWon) return false;
+                if (winningsSearch) {
+                  const q = winningsSearch.toLowerCase();
+                  const s = item.slip;
+                  return (
+                    (s.userName || '').toLowerCase().includes(q) ||
+                    (s.userPhone || '').toLowerCase().includes(q) ||
+                    (s.userId || '').toLowerCase().includes(q)
+                  );
+                }
+                return true;
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="p-6 text-center text-slate-500 text-xs">
+                    No users found matching current filters.
+                  </div>
+                );
+              }
+
+              return filtered.map((item) => {
+                const s = item.slip;
+                const hasWon = item.hasWon;
+
+                return (
+                  <div
+                    key={s.id}
+                    className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
+                      hasWon
+                        ? 'bg-emerald-950/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10'
+                        : 'bg-[#080C1D] border-[#1A223E]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs font-mono ${
+                          hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                        }`}>
+                          {(s.userName || 'U')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-bold text-white text-xs block">{s.userName || 'SuperOver Fan'}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">{s.userPhone || s.userId || 'N/A'}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        {hasWon ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-sm font-black text-emerald-400 font-mono">
+                              +₹{item.winningsINR.toLocaleString()}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-500 font-mono">₹0</span>
+                        )}
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase inline-block mt-0.5 ${
+                          hasWon ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
+                        }`}>
+                          {hasWon ? `WON ${item.multiplier}X` : 'NO WIN'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-[#131A38] text-[10px]">
+                      <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
+                        <span className="text-slate-400 block font-bold">STAKE</span>
+                        <span className="text-slate-200 font-mono font-bold">₹{s.entryFee || 50}</span>
+                      </div>
+                      <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
+                        <span className="text-slate-400 block font-bold">STREAK</span>
+                        <span className={`font-mono font-bold ${
+                          item.streak >= 3 ? 'text-emerald-400' : 'text-slate-300'
+                        }`}>
+                          {item.streak}/6
+                        </span>
+                      </div>
+                      <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
+                        <span className="text-slate-400 block font-bold">TIER</span>
+                        <span className="text-[#FFAA00] font-mono font-bold">{item.multiplier}X</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+
+          {/* Desktop User Winnings Table (Hidden on Mobile) */}
+          <div className="hidden md:block overflow-x-auto border-t md:border-t-0 border-[#1A223E]">
             <table className="w-full text-left text-xs whitespace-nowrap">
               <thead className="bg-[#131A38] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#1A223E]">
                 <tr>
