@@ -397,7 +397,7 @@ export default function App({ initialMatches = [] }: AppProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#050816] text-slate-100 flex flex-col selection:bg-[#FF6B00] selection:text-white">
+    <div className="min-h-screen bg-[#050816] text-slate-100 flex flex-col selection:bg-[#FF6B00] selection:text-white pb-20 md:pb-0">
       {/* Top Main Navigation Header */}
       <Header 
         user={currentUser}
@@ -653,6 +653,7 @@ export default function App({ initialMatches = [] }: AppProps) {
             slips={slips}
             transactions={transactions}
             onClose={() => setIsPersonalDetailsOpen(false)}
+            onSignOut={handleSignOut}
           />
         )}
 

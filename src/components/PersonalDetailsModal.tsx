@@ -13,7 +13,8 @@ import {
   Eye, 
   EyeOff, 
   Fingerprint,
-  Calendar
+  Calendar,
+  LogOut
 } from 'lucide-react';
 import { UserAccount, UserPredictionSlip, WalletTransaction } from '../types';
 import { formatINR } from '../utils/payoutCalculator';
@@ -23,6 +24,7 @@ interface PersonalDetailsModalProps {
   slips: UserPredictionSlip[];
   transactions: WalletTransaction[];
   onClose: () => void;
+  onSignOut?: () => void;
 }
 
 export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
@@ -30,6 +32,7 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
   slips,
   transactions,
   onClose,
+  onSignOut,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -235,11 +238,24 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="p-4 bg-[#080C1D] border-t border-[#1A223E] flex justify-end">
+        {/* Modal Footer with Sign Out / Logout */}
+        <div className="p-4 bg-[#080C1D] border-t border-[#1A223E] flex items-center justify-between gap-3">
+          {onSignOut && (
+            <button
+              onClick={() => {
+                onClose();
+                onSignOut();
+              }}
+              className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold border border-rose-500/20 flex items-center gap-1.5 transition-colors"
+              id="btn-personal-details-signout"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black text-xs hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/25"
+            className="px-6 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black text-xs hover:brightness-110 active:scale-95 transition-all shadow-md shadow-[#FF6B00]/25 ml-auto"
           >
             Close
           </button>
@@ -248,3 +264,4 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
     </div>
   );
 };
+
