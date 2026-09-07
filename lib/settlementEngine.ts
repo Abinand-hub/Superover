@@ -139,17 +139,22 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
         const officialAnswerId = typeof officialPick === 'object' && officialPick !== null 
           ? (officialPick.answerId || officialPick.answerText) 
           : officialPick;
+        const officialAnswerText = typeof officialPick === 'object' && officialPick !== null 
+          ? (officialPick.answerText || officialPick.answerId) 
+          : officialPick;
 
         if (officialAnswerId && userAns) {
           const userAnsString = String(userAns).trim().toLowerCase();
           const officialAnsString = String(officialAnswerId).trim().toLowerCase();
+          const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
           
           const userName = playerMap.get(userAns)?.name?.toLowerCase() || '';
-          const officialName = playerMap.get(officialAnswerId)?.name?.toLowerCase() || '';
+          const officialName = (playerMap.get(officialAnswerId)?.name || playerMap.get(officialAnswerText)?.name)?.toLowerCase() || '';
 
           const isMatch = (userAnsString === officialAnsString) ||
-                          (userName && userName === officialAnsString) ||
-                          (officialName && officialName === userAnsString) ||
+                          (officialTextString && userAnsString === officialTextString) ||
+                          (userName && (userName === officialAnsString || userName === officialTextString)) ||
+                          (officialName && (officialName === userAnsString || officialName === officialTextString)) ||
                           (userName && officialName && userName === officialName);
 
           if (isMatch) {
@@ -172,25 +177,22 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
     let slipStatus = 'LOST';
     let multiplierWon = 0;
 
-    // PRD Streak Multiplier Rules:
-    // 6/6 Streak: 50X (or Free Hit Wheel Multiplier)
-    // 5/6 Streak: 10X
-    // 4/6 Streak: 3X
-    // 3/6 Streak: 0.5X
-    // < 3 Streak: 0X (Lost)
-    if (streakCount >= 6) {
+    // Evaluate based on score (correct answers count)
+    const score = Math.max(streakCount, correctAnswers);
+
+    if (score >= 6) {
       multiplierWon = slip.freeHit ? wheelMult : 50;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
-    } else if (streakCount === 5) {
+    } else if (score === 5) {
       multiplierWon = 10;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
-    } else if (streakCount === 4) {
+    } else if (score === 4) {
       multiplierWon = 3;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
-    } else if (streakCount === 3) {
+    } else if (score === 3) {
       multiplierWon = 0.5;
       slipStatus = 'WON';
       wonAmount = entryFee * multiplierWon;
@@ -226,7 +228,7 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
         amount: wonAmount,
         status: 'SUCCESS',
         referenceId: slip._id.toString(),
-        description: `Contest Winnings: ${streakCount}/6 Streak on ${match.title}`
+        description: `Contest Winnings: ${score}/6 (${correctAnswers} Correct) on ${match.title}`
       });
 
       payoutsCount++;

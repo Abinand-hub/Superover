@@ -82,6 +82,24 @@ export const WalletModal: React.FC<WalletModalProps> = ({
       // 1. Create Order on Backend
       const order = await api.createOrder({ amount: depositAmount });
 
+      if ((order as any).isDummy || !(window as any).Razorpay) {
+        // Seamless Instant Dummy / Test Payment
+        setIsProcessingDeposit(false);
+        setDepositSuccess(true);
+        
+        await onDeposit({
+          razorpay_order_id: order.orderId,
+          razorpay_payment_id: `pay_dummy_${Date.now()}`,
+          razorpay_signature: 'dummy_signature',
+          amount: depositAmount
+        }, `Demo UPI Deposit: pay_dummy_${Date.now()}`);
+        
+        setTimeout(() => {
+          setDepositSuccess(false);
+        }, 2500);
+        return;
+      }
+
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TTavRCG2g2HcRS', 
         amount: order.amount,

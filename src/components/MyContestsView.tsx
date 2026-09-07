@@ -29,7 +29,12 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
 }) => {
   const [slipFilter, setSlipFilter] = useState<'ALL' | 'ACTIVE' | 'WON' | 'COMPLETED'>('ALL');
 
-  const matchMap = new Map(matches.map((m) => [m.id, m]));
+  const matchMap = new Map<string, CricketMatch>();
+  matches.forEach((m) => {
+    if (m.id) matchMap.set(String(m.id), m);
+    if ((m as any)._id) matchMap.set(String((m as any)._id), m);
+    if ((m as any).apiId) matchMap.set(String((m as any).apiId), m);
+  });
 
   // User-specific filtering
   const currentUserId = (user.id || (user as any)._id || '').toString();
@@ -103,7 +108,23 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
       ) : (
         <div className="space-y-3.5">
           {filteredSlips.map((slip) => {
-            const match = matchMap.get(slip.matchId);
+            const match = matchMap.get(String(slip.matchId)) || ({
+              id: slip.matchId,
+              title: slip.matchTitle || 'Contested Match',
+              series: slip.series || 'Cricket Contest',
+              format: 'T20',
+              status: (slip.status === 'WON' || slip.status === 'LOST') ? 'COMPLETED' : 'UPCOMING',
+              team1: { name: slip.team1Code || 'Team 1', code: slip.team1Code || 'T1', logo: '' },
+              team2: { name: slip.team2Code || 'Team 2', code: slip.team2Code || 'T2', logo: '' },
+              venue: 'SuperOver Arena',
+              startTime: slip.matchStartTime || slip.submittedAt,
+              totalPool: 100000,
+              totalEntries: 10,
+              entryFee: slip.entryFee || 50,
+              questions: [],
+              squadTeam1: [],
+              squadTeam2: [],
+            } as unknown as CricketMatch);
             const isWon = slip.status === 'WON';
             const isPending = slip.status === 'PENDING' || slip.status === 'LIVE';
 

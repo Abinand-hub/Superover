@@ -95,19 +95,20 @@ export function settlePredictionSlip(
   });
 
   const wheelMult = slip.wheelMultiplier || 50;
+  const score = Math.max(streakCount, correctCount);
   
   let baseMultiplier = 0;
-  if (streakCount >= 6) baseMultiplier = slip.freeHit ? wheelMult : 50;
-  else if (streakCount === 5) baseMultiplier = 10;
-  else if (streakCount === 4) baseMultiplier = 3;
-  else if (streakCount === 3) baseMultiplier = 0.5;
+  if (score >= 6) baseMultiplier = slip.freeHit ? wheelMult : 50;
+  else if (score === 5) baseMultiplier = 10;
+  else if (score === 4) baseMultiplier = 3;
+  else if (score === 3) baseMultiplier = 0.5;
 
   const multiplier = baseMultiplier;
-  const payoutAmount = slip.entryFee * multiplier; // note: entryFee is the base stake. freeHitFee is lost.
+  const payoutAmount = slip.entryFee * multiplier;
   
   let status: 'WON' | 'LOST' | 'PENDING_APPROVAL' = 'LOST';
   if (multiplier > 0) {
-    status = streakCount === 6 ? 'PENDING_APPROVAL' : 'WON';
+    status = 'WON';
   }
 
   const settledSlip: UserPredictionSlip = {

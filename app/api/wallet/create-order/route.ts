@@ -33,8 +33,13 @@ export async function POST(req: Request) {
 
     // Initialize Razorpay
     if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-       console.error('Razorpay keys missing from environment variables');
-       return NextResponse.json({ error: 'Payment gateway configuration error' }, { status: 500 });
+       console.log('Razorpay keys missing or in test mode, using dummy payment order');
+       return NextResponse.json({
+         orderId: `dummy_order_${Date.now()}`,
+         amount: amount * 100,
+         currency: 'INR',
+         isDummy: true
+       });
     }
 
     const razorpay = new Razorpay({

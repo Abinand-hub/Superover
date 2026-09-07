@@ -287,11 +287,24 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                 ? (slip.answers instanceof Map ? slip.answers.get(q.id) : (slip.answers as any)?.[q.id]) 
                 : null;
               
-              const isCorrect = !!(userAnswerId && officialAnswerId && String(userAnswerId).trim().toLowerCase() === String(officialAnswerId).trim().toLowerCase());
+              const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
+              const officialAnsString = officialAnswerId ? String(officialAnswerId).trim().toLowerCase() : '';
+              const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
+              
+              const userName = (userAnswerId && playerMap.get(userAnswerId)?.name?.toLowerCase()) || '';
+              const officialName = (officialAnswerId && playerMap.get(officialAnswerId)?.name?.toLowerCase()) || '';
+
+              const isCorrect = !!(userAnsString && officialAnsString && (
+                (userAnsString === officialAnsString) ||
+                (officialTextString && userAnsString === officialTextString) ||
+                (userName && (userName === officialAnsString || userName === officialTextString)) ||
+                (officialName && (officialName === userAnsString || officialName === officialTextString)) ||
+                (userName && officialName && userName === officialName)
+              ));
 
               // For player questions, look up player details
               let userPickDisplayName = userAnswerId || 'Unselected';
-              if (q.type === 'PLAYER' && userAnswerId) {
+              if (userAnswerId) {
                 const p = playerMap.get(userAnswerId);
                 if (p) userPickDisplayName = p.name || p.shortName;
               }

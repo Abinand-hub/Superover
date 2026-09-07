@@ -17,21 +17,18 @@ export async function GET(req: Request) {
     }
 
     const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = cookieStore.get('admin_token')?.value || cookieStore.get('auth_token')?.value;
 
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    
-    await connectToDatabase();
-    
-    // Verify admin
-    const admin = await User.findById(decoded.userId);
-    if (!admin || admin.role !== 'ADMIN') {
+    if (decoded.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    await connectToDatabase();
 
     const match = await Match.findById(matchId);
     if (!match) {
