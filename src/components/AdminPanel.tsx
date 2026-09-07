@@ -882,15 +882,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </button>
                     )}
 
-                    {/* END & SETTLE BUTTON */}
-                    <button
-                      onClick={() => handleEndMatch(match)}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/30"
-                      id={`btn-end-settle-match-${match.id}`}
-                    >
-                      <Square className="w-3.5 h-3.5 fill-current" />
-                      <span>{match.status === 'COMPLETED' ? 'Review / Re-Settle' : 'End & Settle Payouts'}</span>
-                    </button>
+                    {/* END & SETTLE BUTTON (Only for non-completed matches) */}
+                    {match.status !== 'COMPLETED' ? (
+                      <button
+                        onClick={() => handleEndMatch(match)}
+                        className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#FF6B00]/30"
+                        id={`btn-end-settle-match-${match.id}`}
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>End & Settle Payouts</span>
+                      </button>
+                    ) : (
+                      <span className="px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-black flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Completed & Settled</span>
+                      </span>
+                    )}
 
                     {/* LOCK / UNLOCK BUTTON */}
                     {match.status === 'UPCOMING' && (
@@ -1396,12 +1403,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {/* Action CTA Button on Box */}
                         <div className="pt-2 border-t border-[#1A223E] flex items-center justify-between">
                           <span className="text-[10px] text-slate-400 font-bold">
-                            {isSelected ? '👉 Selected for Payout' : 'Click to Settle'}
+                            {isCompleted ? '✓ Settled & Locked' : isSelected ? '👉 Selected for Payout' : 'Click to Settle'}
                           </span>
-                  <span className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
-                            isSelected ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30' : 'bg-slate-800 text-slate-300'
+                          <span className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
+                            isCompleted
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : isSelected
+                              ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
+                              : 'bg-slate-800 text-slate-300'
                           }`}>
-                            {isCompleted ? 'Review & Settle' : 'Settle Questions'}
+                            {isCompleted ? '✓ Completed' : 'Settle Questions'}
                           </span>
                         </div>
                       </div>
