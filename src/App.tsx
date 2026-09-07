@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { Target, Award, Crosshair, ShieldCheck, Zap, Flame } from 'lucide-react';
+import { Target, Award, Crosshair, ShieldCheck, Zap, Flame, HelpCircle } from 'lucide-react';
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
 import { LogoLoader } from './components/Loader';
@@ -13,6 +13,7 @@ const AuthModal = React.lazy(() => import('./components/AuthModal').then(m => ({
 const KYCModal = React.lazy(() => import('./components/KYCModal').then(m => ({ default: m.KYCModal })));
 const RulesFAQModal = React.lazy(() => import('./components/RulesFAQModal').then(m => ({ default: m.RulesFAQModal })));
 const ResponsibleGamingModal = React.lazy(() => import('./components/ResponsibleGamingModal').then(m => ({ default: m.ResponsibleGamingModal })));
+const PersonalDetailsModal = React.lazy(() => import('./components/PersonalDetailsModal').then(m => ({ default: m.PersonalDetailsModal })));
 
 
 import { 
@@ -104,6 +105,7 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
+  const [isPersonalDetailsOpen, setIsPersonalDetailsOpen] = useState<boolean>(false);
 
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
@@ -407,6 +409,7 @@ export default function App({ initialMatches = [] }: AppProps) {
         openKycModal={() => setIsKycModalOpen(true)}
         openRulesModal={() => setIsRulesModalOpen(true)}
         openResponsibleModal={() => setIsResponsibleModalOpen(true)}
+        openPersonalDetailsModal={() => setIsPersonalDetailsOpen(true)}
         pendingSlipsCount={pendingSlipsCount}
         onSignOut={handleSignOut}
       />
@@ -438,20 +441,20 @@ export default function App({ initialMatches = [] }: AppProps) {
           </div>
         )}
 
-        {/* VIEW 2: MY PREDICTIONS / SLIPS & USER ACTIVITY */}
+        {/* VIEW 2: MY PREDICTIONS / CONTESTED MATCHES ONLY */}
         {activeTab === 'my-contests' && (
           <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
             <MyContestsView
               user={currentUser}
-              wallet={wallet}
               slips={slips}
-              transactions={transactions}
               matches={matches}
               onViewSlipDetails={(match, slip) => {
                 setSelectedMatchForResults({ match, slip });
               }}
+              onEditSlip={(match, slip) => {
+                setEditingSlipState({ match, slip });
+              }}
               onGoToLobby={() => setActiveTab('lobby')}
-              onOpenWallet={(tab) => setWalletModalState({ open: true, tab })}
             />
           </React.Suspense>
         )}
@@ -494,9 +497,42 @@ export default function App({ initialMatches = [] }: AppProps) {
 
       </main>
 
-      {/* Main Footer - Optimized for Mobile */}
-      <footer className="mt-auto bg-[#080C1D] border-t border-[#1A223E] py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col gap-6">
+      {/* Main Footer - With moved top banner information */}
+      <footer className="mt-auto bg-[#080C1D] border-t border-[#1A223E]">
+        {/* Compliance and quick info bar (moved from top to bottom) */}
+        <div className="bg-[#03050D] px-4 py-2.5 border-b border-[#1A223E]/70 text-xs text-slate-400">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+              <span className="flex items-center gap-1.5 font-bold text-[#4ADE80]">
+                <ShieldCheck className="w-3.5 h-3.5" /> Where stats meet instincts
+              </span>
+              <span className="hidden sm:inline-block text-slate-700">•</span>
+              <span className="inline-flex items-center gap-1.5 text-slate-300 font-medium text-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse"></span>
+                Crack 6 match stats and gain upto 500X rewards
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsResponsibleModalOpen(true)}
+                className="hover:text-[#FFAA00] transition-colors flex items-center gap-1 text-[11px]"
+              >
+                <span className="px-1.5 py-0.2 rounded bg-[#FF6B00]/15 text-[#FF6B00] font-bold border border-[#FF6B00]/30 text-[10px]">18+</span>
+                Responsible Gaming
+              </button>
+              <span className="text-slate-700">|</span>
+              <button 
+                onClick={() => setIsRulesModalOpen(true)}
+                className="hover:text-slate-200 transition-colors flex items-center gap-1 text-[11px]"
+              >
+                <HelpCircle className="w-3 h-3 text-[#FF6B00]" /> FAQs & Rules
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[#FF6B00] flex items-center justify-center font-black text-slate-950 text-xs shadow-md shadow-[#FF6B00]/30">
@@ -640,6 +676,16 @@ export default function App({ initialMatches = [] }: AppProps) {
             onUpdateLimit={(limit) => {
               setCurrentUser((prev) => ({ ...prev, dailyDepositLimit: limit }));
             }}
+          />
+        )}
+
+        {/* MODAL 8: Personal Details */}
+        {isPersonalDetailsOpen && (
+          <PersonalDetailsModal
+            user={currentUser}
+            slips={slips}
+            transactions={transactions}
+            onClose={() => setIsPersonalDetailsOpen(false)}
           />
         )}
 
