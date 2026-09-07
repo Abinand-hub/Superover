@@ -13,19 +13,32 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   const [selectedMultiplier, setSelectedMultiplier] = useState<number | null>(null);
   
   const [wheelConfig, setWheelConfig] = useState([
-    { multiplier: 75, probability: 40 },
-    { multiplier: 100, probability: 30 },
-    { multiplier: 120, probability: 15 },
-    { multiplier: 150, probability: 10 },
-    { multiplier: 200, probability: 4 },
-    { multiplier: 500, probability: 1 },
+    { multiplier: 50, probability: 20 },
+    { multiplier: 60, probability: 15 },
+    { multiplier: 75, probability: 14 },
+    { multiplier: 80, probability: 10 },
+    { multiplier: 100, probability: 10 },
+    { multiplier: 110, probability: 8 },
+    { multiplier: 120, probability: 6 },
+    { multiplier: 140, probability: 5 },
+    { multiplier: 150, probability: 4 },
+    { multiplier: 175, probability: 3 },
+    { multiplier: 200, probability: 2 },
+    { multiplier: 250, probability: 1 },
+    { multiplier: 300, probability: 1 },
+    { multiplier: 400, probability: 0.5 },
+    { multiplier: 500, probability: 0.5 },
   ]);
 
   useEffect(() => {
     // Fetch dynamic probabilities from settings
     api.getSettings().then(settings => {
-      if (settings && settings.wheelProbabilities && settings.wheelProbabilities.length === 6) {
-        setWheelConfig(settings.wheelProbabilities);
+      if (settings && settings.wheelProbabilities && settings.wheelProbabilities.length > 0) {
+        const parsed = settings.wheelProbabilities.map((p: any) => ({
+          multiplier: Number(p.multiplier || (typeof p.segment === 'string' ? parseInt(p.segment.replace(/\D/g, '')) : p.segment) || 50),
+          probability: Number(p.probability || 0)
+        }));
+        setWheelConfig(parsed);
       }
     }).catch(console.error);
   }, []);
@@ -56,9 +69,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
     // Calculate final rotation
     const spins = 5; // Spin 5 times
     const baseRotation = spins * 360;
-    // We want the winning index to land at the top (0 degrees).
-    // The top is 0 deg. If wheel rotates clockwise, segment at angle A will be at top if rotation is 360 - A.
-    // However, SVG is drawn starting from right usually, but we will draw from top.
+    // Target winning slice to land precisely at the top pointer (0 degrees)
     const targetAngle = 360 - (winningIndex * segmentAngle) - (segmentAngle / 2);
     
     const finalRotation = rotation + baseRotation + targetAngle;
@@ -102,11 +113,20 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   const getSegmentGradients = (index: number) => {
     const gradients = [
       { id: 'grad-0', from: '#ff4d4d', to: '#cc0000' }, // Red
-      { id: 'grad-1', from: '#4d94ff', to: '#004de6' }, // Blue
-      { id: 'grad-2', from: '#ffcc00', to: '#e69900' }, // Gold
-      { id: 'grad-3', from: '#00e673', to: '#00994d' }, // Green
-      { id: 'grad-4', from: '#b366ff', to: '#6600cc' }, // Purple
-      { id: 'grad-5', from: '#ff66a3', to: '#e6005c' }, // Pink
+      { id: 'grad-1', from: '#ff8800', to: '#cc5500' }, // Orange
+      { id: 'grad-2', from: '#ffcc00', to: '#c28500' }, // Gold
+      { id: 'grad-3', from: '#00e673', to: '#008040' }, // Green
+      { id: 'grad-4', from: '#00d2ff', to: '#0077aa' }, // Cyan
+      { id: 'grad-5', from: '#4d94ff', to: '#004de6' }, // Blue
+      { id: 'grad-6', from: '#b366ff', to: '#6600cc' }, // Purple
+      { id: 'grad-7', from: '#ff00aa', to: '#990066' }, // Magenta
+      { id: 'grad-8', from: '#ff66a3', to: '#e6005c' }, // Pink
+      { id: 'grad-9', from: '#00f5d4', to: '#009b86' }, // Teal
+      { id: 'grad-10', from: '#fee440', to: '#d4af37' }, // Yellow
+      { id: 'grad-11', from: '#70e000', to: '#38b000' }, // Lime
+      { id: 'grad-12', from: '#9b5de5', to: '#5a189a' }, // Violet
+      { id: 'grad-13', from: '#f72585', to: '#7209b7' }, // Rose
+      { id: 'grad-14', from: '#4361ee', to: '#3a0ca3' }, // Indigo
     ];
     return gradients[index % gradients.length];
   };
@@ -188,9 +208,10 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
                 const grad = getSegmentGradients(i);
                 const textAngle = i * segmentAngle + (segmentAngle / 2);
                 const textRad = (textAngle - 90) * Math.PI / 180;
-                // Place text closer to edge
-                const textX = 150 + 95 * Math.cos(textRad);
-                const textY = 150 + 95 * Math.sin(textRad);
+                // Place text appropriately along the slice radius
+                const textRadius = segments.length > 8 ? 100 : 95;
+                const textX = 150 + textRadius * Math.cos(textRad);
+                const textY = 150 + textRadius * Math.sin(textRad);
                 
                 return (
                   <g key={i}>
@@ -198,13 +219,13 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
                       d={createSegmentPath(i)} 
                       fill={`url(#${grad.id})`}
                       stroke="#ffe699"
-                      strokeWidth="2"
+                      strokeWidth="1.5"
                     />
                     <text 
                       x={textX} 
                       y={textY} 
                       fill="#ffffff" 
-                      fontSize={mult >= 200 ? "24" : "18"} 
+                      fontSize={segments.length > 8 ? (mult >= 100 ? "10.5" : "11.5") : (mult >= 200 ? "24" : "18")} 
                       fontWeight="900"
                       fontFamily="Outfit, sans-serif"
                       textAnchor="middle" 
