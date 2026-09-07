@@ -271,11 +271,11 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
             </div>
           )}
 
-          {/* 6 Stats Breakdown List */}
+          {/* 6 Stats Breakdown List with Side-by-Side Comparison */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
               <span>Stat Category (Q1 → Q6 Streak)</span>
-              <span>{isSettled ? 'Official Result vs Your Pick' : 'Your Selected Pick'}</span>
+              <span>{isSettled ? 'Your Pick vs Official Admin Result' : 'Your Selected Pick'}</span>
             </div>
 
             {(() => {
@@ -286,126 +286,146 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                   ? String(rawResult.answerId || rawResult.answerText || '')
                   : String(rawResult || '');
 
+                const officialPlayer = playerMap.get(officialAnswerId) || (rawResult?.answerText ? playerMap.get(rawResult.answerText) : undefined);
+                const officialName = officialPlayer?.name?.toLowerCase() || '';
+
                 const officialAnswerText: string = typeof rawResult === 'object' && rawResult !== null
-                  ? String(rawResult.answerText || playerMap.get(officialAnswerId)?.name || officialAnswerId)
-                  : String(playerMap.get(officialAnswerId)?.name || officialAnswerId || 'TBD');
+                  ? String(rawResult.answerText || officialPlayer?.name || officialAnswerId)
+                  : String(officialPlayer?.name || officialAnswerId || 'TBD');
 
                 const statDetailText: string = typeof rawResult === 'object' && rawResult !== null
-                  ? String(rawResult.statValue || (rawResult ? 'Official Verified Result' : 'Awaiting Result'))
-                  : String(rawResult ? 'Official Verified Result' : 'Awaiting Result');
+                  ? String(rawResult.statValue || (rawResult ? 'Official Verified' : 'Awaiting Result'))
+                  : String(rawResult ? 'Official Verified' : 'Awaiting Result');
 
                 const userAnswerId = currentSlip ? getUserAnswerFromSlip(currentSlip.answers, q.id, idx) : null;
-                
-                const userAnsString = userAnswerId ? String(userAnswerId).trim().toLowerCase() : '';
-                const officialAnsString = officialAnswerId ? String(officialAnswerId).trim().toLowerCase() : '';
-                const officialTextString = officialAnswerText ? String(officialAnswerText).trim().toLowerCase() : '';
-                
-                const userName = (userAnswerId && playerMap.get(userAnswerId)?.name?.toLowerCase()) || '';
-                const officialName = (officialAnswerId && playerMap.get(officialAnswerId)?.name?.toLowerCase()) || '';
+                const userPlayer = userAnswerId ? playerMap.get(userAnswerId) : undefined;
+                const userName = userPlayer?.name?.toLowerCase() || '';
 
-                const isCorrect = !!(userAnsString && (officialAnsString || officialTextString) && (
-                  (userAnsString === officialAnsString) ||
-                  (officialTextString && userAnsString === officialTextString) ||
-                  (userName && (userName === officialAnsString || userName === officialTextString)) ||
-                  (officialName && (officialName === userAnsString || officialName === officialTextString)) ||
-                  (userName && officialName && userName === officialName)
-                ));
+                let userPickDisplayName = userAnswerId || 'Unselected';
+                if (userPlayer) {
+                  userPickDisplayName = `${userPlayer.name} (${userPlayer.team})`;
+                } else if (userAnswerId === 'IND') {
+                  userPickDisplayName = match.team1.name || 'India';
+                } else if (userAnswerId === 'AUS') {
+                  userPickDisplayName = match.team2.name || 'Australia';
+                }
+
+                const userAnsClean = (userAnswerId || '').trim().toLowerCase();
+                const officialAnsClean = (officialAnswerId || '').trim().toLowerCase();
+                const officialTextClean = (officialAnswerText || '').trim().toLowerCase();
+
+                let isCorrect = false;
+                if (userAnsClean && (officialAnsClean || officialTextClean)) {
+                  if (userAnsClean === officialAnsClean) {
+                    isCorrect = true;
+                  } else if (userName && officialName && userName === officialName) {
+                    isCorrect = true;
+                  } else if (userName && (userName === officialAnsClean || userName === officialTextClean)) {
+                    isCorrect = true;
+                  } else if (officialName && (officialName === userAnsClean || officialName === officialTextClean)) {
+                    isCorrect = true;
+                  } else if (userAnsClean === officialTextClean) {
+                    isCorrect = true;
+                  }
+                }
 
                 const isStrictStreak = isCorrect && !runningStreakBroken;
                 if (!isCorrect && rawResult) {
                   runningStreakBroken = true;
                 }
 
-                // For player questions, look up player details
-                let userPickDisplayName = userAnswerId || 'Unselected';
-                if (userAnswerId) {
-                  const p = playerMap.get(userAnswerId);
-                  if (p) userPickDisplayName = p.name || p.shortName;
-                }
-
                 return (
                   <div
                     key={q.id}
-                    className={`p-3.5 rounded-xl border transition-colors ${
-                      slip && rawResult
-                        ? isStrictStreak
-                          ? 'bg-emerald-500/15 border-emerald-500/50 shadow-sm'
-                          : isCorrect
-                          ? 'bg-slate-800/60 border-slate-700/60 opacity-80'
-                          : 'bg-rose-500/10 border-rose-500/30'
-                        : 'bg-slate-950/60 border-slate-800'
+                    className={`p-4 rounded-2xl border transition-all ${
+                      !isSettled 
+                        ? 'bg-slate-900/90 border-slate-800' 
+                        : isStrictStreak 
+                        ? 'bg-emerald-950/25 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
+                        : isCorrect 
+                        ? 'bg-amber-950/20 border-amber-500/30' 
+                        : 'bg-rose-950/25 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                      {/* Left: Category info */}
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-slate-800 text-amber-400 flex items-center justify-center flex-shrink-0 text-xs font-black">
+                    {/* Header: Question Number & Status */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-[#FFAA00] text-xs font-black">
                           Q{idx + 1}
-                        </div>
+                        </span>
+                        <span className="text-xs font-black text-white">{q.title}</span>
+                        <span className="text-[10px] text-slate-400">({q.shortTitle})</span>
+                      </div>
+
+                      {isSettled && (
                         <div>
-                          <div className="text-xs font-black text-white">{q.title}</div>
-                          <div className="text-[10px] text-slate-400">{q.shortTitle}</div>
+                          {isStrictStreak ? (
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                              CORRECT (Streak +1)
+                            </span>
+                          ) : isCorrect ? (
+                            <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold inline-flex items-center gap-1">
+                              ⚠️ CORRECT (Post-Break / Waste)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black inline-flex items-center gap-1">
+                              <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                              WRONG (Streak Broken)
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Comparison Row: YOUR PICK vs OFFICIAL ADMIN ANSWER */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
+                      {/* Box 1: Your Selected Pick */}
+                      <div className={`p-3 rounded-xl border ${
+                        !isSettled 
+                          ? 'bg-[#080C1D] border-slate-800 text-slate-200' 
+                          : isCorrect 
+                          ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200' 
+                          : 'bg-rose-950/40 border-rose-500/30 text-rose-200'
+                      }`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            👤 Your Selected Pick
+                          </span>
+                          {isSettled && (
+                            isCorrect ? (
+                              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded">
+                                ✓ Match
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black text-rose-400 bg-rose-500/20 px-1.5 py-0.5 rounded">
+                                ✗ Wrong
+                              </span>
+                            )
+                          )}
+                        </div>
+                        <div className={`text-xs font-black truncate ${
+                          !isSettled ? 'text-white' : isCorrect ? 'text-emerald-300' : 'text-rose-300'
+                        }`}>
+                          {userPickDisplayName}
                         </div>
                       </div>
 
-                      {/* Right: Winner info & comparison */}
-                      <div className="flex items-center gap-3 justify-between sm:justify-end">
-                        {isSettled ? (
-                          <>
-                            {/* Actual Official Winner */}
-                            <div className="text-right">
-                              <div className="text-xs font-bold text-amber-300">
-                                {officialAnswerText}
-                              </div>
-                              <div className="text-[11px] font-mono text-slate-400">
-                                {statDetailText}
-                              </div>
-                            </div>
-
-                            {/* User Pick Badge */}
-                            {slip && (
-                              <div className="pl-2 border-l border-slate-800">
-                                {isStrictStreak ? (
-                                  <div className="flex items-center gap-1 text-emerald-400 text-xs font-black bg-emerald-500/20 px-2 py-1 rounded-md border border-emerald-500/40">
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Match ✅ (Streak +1)</span>
-                                  </div>
-                                ) : isCorrect ? (
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-slate-300 font-bold">
-                                      Pick: {userPickDisplayName}
-                                    </span>
-                                    <span className="text-[10px] text-amber-400/90 font-medium">
-                                      Correct (Post-Break) ⚠️
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-slate-400 line-through">
-                                      Pick: {userPickDisplayName}
-                                    </span>
-                                    <span className="text-[10px] text-rose-400 font-black">
-                                      Missed ❌ (Streak End)
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          /* Active Slip State */
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <span className="text-[10px] text-slate-400 uppercase font-bold block">Your Pick</span>
-                              <span className="text-xs font-bold text-amber-300">
-                                {userPickDisplayName}
-                              </span>
-                            </div>
-                            <span className="px-2 py-1 rounded-md bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] font-bold">
-                              Locked ⏳
+                      {/* Box 2: Official Admin Answer */}
+                      <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] text-slate-200">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFAA00]">
+                            🏆 Official Admin Answer
+                          </span>
+                          {statDetailText && (
+                            <span className="text-[9px] text-slate-400 font-mono">
+                              {statDetailText}
                             </span>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        <div className="text-xs font-black text-amber-300 truncate">
+                          {officialAnswerText || 'Awaiting Result'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -416,8 +436,9 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
           {/* Match Summary Note */}
           {results?.summaryNote && (
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 italic text-center">
-              "{results.summaryNote}"
+            <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-amber-500/20 text-xs text-slate-300 flex items-center gap-2">
+              <span className="text-base">📢</span>
+              <span><strong>Official Match Commentary:</strong> {results.summaryNote}</span>
             </div>
           )}
         </div>
