@@ -181,14 +181,30 @@ export async function executeMatchSettlement(matchId: string, picks?: any, summa
   await match.save();
 
   // 2. Fetch and evaluate all user prediction slips
-  const matchIdList: any[] = [match._id, match._id.toString()];
-  if (match.apiId) matchIdList.push(match.apiId);
-  if (matchId) matchIdList.push(matchId);
+  const matchIdPermutations: any[] = [
+    match._id,
+    match._id.toString(),
+  ];
+  if (match.apiId) matchIdPermutations.push(match.apiId);
+  if (matchId) {
+    matchIdPermutations.push(matchId);
+    if (isValidObjectId) {
+      matchIdPermutations.push(new (require('mongoose').Types.ObjectId)(matchId));
+    }
+  }
+
+  const t1 = match.team1?.name || match.team1?.code || '';
+  const t2 = match.team2?.name || match.team2?.code || '';
 
   const slips = await Slip.find({
     $or: [
-      { matchId: { $in: matchIdList } },
-      { matchTitle: match.title }
+      { matchId: { $in: matchIdPermutations } },
+      { matchTitle: match.title },
+      { matchTitle: new RegExp(match.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
+      ...(t1 && t2 ? [
+        { matchTitle: new RegExp(`${t1}.*${t2}`, 'i') },
+        { matchTitle: new RegExp(`${t2}.*${t1}`, 'i') }
+      ] : [])
     ]
   });
   let payoutsCount = 0;

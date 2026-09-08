@@ -74,11 +74,27 @@ export async function GET(req: Request) {
       };
     });
 
+    const matchMap = new Map();
+    matches.forEach((m: any) => {
+      if (m.status === 'COMPLETED' || m.actualResults?.answers) {
+        matchMap.set(String(m._id || m.id), m);
+        if (m.title) matchMap.set(m.title.toLowerCase().trim(), m);
+      }
+    });
+
     // Process slips
-    const slips = slipsRaw.map((s: any) => ({
-      ...s,
-      id: s._id.toString(),
-    }));
+    const slips = slipsRaw.map((s: any) => {
+      const match = matchMap.get(String(s.matchId)) || (s.matchTitle ? matchMap.get(s.matchTitle.toLowerCase().trim()) : null);
+      let status = s.status;
+      if (match && (match.status === 'COMPLETED' || match.actualResults?.answers) && (status === 'PENDING' || status === 'LIVE')) {
+        status = (s.multiplierWon && s.multiplierWon > 0) || (s.streakCount && s.streakCount >= 3) ? 'WON' : 'LOST';
+      }
+      return {
+        ...s,
+        status,
+        id: s._id.toString(),
+      };
+    });
 
     // Process transactions
     const transactions = transactionsRaw.map((tx: any) => ({
