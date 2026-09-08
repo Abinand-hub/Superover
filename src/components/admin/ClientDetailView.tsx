@@ -231,9 +231,9 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
                     )}
                   </td>
                   <td className="p-4 text-yellow-400 font-bold">
-                    {formatINR(slip.payoutAmount || slip.potentialPayout || (slip.entryFee * (slip.multiplierWon || slip.wheelMultiplier || 50)))}
-                    {slip.wheelMultiplier && slip.wheelMultiplier > 50 && (
-                      <span className="text-[11px] text-amber-400/80 block font-normal">({slip.wheelMultiplier}X Max)</span>
+                    {formatINR(slip.payoutAmount || slip.potentialPayout || (slip.entryFee * (slip.multiplierWon || slip.wheelMultiplier || (slip.freeHit ? 75 : 50))))}
+                    {slip.status === 'PENDING' && (
+                      <span className="text-[11px] text-amber-400/80 block font-normal">({slip.wheelMultiplier || (slip.freeHit ? 75 : 50)}X Max)</span>
                     )}
                   </td>
                   <td className="p-4">

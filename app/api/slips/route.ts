@@ -177,7 +177,7 @@ export async function POST(req: Request) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     
     const body = await req.json();
-    const { matchId, answers, entryFee, freeHit, freeHitFee, totalPayable } = body;
+    const { matchId, answers, entryFee, freeHit, freeHitFee, totalPayable, wheelMultiplier, jackpotMultiplier } = body;
 
     if (!matchId || !answers || totalPayable === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -257,6 +257,7 @@ export async function POST(req: Request) {
     await user.save();
 
     // 5. Create the Slip
+    const effectiveWheelMult = wheelMultiplier || (freeHit ? 75 : 50);
     const newSlip = new Slip({
       userId: user._id,
       userName: user.name,
@@ -269,9 +270,11 @@ export async function POST(req: Request) {
       matchStartTime: match.matchStartTime,
       answers,
       entryFee,
+      jackpotMultiplier: jackpotMultiplier || effectiveWheelMult,
       freeHit: freeHit || false,
       freeHitFee: freeHitFee || 0,
       totalPayable,
+      wheelMultiplier: effectiveWheelMult,
       status: 'PENDING',
       submittedAt: new Date()
     });

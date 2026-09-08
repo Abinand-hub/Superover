@@ -217,12 +217,12 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
                 <div className="text-right sm:border-l sm:border-slate-800 sm:pl-4">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
-                    {isActiveSlip ? `Potential ${currentSlip.wheelMultiplier || 100}X Win` : isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
+                    {isActiveSlip ? `Potential ${currentSlip.wheelMultiplier || (currentSlip.freeHit ? 75 : 50)}X Win` : isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
                   </span>
                   <span className={`text-2xl font-black font-display ${
                     isActiveSlip ? 'text-amber-400 font-mono' : isPendingApproval ? 'text-amber-400 animate-pulse' : isWon ? 'text-emerald-400' : 'text-slate-500'
                   }`}>
-                    {isActiveSlip ? formatINR((currentSlip.entryFee || 25) * (currentSlip.wheelMultiplier || 100)) : formatINR(currentSlip.payoutAmount || 0)}
+                    {isActiveSlip ? formatINR((currentSlip.entryFee || 25) * (currentSlip.wheelMultiplier || (currentSlip.freeHit ? 75 : 50))) : formatINR(currentSlip.payoutAmount || 0)}
                   </span>
                 </div>
               </div>
