@@ -770,7 +770,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                     <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-[#131A38] text-[10px]">
                       <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
                         <span className="text-slate-400 block font-bold">STAKE</span>
-                        <span className="text-slate-200 font-mono font-bold">₹{s.entryFee || 50}</span>
+                        <span className="text-slate-200 font-mono font-bold">₹{s.totalPayable || (s.entryFee ? (s.freeHit ? s.entryFee + (s.freeHitFee || 10) : s.entryFee) : 50)}</span>
                       </div>
                       <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
                         <span className="text-slate-400 block font-bold">STREAK</span>
@@ -861,7 +861,14 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
                         {/* Entry Stake */}
                         <td className="px-4 py-3 text-slate-200">
-                          ₹{s.entryFee || 50}
+                          {s.freeHit || (s.totalPayable && s.totalPayable > (s.entryFee || 25)) ? (
+                            <div>
+                              <span className="font-bold text-white">₹{s.totalPayable || ((s.entryFee || 25) + (s.freeHitFee || 10))}</span>
+                              <span className="text-[10px] text-amber-400 block font-normal">(₹{s.entryFee || 25} + ₹{s.freeHitFee || 10} Spin)</span>
+                            </div>
+                          ) : (
+                            <span>₹{s.entryFee || 50}</span>
+                          )}
                         </td>
 
                         {/* Streak */}
@@ -1256,8 +1263,15 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                                 <td className="px-4 py-3 text-emerald-400 font-sans font-bold">
                                   {inspectorData.optionValue}
                                 </td>
-                                <td className="px-4 py-3 text-slate-200">
-                                  ₹{s.entryFee || 50}
+                                 <td className="px-4 py-3 text-slate-200">
+                                  {s.freeHit || (s.totalPayable && s.totalPayable > (s.entryFee || 25)) ? (
+                                    <div>
+                                      <span className="font-bold text-white">₹{s.totalPayable || ((s.entryFee || 25) + (s.freeHitFee || 10))}</span>
+                                      <span className="text-[10px] text-amber-400 block font-normal">(₹{s.entryFee || 25} + ₹{s.freeHitFee || 10})</span>
+                                    </div>
+                                  ) : (
+                                    <span>₹{s.entryFee || 50}</span>
+                                  )}
                                 </td>
                                 <td className="px-4 py-3 text-[#FFAA00] font-bold">
                                   {s.wheelMultiplier || 50}X

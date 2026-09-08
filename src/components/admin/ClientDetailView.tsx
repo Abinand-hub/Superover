@@ -220,8 +220,22 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
                 <tr key={slip.id} className="text-slate-300">
                   <td className="p-4">{new Date(slip.submittedAt).toLocaleString()}</td>
                   <td className="p-4 font-mono text-xs text-indigo-400">{slip.matchId}</td>
-                  <td className="p-4">{formatINR(slip.entryFee)}</td>
-                  <td className="p-4 text-yellow-400 font-bold">{formatINR(slip.payoutAmount || slip.potentialPayout || (slip.entryFee * (slip.multiplierWon || 50)))}</td>
+                  <td className="p-4">
+                    {slip.freeHit || (slip.totalPayable && slip.totalPayable > slip.entryFee) ? (
+                      <div>
+                        <span className="font-bold text-white">{formatINR(slip.totalPayable || (slip.entryFee + (slip.freeHitFee || 10)))}</span>
+                        <span className="text-[11px] text-amber-400 block font-normal">({formatINR(slip.entryFee)} + {formatINR(slip.freeHitFee || 10)} Spin)</span>
+                      </div>
+                    ) : (
+                      <span>{formatINR(slip.entryFee)}</span>
+                    )}
+                  </td>
+                  <td className="p-4 text-yellow-400 font-bold">
+                    {formatINR(slip.payoutAmount || slip.potentialPayout || (slip.entryFee * (slip.multiplierWon || slip.wheelMultiplier || 50)))}
+                    {slip.wheelMultiplier && slip.wheelMultiplier > 50 && (
+                      <span className="text-[11px] text-amber-400/80 block font-normal">({slip.wheelMultiplier}X Max)</span>
+                    )}
+                  </td>
                   <td className="p-4">
                     <span className={`text-xs px-2 py-1 rounded border ${
                       slip.status === 'WON' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :

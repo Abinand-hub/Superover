@@ -31,7 +31,7 @@ export const LiveMatchDashboard: React.FC<LiveMatchDashboardProps> = ({ liveMatc
         const goldEntries = matchSlips.filter(s => s.entryFee > 50).length;
         
         const totalEntries = matchSlips.length;
-        const poolCollected = matchSlips.reduce((sum, s) => sum + s.entryFee, 0);
+        const poolCollected = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
         
         // Mocking estimated payouts and streaks since live stat verification isn't fully integrated here
         // In a real app, this would be calculated from real-time API event streams

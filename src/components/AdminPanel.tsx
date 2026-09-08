@@ -684,9 +684,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total Pool Volume</span>
               <span className="text-2xl sm:text-3xl font-black text-white font-display mt-1 block">
-                {formatINR(allSlips.reduce((sum, slip) => sum + (slip.entryFee || 0), 0))}
+                {formatINR(allSlips.reduce((sum, slip) => sum + (slip.totalPayable || slip.entryFee || 0), 0))}
               </span>
-              <span className="text-[11px] text-[#4ADE80] mt-1 block">From ₹25, ₹50, ₹100 entry fees</span>
+              <span className="text-[11px] text-[#4ADE80] mt-1 block">Includes Base Stakes & Spin Wheel Fees</span>
             </div>
 
             <div className="p-5 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
@@ -735,7 +735,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div>
                         <div className="font-bold text-white text-xs">{m.title}</div>
                         <div className="text-[11px] text-slate-400">
-                          {new Date(m.startTime).toLocaleDateString()} {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Prize Pool: <span className="text-[#FFAA00] font-bold">{formatINR(allSlips.filter(s => s.matchId === m.id).reduce((sum, slip) => sum + slip.entryFee, 0))}</span>
+                          {new Date(m.startTime).toLocaleDateString()} {new Date(m.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Prize Pool: <span className="text-[#FFAA00] font-bold">{formatINR(allSlips.filter(s => s.matchId === m.id).reduce((sum, slip) => sum + (slip.totalPayable || slip.entryFee || 0), 0))}</span>
                         </div>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
@@ -848,7 +848,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     )}
                     <div className="text-xs text-slate-400 mt-1">
                       Venue: {match.venue} • Prize Pool: <span className="text-[#FFAA00] font-bold">
-                        {formatINR(allSlips.filter(s => s.matchId === match.id).reduce((sum, slip) => sum + slip.entryFee, 0))}
+                        {formatINR(allSlips.filter(s => s.matchId === match.id).reduce((sum, slip) => sum + (slip.totalPayable || slip.entryFee || 0), 0))}
                       </span> • {allSlips.filter(s => s.matchId === match.id).length} Entries Placed
                     </div>
                     <div className="text-[11px] text-slate-500">
