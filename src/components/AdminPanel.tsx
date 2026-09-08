@@ -1894,88 +1894,159 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               ) : (
                 <div className="bg-[#0D122B] rounded-2xl border border-[#1A223E] overflow-hidden">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-[#080C1D] text-slate-400 border-b border-[#1A223E]">
-                      <tr>
-                        <th className="p-4 font-semibold">Client</th>
-                        <th className="p-4 font-semibold">Date Joined</th>
-                        <th className="p-4 font-semibold">Total Deposits</th>
-                        <th className="p-4 font-semibold">Total Withdrawals</th>
-                        <th className="p-4 font-semibold">Contests Played</th>
-                        <th className="p-4 font-semibold">Current Balance</th>
-                        <th className="p-4 font-semibold">Net P/L</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#1A223E]">
-                      {loadedUsers
-                        .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
-                        .map(u => {
-                          const totalDep = Number(u.totalDeposits || 0);
-                          const totalWd = Number(u.totalWithdrawals || 0);
-                          const balance = Number(u.currentBalance || 0);
-                          const clientPnL = (totalWd + balance) - totalDep;
-                          const isProfit = clientPnL > 0.01;
-                          const isLoss = clientPnL < -0.01;
-                          
-                          return (
-                            <tr 
-                              key={u.id} 
-                              onClick={() => setSelectedClientId(u.id)}
-                              className="text-slate-300 hover:bg-[#131A38] cursor-pointer transition-colors"
-                            >
-                              <td className="p-4">
-                                <div className="flex items-center gap-3">
-                                  <img 
-                                    src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
-                                    alt={u.name} 
-                                    className="w-9 h-9 rounded-xl object-cover bg-[#1A223E] border border-[#1A223E] shadow-sm" 
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`;
-                                    }}
-                                  />
-                                  <div>
-                                    <div className="font-bold text-white flex items-center gap-2">
-                                      {u.name} 
-                                      {u.role === 'ADMIN' && <span className="text-[9px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.5 rounded">ADMIN</span>}
-                                      {u.isBlocked && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">BLOCKED</span>}
-                                    </div>
-                                    <div className="text-xs text-slate-500">{u.phone}</div>
+                  {/* Mobile Cards (Visible on screens < md) */}
+                  <div className="block md:hidden divide-y divide-[#1A223E]">
+                    {loadedUsers
+                      .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
+                      .map(u => {
+                        const totalDep = Number(u.totalDeposits || 0);
+                        const totalWd = Number(u.totalWithdrawals || 0);
+                        const balance = Number(u.currentBalance || 0);
+                        const clientPnL = (totalWd + balance) - totalDep;
+                        const isProfit = clientPnL > 0.01;
+                        const isLoss = clientPnL < -0.01;
+
+                        return (
+                          <div 
+                            key={u.id}
+                            onClick={() => setSelectedClientId(u.id)}
+                            className="p-3.5 space-y-2.5 active:bg-[#131A38] cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <img 
+                                  src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+                                  alt={u.name} 
+                                  className="w-10 h-10 rounded-xl object-cover bg-[#1A223E] border border-[#1A223E] shrink-0" 
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+                                  }}
+                                />
+                                <div className="min-w-0">
+                                  <div className="font-bold text-white text-sm truncate flex items-center gap-1.5">
+                                    {u.name}
+                                    {u.role === 'ADMIN' && <span className="text-[8px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1 py-0.2 rounded">ADMIN</span>}
+                                    {u.isBlocked && <span className="text-[8px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1 py-0.2 rounded">BLOCKED</span>}
                                   </div>
+                                  <div className="text-[11px] text-slate-400 font-mono">+91 {u.phone}</div>
                                 </div>
-                              </td>
-                              <td className="p-4 text-xs font-medium text-slate-300">
-                                {(() => {
-                                  const dateVal = u.joinedDate || u.dateJoined || (u as any).createdAt;
-                                  if (!dateVal) return 'Recent';
-                                  const d = new Date(dateVal);
-                                  return isNaN(d.getTime()) ? 'Recent' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-                                })()}
-                              </td>
-                              <td className="p-4 font-mono">{formatINR(totalDep)}</td>
-                              <td className="p-4 font-mono">{formatINR(totalWd)}</td>
-                              <td className="p-4 text-center">{u.totalContestsPlayed || 0}</td>
-                              <td className="p-4 font-mono font-bold text-white">{formatINR(balance)}</td>
-                              <td className="p-4">
-                                <span className={`font-mono font-bold px-2.5 py-1 rounded text-xs border ${
-                                  isProfit 
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                                    : isLoss 
-                                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' 
-                                    : 'bg-slate-800/60 text-slate-400 border-slate-700/40'
-                                }`}>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] text-slate-400 block">Balance</span>
+                                <span className="font-mono font-bold text-emerald-400 text-sm">{formatINR(balance)}</span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-1.5 bg-[#080C1D] p-2 rounded-xl border border-[#1A223E] text-center text-xs">
+                              <div>
+                                <span className="text-[9px] text-slate-500 block">Deposits</span>
+                                <span className="font-mono text-slate-300 font-semibold">{formatINR(totalDep)}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-500 block">Contests</span>
+                                <span className="font-mono text-slate-300 font-semibold">{u.totalContestsPlayed || 0}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-500 block">Net P/L</span>
+                                <span className={`font-mono text-[11px] font-bold ${isProfit ? 'text-emerald-400' : isLoss ? 'text-rose-400' : 'text-slate-400'}`}>
                                   {isProfit ? `+${formatINR(clientPnL)}` : isLoss ? `-${formatINR(Math.abs(clientPnL))}` : '₹0'}
                                 </span>
-                              </td>
-                            </tr>
-                          );
+                              </div>
+                            </div>
+                          </div>
+                        );
                       })}
-                      {loadedUsers.length === 0 && (
+                    {loadedUsers.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch)).length === 0 && (
+                      <div className="p-8 text-center text-slate-500 text-xs">No clients found.</div>
+                    )}
+                  </div>
+
+                  {/* Desktop Table (Visible on md+) */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-[#080C1D] text-slate-400 border-b border-[#1A223E]">
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-slate-500">No clients found.</td>
+                          <th className="p-4 font-semibold">Client</th>
+                          <th className="p-4 font-semibold">Date Joined</th>
+                          <th className="p-4 font-semibold">Total Deposits</th>
+                          <th className="p-4 font-semibold">Total Withdrawals</th>
+                          <th className="p-4 font-semibold">Contests Played</th>
+                          <th className="p-4 font-semibold">Current Balance</th>
+                          <th className="p-4 font-semibold">Net P/L</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-[#1A223E]">
+                        {loadedUsers
+                          .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
+                          .map(u => {
+                            const totalDep = Number(u.totalDeposits || 0);
+                            const totalWd = Number(u.totalWithdrawals || 0);
+                            const balance = Number(u.currentBalance || 0);
+                            const clientPnL = (totalWd + balance) - totalDep;
+                            const isProfit = clientPnL > 0.01;
+                            const isLoss = clientPnL < -0.01;
+                            
+                            return (
+                              <tr 
+                                key={u.id} 
+                                onClick={() => setSelectedClientId(u.id)}
+                                className="text-slate-300 hover:bg-[#131A38] cursor-pointer transition-colors"
+                              >
+                                <td className="p-4">
+                                  <div className="flex items-center gap-3">
+                                    <img 
+                                      src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+                                      alt={u.name} 
+                                      className="w-9 h-9 rounded-xl object-cover bg-[#1A223E] border border-[#1A223E] shadow-sm" 
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+                                      }}
+                                    />
+                                    <div>
+                                      <div className="font-bold text-white flex items-center gap-2">
+                                        {u.name} 
+                                        {u.role === 'ADMIN' && <span className="text-[9px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.5 rounded">ADMIN</span>}
+                                        {u.isBlocked && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">BLOCKED</span>}
+                                      </div>
+                                      <div className="text-xs text-slate-500">{u.phone}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-xs font-medium text-slate-300">
+                                  {(() => {
+                                    const dateVal = u.joinedDate || u.dateJoined || (u as any).createdAt;
+                                    if (!dateVal) return 'Recent';
+                                    const d = new Date(dateVal);
+                                    return isNaN(d.getTime()) ? 'Recent' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                                  })()}
+                                </td>
+                                <td className="p-4 font-mono">{formatINR(totalDep)}</td>
+                                <td className="p-4 font-mono">{formatINR(totalWd)}</td>
+                                <td className="p-4 text-center">{u.totalContestsPlayed || 0}</td>
+                                <td className="p-4 font-mono font-bold text-white">{formatINR(balance)}</td>
+                                <td className="p-4">
+                                  <span className={`font-mono font-bold px-2.5 py-1 rounded text-xs border ${
+                                    isProfit 
+                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                                      : isLoss 
+                                      ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' 
+                                      : 'bg-slate-800/60 text-slate-400 border-slate-700/40'
+                                  }`}>
+                                    {isProfit ? `+${formatINR(clientPnL)}` : isLoss ? `-${formatINR(Math.abs(clientPnL))}` : '₹0'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                        })}
+                        {loadedUsers.length === 0 && (
+                          <tr>
+                            <td colSpan={7} className="p-8 text-center text-slate-500">No clients found.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </>

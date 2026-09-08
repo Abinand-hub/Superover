@@ -1,20 +1,20 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle, 
-  Download, 
-  RefreshCw, 
-  ChevronRight, 
-  Search, 
-  ShieldCheck, 
-  Users, 
-  DollarSign, 
-  Lock, 
-  Eye, 
-  X, 
-  Copy, 
-  Check, 
+import {
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Download,
+  RefreshCw,
+  ChevronRight,
+  Search,
+  ShieldCheck,
+  Users,
+  DollarSign,
+  Lock,
+  Eye,
+  X,
+  Copy,
+  Check,
   Sparkles,
   ArrowDownRight,
   Filter,
@@ -36,7 +36,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [funnelFilters, setFunnelFilters] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
+
   // Winnings Table Filter State
   const [winningsFilter, setWinningsFilter] = useState<'ALL' | 'WINNERS_ONLY' | 'TOP_TIER'>('ALL');
   const [winningsSearch, setWinningsSearch] = useState<string>('');
@@ -165,7 +165,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 const isLocked = match.status === 'LOCKED';
 
                 return (
-                  <div 
+                  <div
                     key={match.id}
                     className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-3"
                   >
@@ -175,12 +175,11 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                           <span className="font-black text-white text-base font-display">
                             {match.team1?.code || 'T1'} vs {match.team2?.code || 'T2'}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 ${
-                            isLive ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
-                            isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                            isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                            'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 ${isLive ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
+                              isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                                isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                  'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                            }`}>
                             {isLive && <span className="w-1 h-1 rounded-full bg-red-400 animate-ping"></span>}
                             {isCompleted && '✓ '}
                             {match.status}
@@ -294,12 +293,11 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                           ₹{totalCollection.toLocaleString()}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-max ${
-                            isLive ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
-                            isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                            isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                            'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                          }`}>
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-max ${isLive ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
+                              isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                                isLocked ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                  'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                            }`}>
                             {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping"></span>}
                             {isCompleted && '✓ '}
                             {match.status}
@@ -347,7 +345,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
     const resolveDisplayName = (rawAns: string, qType?: string): string => {
       if (!rawAns || rawAns === 'Unanswered') return 'Unanswered';
-      
+
       const p = playerMap.get(rawAns);
       if (p) return `${p.name} (${p.team || ''})`;
 
@@ -414,7 +412,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
         const filterVal = funnelFilters[q.id];
         const officialVal = match.actualResults?.answers?.[q.id];
         const targetAns = filterVal || (typeof officialVal === 'object' ? (officialVal?.answerText || officialVal?.answerId) : officialVal);
-        
+
         if (!targetAns) break;
 
         const userAns = getUserAnswerFromSlip(slip.answers, q.id, i);
@@ -429,7 +427,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
       }
 
       const mult = getMultiplierForStreak(streak);
-      const calculatedPayout = streak >= 3 
+      const calculatedPayout = streak >= 3
         ? calculatePotentialPayout(slip.entryFee || 50, streak, slip.wheelMultiplier || 50, !!slip.freeHit)
         : 0;
 
@@ -469,13 +467,13 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
     // Export User Winnings & Slips CSV
     const handleExportUserWinnings = () => {
-      const csvContent = "data:text/csv;charset=utf-8," 
+      const csvContent = "data:text/csv;charset=utf-8,"
         + "Slip_ID,User_Name,Phone,User_ID,Entry_Fee_INR,Consecutive_Streak,Multiplier_Tier,Winnings_Won_INR,Wheel_Multiplier,Free_Hit,Status,Submitted_At\n"
         + evaluatedSlipsWithWinnings.map(item => {
           const s = item.slip;
           return `${s.id},${s.userName || 'User'},${s.userPhone || 'N/A'},${s.userId || 'N/A'},${s.entryFee || 50},${item.streak}/6,${item.multiplier}X,${item.winningsINR},${s.wheelMultiplier || 50}X,${s.freeHit ? 'YES' : 'NO'},${item.hasWon ? 'WON' : 'NO_WIN'},${s.submittedAt || 'N/A'}`;
         }).join("\n");
-      
+
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
@@ -490,7 +488,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
         {/* Back Button & Match Title Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1A223E]">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => {
                 setSelectedMatchId(null);
                 setFunnelFilters({});
@@ -515,7 +513,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           </div>
 
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={() => setFunnelFilters({})}
               className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-700"
               id="btn-reset-funnel-filters"
@@ -524,7 +522,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               <span>Reset Filters</span>
             </button>
 
-            <button 
+            <button
               onClick={handleExportUserWinnings}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/30"
               id="btn-export-winnings-csv"
@@ -574,9 +572,8 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight ${
-                netProfit >= 0 ? 'text-emerald-400' : 'text-rose-500'
-              }`}>
+              <span className={`text-3xl sm:text-4xl font-black font-mono tracking-tight ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-500'
+                }`}>
                 {netProfit >= 0 ? '+' : '-'}₹{Math.abs(netProfit).toLocaleString()}
               </span>
             </div>
@@ -591,38 +588,34 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           </div>
 
           {/* AUTO RISK ALERT SYSTEM */}
-          <div className={`p-5 rounded-2xl border relative overflow-hidden shadow-lg flex flex-col justify-between ${
-            riskStatus === 'SAFE' 
-              ? 'bg-emerald-950/20 border-emerald-500/40 shadow-emerald-500/5' 
+          <div className={`p-5 rounded-2xl border relative overflow-hidden shadow-lg flex flex-col justify-between ${riskStatus === 'SAFE'
+              ? 'bg-emerald-950/20 border-emerald-500/40 shadow-emerald-500/5'
               : riskStatus === 'WARNING'
-              ? 'bg-amber-950/20 border-amber-500/40 shadow-amber-500/5'
-              : 'bg-rose-950/30 border-rose-500/60 shadow-rose-500/10'
-          }`}>
+                ? 'bg-amber-950/20 border-amber-500/40 shadow-amber-500/5'
+                : 'bg-rose-950/30 border-rose-500/60 shadow-rose-500/10'
+            }`}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Auto Risk Alert System</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                riskStatus === 'SAFE' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                riskStatus === 'WARNING' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-              }`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${riskStatus === 'SAFE' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                  riskStatus === 'WARNING' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                    'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                }`}>
                 {riskLabel}
               </span>
             </div>
 
             <div className="flex items-center gap-3.5 my-1">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl border ${
-                riskStatus === 'SAFE' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' :
-                riskStatus === 'WARNING' ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 animate-pulse' :
-                'bg-rose-500/20 border-rose-500/50 text-rose-400 animate-bounce'
-              }`}>
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl border ${riskStatus === 'SAFE' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' :
+                  riskStatus === 'WARNING' ? 'bg-amber-500/20 border-amber-500/40 text-amber-400 animate-pulse' :
+                    'bg-rose-500/20 border-rose-500/50 text-rose-400 animate-bounce'
+                }`}>
                 {riskStatus === 'SAFE' ? <ShieldCheck className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
               </div>
               <div>
-                <h4 className={`text-base font-black ${
-                  riskStatus === 'SAFE' ? 'text-emerald-400' :
-                  riskStatus === 'WARNING' ? 'text-amber-400' :
-                  'text-rose-400'
-                }`}>
+                <h4 className={`text-base font-black ${riskStatus === 'SAFE' ? 'text-emerald-400' :
+                    riskStatus === 'WARNING' ? 'text-amber-400' :
+                      'text-rose-400'
+                  }`}>
                   {riskStatus === 'SAFE' ? '🟢 GREEN SAFE' : riskStatus === 'WARNING' ? '🟡 YELLOW WARNING' : '🔴 RED HIGH RISK'}
                 </h4>
                 <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
@@ -666,18 +659,16 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 <button
                   type="button"
                   onClick={() => setWinningsFilter('ALL')}
-                  className={`px-3 py-1 rounded-lg transition-colors ${
-                    winningsFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1 rounded-lg transition-colors ${winningsFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   All Users ({matchSlips.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setWinningsFilter('WINNERS_ONLY')}
-                  className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${
-                    winningsFilter === 'WINNERS_ONLY' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${winningsFilter === 'WINNERS_ONLY' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                    }`}
                 >
                   <Award className="w-3 h-3" />
                   <span>Winners Only ({totalWinnersCount})</span>
@@ -729,17 +720,15 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 return (
                   <div
                     key={s.id}
-                    className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
-                      hasWon
+                    className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${hasWon
                         ? 'bg-emerald-950/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10'
                         : 'bg-[#080C1D] border-[#1A223E]'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs font-mono ${
-                          hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
-                        }`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs font-mono ${hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                          }`}>
                           {(s.userName || 'U')[0].toUpperCase()}
                         </div>
                         <div>
@@ -759,9 +748,8 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                         ) : (
                           <span className="text-xs text-slate-500 font-mono">₹0</span>
                         )}
-                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase inline-block mt-0.5 ${
-                          hasWon ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
-                        }`}>
+                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase inline-block mt-0.5 ${hasWon ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
+                          }`}>
                           {hasWon ? `WON ${item.multiplier}X` : 'NO WIN'}
                         </span>
                       </div>
@@ -774,9 +762,8 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                       </div>
                       <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
                         <span className="text-slate-400 block font-bold">STREAK</span>
-                        <span className={`font-mono font-bold ${
-                          item.streak >= 3 ? 'text-emerald-400' : 'text-slate-300'
-                        }`}>
+                        <span className={`font-mono font-bold ${item.streak >= 3 ? 'text-emerald-400' : 'text-slate-300'
+                          }`}>
                           {item.streak}/6
                         </span>
                       </div>
@@ -836,20 +823,18 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                     const hasWon = item.hasWon;
 
                     return (
-                      <tr 
-                        key={s.id} 
-                        className={`transition-colors ${
-                          hasWon 
-                            ? 'bg-emerald-950/15 hover:bg-emerald-950/30' 
+                      <tr
+                        key={s.id}
+                        className={`transition-colors ${hasWon
+                            ? 'bg-emerald-950/15 hover:bg-emerald-950/30'
                             : 'hover:bg-[#131A38]/40'
-                        }`}
+                          }`}
                       >
                         {/* User identity */}
                         <td className="px-4 py-3 font-sans">
                           <div className="flex items-center gap-2">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs font-mono ${
-                              hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
-                            }`}>
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs font-mono ${hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                              }`}>
                               {(s.userName || 'U')[0].toUpperCase()}
                             </div>
                             <div>
@@ -873,11 +858,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
                         {/* Streak */}
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-black ${
-                            item.streak === 6 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
-                            item.streak >= 3 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
-                            'bg-slate-800 text-slate-400'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-black ${item.streak === 6 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+                              item.streak >= 3 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+                                'bg-slate-800 text-slate-400'
+                            }`}>
                             {item.streak} / 6 Streak
                           </span>
                         </td>
@@ -891,9 +875,8 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
                         {/* Free Hit */}
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            s.freeHit ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-500'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.freeHit ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-500'
+                            }`}>
                             {s.freeHit ? `ACTIVE (${s.wheelMultiplier || 50}X)` : 'NO'}
                           </span>
                         </td>
@@ -916,11 +899,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
                         {/* Status badge */}
                         <td className="px-4 py-3 text-center">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase font-sans ${
-                            hasWon 
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm' 
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase font-sans ${hasWon
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
                               : 'bg-slate-800 text-slate-500'
-                          }`}>
+                            }`}>
                             {hasWon ? `WON ₹${item.winningsINR}` : 'NO WIN'}
                           </span>
                         </td>
@@ -945,7 +927,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 Simulate match outcomes question-by-question to see how many users survive each streak tier and calculate platform liability.
               </p>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-400 font-mono">
                 Rule: Q1 &ge; Q2 &ge; Q3 &ge; Q4 &ge; Q5 &ge; Q6
@@ -989,7 +971,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               // Calculate tier payout for users qualifying this question
               const qualifyingSlips = selectedOption ? (optionSlipsMap[selectedOption] || []) : [];
               const qualifyingCount = qualifyingSlips.length;
-              
+
               let tierPayout = 0;
               qualifyingSlips.forEach(s => {
                 tierPayout += calculatePotentialPayout(s.entryFee || 50, currentStreak, s.wheelMultiplier || 50, !!s.freeHit);
@@ -1004,11 +986,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                     </div>
                   )}
 
-                  <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                    selectedOption 
-                      ? 'bg-gradient-to-r from-indigo-950/40 via-[#0D122B] to-[#0D122B] border-indigo-500/50 shadow-md shadow-indigo-500/10' 
+                  <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${selectedOption
+                      ? 'bg-gradient-to-r from-indigo-950/40 via-[#0D122B] to-[#0D122B] border-indigo-500/50 shadow-md shadow-indigo-500/10'
                       : 'bg-[#080C1D] border-[#1A223E]'
-                  }`}>
+                    }`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5 pb-2.5 border-b border-[#1A223E]">
                       <div className="flex items-center gap-2.5">
                         <span className="w-8 h-8 rounded-xl bg-[#FF6B00]/20 text-[#FF8800] border border-[#FF6B00]/40 flex items-center justify-center text-xs font-black">
@@ -1070,11 +1051,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                           return (
                             <div
                               key={optName}
-                              className={`p-3 rounded-xl border transition-all flex flex-col justify-between gap-2 ${
-                                isSelected 
-                                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 border-indigo-400 text-white shadow-lg shadow-indigo-600/30 ring-2 ring-indigo-400/50' 
+                              className={`p-3 rounded-xl border transition-all flex flex-col justify-between gap-2 ${isSelected
+                                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 border-indigo-400 text-white shadow-lg shadow-indigo-600/30 ring-2 ring-indigo-400/50'
                                   : 'bg-[#0D122B] border-[#1A223E] hover:border-slate-700 hover:bg-[#131A38]'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <button
@@ -1110,11 +1090,10 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                                       slipsList: optSlips,
                                     });
                                   }}
-                                  className={`p-1.5 rounded-lg text-xs transition-colors flex-shrink-0 ${
-                                    isSelected 
-                                      ? 'bg-white/20 hover:bg-white/30 text-white' 
+                                  className={`p-1.5 rounded-lg text-xs transition-colors flex-shrink-0 ${isSelected
+                                      ? 'bg-white/20 hover:bg-white/30 text-white'
                                       : 'bg-[#080C1D] hover:bg-slate-800 text-slate-400 hover:text-white border border-[#1A223E]'
-                                  }`}
+                                    }`}
                                   title="Inspect who selected this answer"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
@@ -1123,10 +1102,9 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
                               {/* Progress bar */}
                               <div className="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full transition-all duration-300 ${
-                                    isSelected ? 'bg-white' : 'bg-[#FF6B00]'
-                                  }`}
+                                <div
+                                  className={`h-full rounded-full transition-all duration-300 ${isSelected ? 'bg-white' : 'bg-[#FF6B00]'
+                                    }`}
                                   style={{ width: `${percentage}%` }}
                                 />
                               </div>
@@ -1157,7 +1135,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               </span>
             </div>
 
-            <button 
+            <button
               onClick={() => setFunnelFilters({})}
               className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors flex items-center gap-1.5 self-start sm:self-auto"
             >
@@ -1189,7 +1167,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => {
                     setInspectorData(null);
                     setUserSearchFilter('');
@@ -1250,7 +1228,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                         <tbody className="divide-y divide-[#1A223E] font-mono text-[11px]">
                           {filteredList.map((s) => {
                             const currentStreak = inspectorData.questionNumber;
-                            const potentialINR = currentStreak >= 3 
+                            const potentialINR = currentStreak >= 3
                               ? calculatePotentialPayout(s.entryFee || 50, currentStreak, s.wheelMultiplier || 50, !!s.freeHit)
                               : 0;
 
@@ -1263,7 +1241,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                                 <td className="px-4 py-3 text-emerald-400 font-sans font-bold">
                                   {inspectorData.optionValue}
                                 </td>
-                                 <td className="px-4 py-3 text-slate-200">
+                                <td className="px-4 py-3 text-slate-200">
                                   {s.freeHit || (s.totalPayable && s.totalPayable > (s.entryFee || 25)) ? (
                                     <div>
                                       <span className="font-bold text-white">₹{s.totalPayable || ((s.entryFee || 25) + (s.freeHitFee || 10))}</span>
@@ -1277,9 +1255,8 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                                   {s.wheelMultiplier || 50}X
                                 </td>
                                 <td className="px-4 py-3">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                    s.freeHit ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500'
-                                  }`}>
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.freeHit ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500'
+                                    }`}>
                                     {s.freeHit ? 'ACTIVE' : 'NO'}
                                   </span>
                                 </td>
