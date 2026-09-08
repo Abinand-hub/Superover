@@ -178,4 +178,19 @@ export const api = {
   // Settings
   getSettings: () => fetch('/api/admin/settings', { method: 'GET' }).then(r => r.json()),
   updateSettings: (payload: any) => fetch('/api/admin/settings', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+
+  // Admin Withdrawals
+  getAdminWithdrawals: () => fetch('/api/admin/withdrawals', { method: 'GET' }).then(r => r.json()),
+  approveWithdrawalAdmin: (transactionId: string, utrNumber?: string) =>
+    fetch('/api/admin/withdrawals/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'APPROVE', transactionId, utrNumber }),
+    }).then(r => r.json()),
+  rejectWithdrawalAdmin: (transactionId: string, reason?: string) =>
+    fetch('/api/admin/withdrawals/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'REJECT', transactionId, reason }),
+    }).then(r => r.json()),
 };

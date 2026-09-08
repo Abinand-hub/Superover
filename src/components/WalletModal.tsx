@@ -155,7 +155,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     }
   };
 
-  const handleWithdrawSubmit = () => {
+  const handleWithdrawSubmit = async () => {
     setWithdrawError('');
     if (withdrawAmount < 5) {
       setWithdrawError('Minimum withdrawal amount is ₹5');
@@ -172,15 +172,17 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 
     setIsProcessingWithdraw(true);
 
-    setTimeout(() => {
+    try {
+      await onWithdraw(withdrawAmount, withdrawUpiId);
       setIsProcessingWithdraw(false);
       setWithdrawSuccess(true);
-      onWithdraw(withdrawAmount, withdrawUpiId);
-
       setTimeout(() => {
         setWithdrawSuccess(false);
-      }, 2500);
-    }, 1000);
+      }, 3500);
+    } catch (err: any) {
+      setIsProcessingWithdraw(false);
+      setWithdrawError(err?.message || 'Failed to place withdrawal request');
+    }
   };
 
   return (
@@ -486,19 +488,19 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                   {/* Withdraw CTA */}
                   <button
                     onClick={handleWithdrawSubmit}
-                    disabled={isProcessingWithdraw || wallet.winningsBalance < 50}
+                    disabled={isProcessingWithdraw || wallet.winningsBalance < 5 || withdrawAmount < 5 || withdrawAmount > wallet.winningsBalance}
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all disabled:opacity-50"
                     id="btn-confirm-withdraw"
                   >
                     {isProcessingWithdraw ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Sending UPI Payout...</span>
+                        <span>Submitting Withdrawal Request...</span>
                       </>
                     ) : (
                       <>
                         <ArrowUpRight className="w-4 h-4" />
-                        <span>Withdraw {formatINR(withdrawAmount || 0)} Instantly</span>
+                        <span>Withdraw {formatINR(withdrawAmount || 0)}</span>
                       </>
                     )}
                   </button>
@@ -516,7 +518,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                 </div>
               ) : (
                 transactions.map((tx) => {
-                  const isCredit = tx.type === 'DEPOSIT' || tx.type === 'CONTEST_PAYOUT' || tx.type === 'BONUS_REWARD';
+                  const isCredit = tx.type === 'DEPOSIT' || tx.type === 'CONTEST_PAYOUT' || tx.type === 'BONUS_REWARD' || tx.type === 'PAYOUT';
 
                   return (
                     <div
@@ -527,7 +529,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black ${
-                            tx.type === 'CONTEST_PAYOUT'
+                            tx.type === 'CONTEST_PAYOUT' || tx.type === 'PAYOUT'
                               ? 'bg-amber-400/20 text-amber-400 border border-amber-500/30'
                               : tx.type === 'DEPOSIT'
                               ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -536,7 +538,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                               : 'bg-slate-800 text-slate-300'
                           }`}
                         >
-                          {tx.type === 'CONTEST_PAYOUT' ? '🏆' : isCredit ? '↓' : '↑'}
+                          {tx.type === 'CONTEST_PAYOUT' || tx.type === 'PAYOUT' ? '🏆' : isCredit ? '↓' : '↑'}
                         </div>
 
                         <div>
@@ -557,8 +559,14 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                         >
                           {isCredit ? '+' : '-'}{formatINR(tx.amount)}
                         </span>
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[9px] font-bold uppercase">
-                          {tx.status}
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase inline-block mt-0.5 ${
+                          tx.status === 'SUCCESS' 
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : tx.status === 'PENDING'
+                            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                            : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                        }`}>
+                          {tx.status === 'PENDING' ? '⏳ Under Review' : tx.status === 'SUCCESS' ? '✓ Completed' : '✕ Refunded'}
                         </span>
                       </div>
                     </div>

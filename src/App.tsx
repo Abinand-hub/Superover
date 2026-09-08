@@ -357,26 +357,66 @@ export default function App({ initialMatches = [] }: AppProps) {
   };
 
   // Handler: Withdraw winnings
-  const handleWithdrawWinnings = (amount: number, upiId: string) => {
-    const updatedWallet: Wallet = {
-      ...wallet,
-      winningsBalance: wallet.winningsBalance - amount,
-      totalBalance: wallet.totalBalance - amount,
-    };
-    setWallet(updatedWallet);
+  const handleWithdrawWinnings = async (amount: number, upiId: string) => {
+    try {
+      const res: any = await api.withdrawFunds({ amount, upiId });
+      if (res && res.success && res.wallet) {
+        setWallet(res.wallet);
+        setCurrentUser((prev) => ({
+          ...prev,
+          wallet: res.wallet,
+          upiId: upiId.trim(),
+          totalWithdrawals: (prev.totalWithdrawals || 0) + amount,
+        }));
+        if (res.transaction) {
+          setTransactions((prev) => [res.transaction, ...prev]);
+        }
+      } else {
+        // Fallback for guest mode
+        const updatedWallet: Wallet = {
+          ...wallet,
+          winningsBalance: wallet.winningsBalance - amount,
+          totalBalance: wallet.totalBalance - amount,
+          upiId: upiId.trim(),
+        };
+        setWallet(updatedWallet);
 
-    const newTx: WalletTransaction = {
-      id: `tx_wdr_${Date.now()}`,
-      userId: currentUser.id,
-      type: 'WITHDRAWAL',
-      amount,
-      status: 'SUCCESS',
-      timestamp: new Date().toISOString(),
-      description: `Withdrawn to UPI (${upiId})`,
-      paymentMethod: `IMPS/UPI: ${upiId}`,
-      referenceId: `WDR-UPI-${Date.now().toString().slice(-6)}`,
-    };
-    setTransactions((prev) => [newTx, ...prev]);
+        const newTx: WalletTransaction = {
+          id: `tx_wdr_${Date.now()}`,
+          userId: currentUser.id,
+          type: 'WITHDRAWAL',
+          amount,
+          status: 'PENDING',
+          timestamp: new Date().toISOString(),
+          description: `Withdrawal to UPI (${upiId}) - Processing`,
+          paymentMethod: `UPI: ${upiId}`,
+          referenceId: `WDR-UPI-${Date.now().toString().slice(-6)}`,
+        };
+        setTransactions((prev) => [newTx, ...prev]);
+      }
+    } catch (err) {
+      console.warn('Withdrawal API fallback:', err);
+      const updatedWallet: Wallet = {
+        ...wallet,
+        winningsBalance: wallet.winningsBalance - amount,
+        totalBalance: wallet.totalBalance - amount,
+        upiId: upiId.trim(),
+      };
+      setWallet(updatedWallet);
+
+      const newTx: WalletTransaction = {
+        id: `tx_wdr_${Date.now()}`,
+        userId: currentUser.id,
+        type: 'WITHDRAWAL',
+        amount,
+        status: 'PENDING',
+        timestamp: new Date().toISOString(),
+        description: `Withdrawal to UPI (${upiId}) - Processing`,
+        paymentMethod: `UPI: ${upiId}`,
+        referenceId: `WDR-UPI-${Date.now().toString().slice(-6)}`,
+      };
+      setTransactions((prev) => [newTx, ...prev]);
+    }
   };
 
   // Handler: Admin Settle Match & Distribute Payouts

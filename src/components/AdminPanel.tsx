@@ -60,6 +60,7 @@ import { LiveMatchDashboard } from './admin/LiveMatchDashboard';
 import { MatchHistory } from './admin/MatchHistory';
 import { SettingsManager } from './admin/SettingsManager';
 import { ReportsManager } from './admin/ReportsManager';
+import { WithdrawalsManager } from './admin/WithdrawalsManager';
 import { getTeamLogoUrl } from '../utils/teamLogoHelper';
 
 interface AdminPanelProps {
@@ -2478,6 +2479,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {adminTab === 'market' && (
         <LiveMarketAnalysis matches={matches} slips={allSlips} users={allUsers} />
+      )}
+
+      {adminTab === 'withdrawals' && (
+        <WithdrawalsManager />
       )}
 
       {adminTab === 'settings' && (
