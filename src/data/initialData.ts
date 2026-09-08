@@ -17,12 +17,12 @@ export const INITIAL_USER: UserAccount = {
 };
 
 export const INITIAL_WALLET: Wallet = {
-  depositBalance: 250,
-  winningsBalance: 450,
+  depositBalance: 0,
+  winningsBalance: 0,
   bonusBalance: 50,
-  totalBalance: 750,
+  totalBalance: 50,
   kycVerified: true,
-  upiId: 'rohitfan@okaxis',
+  upiId: '',
 };
 
 // Players for CSK vs MI match

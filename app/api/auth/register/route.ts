@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       username,
       password: hashedPassword,
       role: 'FAN',
-      wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 100 }, // Give 100 bonus for joining
+      wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 50 }, // Give 50 bonus for joining
     });
 
     // 6. Delete OTP
