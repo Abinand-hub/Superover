@@ -162,59 +162,63 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
   const handleWheelComplete = (multiplier: number) => {
     setJackpotMultiplier(multiplier);
-    // Don't auto-submit! Wait for user to confirm the boosted winnings.
+    // Directly submit the prediction slip with the won wheel multiplier and paid total fee
+    onSubmitSlip(answers, baseStake, finalPayable, multiplier, true, freeHitFee, multiplier);
     setTimeout(() => {
       setCurrentView('WHEEL_RESULT');
-    }, 1500);
+    }, 1200);
   };
 
   // --- RENDERERS ---
 
   const renderWheelResult = () => {
-    // If not free hit, we just show standard breakdown, but this is WheelResult so it's always free hit
     const wheelMult = jackpotMultiplier || 50;
-    const boostFactor = wheelMult / 50;
     
     return (
       <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950 overflow-y-auto custom-scrollbar">
-        <div className="flex-1 max-w-sm mx-auto w-full flex flex-col items-center justify-center">
-          <div className="w-24 h-24 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 border-2 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-            <span className="text-4xl font-black text-amber-500">{wheelMult}x</span>
+        <div className="flex-1 max-w-sm mx-auto w-full flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+          <div className="w-24 h-24 bg-gradient-to-tr from-amber-500/30 to-emerald-500/20 rounded-full flex items-center justify-center mb-4 border-2 border-amber-500/60 shadow-[0_0_40px_rgba(245,158,11,0.4)]">
+            <span className="text-4xl font-black text-amber-400 font-display">{wheelMult}x</span>
           </div>
-          <h3 className="text-2xl font-black text-white font-display text-center mb-2">Multiplier Revealed!</h3>
-          <p className="text-sm text-slate-400 text-center mb-8">Your potential winnings have been boosted.</p>
+
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-wider mb-2 border border-emerald-500/30">
+            ✓ Entry Placed & Paid (₹{finalPayable})
+          </span>
+
+          <h3 className="text-2xl font-black text-white font-display text-center mb-1">
+            {wheelMult}X Boost Activated!
+          </h3>
+          <p className="text-xs text-slate-400 text-center mb-6">
+            Your slip has been confirmed and locked for match results.
+          </p>
           
-          <div className="w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-4 mb-8 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
-            <h4 className="text-sm font-bold text-amber-400 mb-3 text-center uppercase tracking-wider">Boosted Winning Preview</h4>
-            <div className="space-y-3 text-sm">
+          <div className="w-full bg-slate-900 border border-amber-500/30 rounded-2xl p-4 mb-6 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+            <h4 className="text-xs font-bold text-amber-400 mb-3 text-center uppercase tracking-wider">Your Potential Winnings</h4>
+            <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
-                <span className="text-slate-300">✅ Streak 4</span>
-                <div className="text-right">
-                  <span className="font-mono font-bold text-blue-400">₹{Math.floor(baseStake * 3)}</span>
-                  <span className="text-[10px] text-slate-500 block">(Extra fee lost)</span>
-                </div>
+                <span className="text-slate-300">3/6 Correct (0.5X)</span>
+                <span className="font-mono font-bold text-slate-200">₹{Math.floor(baseStake * 0.5)}</span>
               </div>
               <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
-                <span className="text-slate-300">✅ Streak 5</span>
-                <div className="text-right">
-                  <span className="font-mono font-bold text-emerald-400">₹{Math.floor(baseStake * 10)}</span>
-                  <span className="text-[10px] text-slate-500 block">(Extra fee lost)</span>
-                </div>
+                <span className="text-slate-300">4/6 Correct (3X)</span>
+                <span className="font-mono font-bold text-blue-400">₹{Math.floor(baseStake * 3)}</span>
               </div>
-              <div className="flex justify-between items-center bg-amber-500/20 p-2 rounded-lg border border-amber-500/30">
-                <span className="text-amber-500 font-bold">✅ Streak 6 (JACKPOT)</span>
-                <div className="text-right">
-                  <span className="font-mono font-black text-amber-500">₹{Math.floor(baseStake * wheelMult)}</span> 
-                </div>
+              <div className="flex justify-between items-center p-2 rounded bg-slate-800/50">
+                <span className="text-slate-300">5/6 Correct (10X)</span>
+                <span className="font-mono font-bold text-emerald-400">₹{Math.floor(baseStake * 10)}</span>
+              </div>
+              <div className="flex justify-between items-center bg-gradient-to-r from-amber-500/20 to-amber-500/10 p-2.5 rounded-lg border border-amber-500/40">
+                <span className="text-amber-400 font-bold">6/6 Correct ({wheelMult}X JACKPOT)</span>
+                <span className="font-mono font-black text-amber-400 text-sm">₹{Math.floor(baseStake * wheelMult)}</span>
               </div>
             </div>
           </div>
           
           <button 
-            onClick={() => onSubmitSlip(answers, baseStake, finalPayable, jackpotMultiplier || 50, true, freeHitFee, jackpotMultiplier || 50)}
-            className="w-full py-4 rounded-xl font-black text-slate-950 text-lg bg-emerald-500 hover:bg-emerald-400 transition-all flex flex-col items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+            onClick={onClose}
+            className="w-full py-3.5 rounded-xl font-black text-slate-950 text-base bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.3)]"
           >
-            <span>CONFIRM & PAY ₹{finalPayable}</span>
+            <span>VIEW MY CONTESTS →</span>
           </button>
         </div>
       </div>
