@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   X, 
   Trophy, 
@@ -15,7 +15,10 @@ import {
   Check,
   ArrowRight,
   TrendingUp,
-  Edit3
+  Edit3,
+  Search,
+  Users,
+  CheckCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CricketMatch, SettlementDetail, UserPredictionSlip } from '../types';
@@ -27,6 +30,7 @@ interface SlipResultModalProps {
   onClose: () => void;
   onPlayAnother?: () => void;
   onEditSlip?: (match: CricketMatch, slip: UserPredictionSlip) => void;
+  onUpdateSlip?: (slipId: string, answers: Record<string, string>) => Promise<void> | void;
 }
 
 function getMatchWinnerOutcome(m: CricketMatch) {
@@ -64,21 +68,47 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
   onClose,
   onPlayAnother,
   onEditSlip,
+  onUpdateSlip,
 }) => {
+  // Local answers state for instant granular per-question swap
+  const [localAnswers, setLocalAnswers] = useState<Record<string, string>>(() => {
+    if (!slip?.answers) return {};
+    if (slip.answers instanceof Map) return Object.fromEntries(slip.answers);
+    return typeof slip.answers === 'object' ? slip.answers : {};
+  });
+
+  // State for single-question swap popup
+  const [swappingQuestion, setSwappingQuestion] = useState<any | null>(null);
+  const [swapSearch, setSwapSearch] = useState('');
+  const [swapRoleFilter, setSwapRoleFilter] = useState<'ALL' | 'BAT' | 'BOWL' | 'AR' | 'WK'>('ALL');
+  const [swapToast, setSwapToast] = useState<string | null>(null);
+
   const currentSlip = React.useMemo(() => {
     if (!slip) return undefined;
+    const slipWithLocalAnswers = { ...slip, answers: localAnswers };
     if (match.actualResults?.answers && Object.keys(match.actualResults.answers).length > 0) {
-      const { settledSlip } = settlePredictionSlip(slip, match, match.actualResults);
+      const { settledSlip } = settlePredictionSlip(slipWithLocalAnswers, match, match.actualResults);
       return settledSlip;
     }
-    return slip;
-  }, [slip, match]);
+    return slipWithLocalAnswers;
+  }, [slip, localAnswers, match]);
 
   const isSettled = match.status === 'COMPLETED' || currentSlip?.status === 'WON' || currentSlip?.status === 'LOST' || currentSlip?.status === 'PENDING_APPROVAL';
   const isWon = currentSlip && currentSlip.status === 'WON' && (currentSlip.multiplierWon || 0) > 0;
   const isPendingApproval = currentSlip && currentSlip.status === 'PENDING_APPROVAL';
   const isLost = currentSlip && currentSlip.status === 'LOST';
   const isActiveSlip = currentSlip && !isSettled;
+
+  const handleSingleQuestionSwap = (questionId: string, newAnswerId: string) => {
+    const updated = { ...localAnswers, [questionId]: newAnswerId };
+    setLocalAnswers(updated);
+    if (slip?.id && onUpdateSlip) {
+      onUpdateSlip(slip.id, updated);
+    }
+    setSwappingQuestion(null);
+    setSwapToast('Pick updated successfully!');
+    setTimeout(() => setSwapToast(null), 3000);
+  };
 
   useEffect(() => {
     if (isWon) {
@@ -394,6 +424,22 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                         }`}>
                           {userPickDisplayName}
                         </div>
+
+                        {!isSettled && match.status === 'UPCOMING' && (
+                          <div className="mt-2 pt-2 border-t border-slate-800/80">
+                            <button
+                              onClick={() => {
+                                setSwappingQuestion({ ...q, questionIdx: idx });
+                                setSwapSearch('');
+                                setSwapRoleFilter('ALL');
+                              }}
+                              className="w-full py-1 px-2 rounded-lg bg-[#FF6B00]/15 hover:bg-[#FF6B00]/30 text-[#FF8800] hover:text-[#FFAA00] text-[10px] font-black border border-[#FF6B00]/40 transition-all flex items-center justify-center gap-1"
+                            >
+                              <Edit3 className="w-2.5 h-2.5" />
+                              <span>Swap This Pick (Q{idx + 1})</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       {/* Box 2: Official Admin Answer */}
@@ -466,6 +512,160 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
             </button>
           )}
         </div>
+
+        {/* ========================================================================= */}
+        {/* SINGLE-QUESTION SWAP PICK POPUP / DRAWER                                 */}
+        {/* ========================================================================= */}
+        {swappingQuestion && (
+          <div className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col animate-in slide-in-from-bottom-6 duration-200">
+            {/* Header */}
+            <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+              <div>
+                <span className="text-[10px] font-black uppercase text-[#FF8800] tracking-wider block">
+                  Swap Pick For Q{swappingQuestion.questionIdx + 1}
+                </span>
+                <h3 className="text-base font-black text-white">{swappingQuestion.title}</h3>
+              </div>
+              <button
+                onClick={() => setSwappingQuestion(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Question: Player Pick Mode */}
+              {swappingQuestion.optionsType === 'PLAYER_PICK' || (!swappingQuestion.options && allSquadPlayers.length > 0) ? (
+                <div className="space-y-3">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search player by name or team..."
+                      value={swapSearch}
+                      onChange={(e) => setSwapSearch(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:border-amber-500 outline-none"
+                    />
+                  </div>
+
+                  {/* Role Filters */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    {(['ALL', 'BAT', 'BOWL', 'AR', 'WK'] as const).map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => setSwapRoleFilter(role)}
+                        className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
+                          swapRoleFilter === role 
+                            ? 'bg-[#FF6B00] text-slate-950 shadow-md shadow-[#FF6B00]/30' 
+                            : 'bg-slate-850 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {role === 'ALL' ? 'All Roles' : role}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Players Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[50vh] overflow-y-auto pr-1">
+                    {allSquadPlayers
+                      .filter((p) => {
+                        if (swapRoleFilter !== 'ALL' && p.role !== swapRoleFilter) return false;
+                        if (swapSearch.trim()) {
+                          const q = swapSearch.toLowerCase();
+                          return (p.name || '').toLowerCase().includes(q) || (p.team || '').toLowerCase().includes(q);
+                        }
+                        return true;
+                      })
+                      .map((player) => {
+                        const isCurrentPick = localAnswers[swappingQuestion.id] === player.id;
+
+                        return (
+                          <button
+                            key={player.id}
+                            onClick={() => handleSingleQuestionSwap(swappingQuestion.id, player.id)}
+                            className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between ${
+                              isCurrentPick
+                                ? 'bg-gradient-to-r from-[#FF6B00]/30 to-amber-500/20 border-[#FF6B00] text-white shadow-md ring-1 ring-[#FF6B00]'
+                                : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-850 text-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <img
+                                src={player.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.name)}&background=FF6B00&color=fff`}
+                                alt={player.name}
+                                className="w-8 h-8 rounded-full bg-slate-800 object-cover border border-slate-700"
+                              />
+                              <div>
+                                <div className="font-black text-xs text-white">{player.name}</div>
+                                <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                                  <span className="font-bold text-amber-400">{player.team}</span>
+                                  <span>•</span>
+                                  <span>{player.role}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {isCurrentPick ? (
+                              <span className="px-2 py-0.5 rounded bg-[#FF6B00] text-slate-950 text-[10px] font-black">
+                                Current Pick
+                              </span>
+                            ) : (
+                              <span className="text-xs font-bold text-slate-400 group-hover:text-white">
+                                Select →
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ) : (
+                /* Question: Fixed Options Mode (e.g. Yes/No, Range, Team Pick) */
+                <div className="space-y-2">
+                  {(swappingQuestion.options || [
+                    { id: match.team1.code, text: match.team1.name || match.team1.code },
+                    { id: match.team2.code, text: match.team2.name || match.team2.code }
+                  ]).map((opt: any) => {
+                    const optId = typeof opt === 'object' ? (opt.id || opt.answerId || opt.text) : opt;
+                    const optText = typeof opt === 'object' ? (opt.text || opt.answerText || opt.id) : opt;
+                    const isCurrentPick = localAnswers[swappingQuestion.id] === optId;
+
+                    return (
+                      <button
+                        key={optId}
+                        onClick={() => handleSingleQuestionSwap(swappingQuestion.id, optId)}
+                        className={`w-full p-4 rounded-xl border text-left font-black text-sm transition-all flex items-center justify-between ${
+                          isCurrentPick
+                            ? 'bg-gradient-to-r from-[#FF6B00]/30 to-amber-500/20 border-[#FF6B00] text-white shadow-md'
+                            : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        <span>{optText}</span>
+                        {isCurrentPick ? (
+                          <span className="px-2.5 py-1 rounded bg-[#FF6B00] text-slate-950 text-xs font-black">
+                            ✓ Current Pick
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">Select →</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 bg-slate-900 border-t border-slate-800 text-center">
+              <span className="text-[11px] text-slate-400">
+                💡 Swapping changes only this single question. Your entry fee and spin multiplier remain locked.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

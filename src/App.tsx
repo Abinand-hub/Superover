@@ -718,6 +718,7 @@ export default function App({ initialMatches = [] }: AppProps) {
             match={selectedMatchForResults.match}
             slip={selectedMatchForResults.slip}
             onClose={() => setSelectedMatchForResults(null)}
+            onUpdateSlip={handleUpdateSlip}
             onEditSlip={(match, slip) => {
               setSelectedMatchForResults(null);
               setEditingSlipState({ match, slip });
