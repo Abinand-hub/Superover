@@ -456,11 +456,11 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                         )}
                       </div>
 
-                      {/* Box 2: Official Admin Answer */}
+                      {/* Box 2: Official Answer */}
                       <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] text-slate-200">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFAA00]">
-                            🏆 Official Admin Answer
+                            🏆 Official Answer
                           </span>
                           {statDetailText && (
                             <span className="text-[9px] text-slate-400 font-mono">
