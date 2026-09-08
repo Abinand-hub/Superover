@@ -35,7 +35,7 @@ export async function GET() {
                   $filter: {
                     input: '$transactions',
                     as: 'tx',
-                    cond: { $in: ['$$tx.type', ['DEPOSIT', 'ADMIN_BONUS']] }
+                    cond: { $eq: ['$$tx.type', 'DEPOSIT'] }
                   }
                 },
                 as: 'deposit',
@@ -50,11 +50,26 @@ export async function GET() {
                   $filter: {
                     input: '$transactions',
                     as: 'tx',
-                    cond: { $eq: ['$$tx.type', 'PAYOUT'] }
+                    cond: { $in: ['$$tx.type', ['WITHDRAWAL', 'PAYOUT']] }
                   }
                 },
                 as: 'withdrawal',
                 in: '$$withdrawal.amount'
+              }
+            }
+          },
+          totalWon: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: '$slips',
+                    as: 'slip',
+                    cond: { $eq: ['$$slip.status', 'WON'] }
+                  }
+                },
+                as: 'wonSlip',
+                in: { $ifNull: ['$$wonSlip.payoutAmount', 0] }
               }
             }
           },

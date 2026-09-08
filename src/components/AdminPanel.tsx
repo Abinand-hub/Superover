@@ -1909,8 +1909,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       {loadedUsers
                         .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
                         .map(u => {
-                          const netPnL = (u.totalWithdrawals || 0) + (u.currentBalance || 0) - (u.totalDeposits || 0);
-                          const isPlatformProfit = netPnL < 0; // If user loss, platform profit
+                          const totalDep = Number(u.totalDeposits || 0);
+                          const totalWd = Number(u.totalWithdrawals || 0);
+                          const balance = Number(u.currentBalance || 0);
+                          const clientPnL = (totalWd + balance) - totalDep;
+                          const isProfit = clientPnL > 0.01;
+                          const isLoss = clientPnL < -0.01;
                           
                           return (
                             <tr 
@@ -1946,15 +1950,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   return isNaN(d.getTime()) ? 'Recent' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
                                 })()}
                               </td>
-                              <td className="p-4 font-mono">{formatINR(u.totalDeposits || 0)}</td>
-                              <td className="p-4 font-mono">{formatINR(u.totalWithdrawals || 0)}</td>
+                              <td className="p-4 font-mono">{formatINR(totalDep)}</td>
+                              <td className="p-4 font-mono">{formatINR(totalWd)}</td>
                               <td className="p-4 text-center">{u.totalContestsPlayed || 0}</td>
-                              <td className="p-4 font-mono font-bold text-white">{formatINR(u.currentBalance || 0)}</td>
+                              <td className="p-4 font-mono font-bold text-white">{formatINR(balance)}</td>
                               <td className="p-4">
-                                <span className={`font-mono font-bold px-2 py-1 rounded text-xs ${
-                                  isPlatformProfit ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                                <span className={`font-mono font-bold px-2.5 py-1 rounded text-xs border ${
+                                  isProfit 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                                    : isLoss 
+                                    ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' 
+                                    : 'bg-slate-800/60 text-slate-400 border-slate-700/40'
                                 }`}>
-                                  {isPlatformProfit ? '+' : ''}{formatINR(Math.abs(netPnL))}
+                                  {isProfit ? `+${formatINR(clientPnL)}` : isLoss ? `-${formatINR(Math.abs(clientPnL))}` : '₹0'}
                                 </span>
                               </td>
                             </tr>
