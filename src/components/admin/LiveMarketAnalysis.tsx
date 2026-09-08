@@ -113,7 +113,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
     const activeMatchIds = new Set(matches.map(m => m.id));
     const relevantSlips = slips.filter(s => activeMatchIds.has(s.matchId));
     const totalPlatformEntries = relevantSlips.length;
-    const totalPlatformCollection = relevantSlips.reduce((sum, s) => sum + (s.entryFee || 0), 0);
+    const totalPlatformCollection = relevantSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
 
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
@@ -159,7 +159,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
               matches.map((match) => {
                 const matchSlips = slips.filter(s => s.matchId === match.id);
                 const totalEntries = matchSlips.length;
-                const totalCollection = matchSlips.reduce((sum, s) => sum + (s.entryFee || 0), 0);
+                const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
                 const isLive = match.status === 'LIVE';
                 const isCompleted = match.status === 'COMPLETED';
                 const isLocked = match.status === 'LOCKED';
@@ -256,7 +256,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                   matches.map((match) => {
                     const matchSlips = slips.filter(s => s.matchId === match.id);
                     const totalEntries = matchSlips.length;
-                    const totalCollection = matchSlips.reduce((sum, s) => sum + (s.entryFee || 0), 0);
+                    const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
                     const isLive = match.status === 'LIVE';
                     const isCompleted = match.status === 'COMPLETED';
                     const isLocked = match.status === 'LOCKED';
@@ -339,7 +339,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
 
     const matchSlips = slips.filter(s => s.matchId === match.id);
     const totalEntries = matchSlips.length;
-    const totalCollection = matchSlips.reduce((sum, s) => sum + (s.entryFee || 0), 0);
+    const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
     const avgEntry = totalEntries > 0 ? totalCollection / totalEntries : 0;
 
     const allPlayers = [...(match.squadTeam1 || []), ...(match.squadTeam2 || [])];

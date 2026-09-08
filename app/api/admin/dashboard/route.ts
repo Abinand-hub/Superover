@@ -90,7 +90,7 @@ export async function GET(req: Request) {
 
     // Calculate metrics locally to save DB queries
     const activeMatches = matches.filter((m: any) => m.status === 'LIVE' || m.status === 'UPCOMING' || m.status === 'LOCKED').length;
-    const totalPoolCollected = slips.reduce((sum: number, s: any) => sum + (s.entryFee || 0), 0);
+    const totalPoolCollected = slips.reduce((sum: number, s: any) => sum + (s.totalPayable || s.entryFee || 0), 0);
     const totalPayoutsDisbursed = transactions.filter((t: any) => t.type === 'CONTEST_PAYOUT' || t.type === 'PAYOUT').reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
     const platformProfit = totalPoolCollected - totalPayoutsDisbursed;
 

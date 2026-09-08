@@ -175,9 +175,18 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                       {slip.matchTitle}
                     </h3>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-400 pt-0.5">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 pt-0.5 flex-wrap">
                       <span className="font-bold text-slate-200">
-                        Entry Fee: {formatINR(slip.entryFee)}
+                        {slip.freeHit || (slip.totalPayable && slip.totalPayable > slip.entryFee) ? (
+                          <>
+                            Paid: <strong className="text-white">{formatINR(slip.totalPayable || (slip.entryFee + (slip.freeHitFee || 10)))}</strong>
+                            <span className="text-[10px] text-amber-400 font-semibold ml-1">
+                              ({formatINR(slip.entryFee)} + {formatINR(slip.freeHitFee || (slip.totalPayable ? slip.totalPayable - slip.entryFee : 10))} Spin)
+                            </span>
+                          </>
+                        ) : (
+                          <>Entry Fee: <strong className="text-white">{formatINR(slip.entryFee)}</strong></>
+                        )}
                       </span>
                       <span>•</span>
                       <span className="text-slate-400">6 Stats Predicted</span>
@@ -198,8 +207,8 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                               <Clock className="w-3.5 h-3.5" /> Awaiting Results
                             </span>
                           )}
-                          <span className="text-[10px] text-slate-400 block mt-1">
-                            Max Win: {formatINR(slip.entryFee * 100)} (100X)
+                          <span className="text-[10px] text-amber-400 font-bold block mt-1">
+                            Max Win: {formatINR(slip.entryFee * (slip.wheelMultiplier || 100))} ({slip.wheelMultiplier || 100}X)
                           </span>
                         </div>
                       ) : isWon ? (

@@ -280,7 +280,7 @@ export async function POST(req: Request) {
 
     // 6. Update Match Entries Count
     match.totalEntries = (match.totalEntries || 0) + 1;
-    match.totalPool = (match.totalPool || 0) + entryFee;
+    match.totalPool = (match.totalPool || 0) + totalPayable;
     await match.save();
 
     return NextResponse.json({

@@ -293,7 +293,7 @@ export default function App({ initialMatches = [] }: AppProps) {
         setMatches((prev) =>
           prev.map((m) =>
             m.id === match.id
-              ? { ...m, totalEntries: (m.totalEntries || 0) + 1, totalPool: (m.totalPool || 0) + entryFee }
+              ? { ...m, totalEntries: (m.totalEntries || 0) + 1, totalPool: (m.totalPool || 0) + totalPaid }
               : m
           )
         );
@@ -301,7 +301,7 @@ export default function App({ initialMatches = [] }: AppProps) {
         // Update platform metrics
         setMetrics((prev) => ({
           ...prev,
-          totalPoolCollected: prev.totalPoolCollected + entryFee,
+          totalPoolCollected: prev.totalPoolCollected + totalPaid,
         }));
 
         // Close prediction modal and redirect to My Contests tab

@@ -204,10 +204,12 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {isActiveSlip
-                        ? `Entry: ${formatINR(currentSlip.entryFee || 50)} • Placed at ${new Date(currentSlip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Results settle upon match end`
+                        ? `${currentSlip.freeHit || (currentSlip.totalPayable && currentSlip.totalPayable > (currentSlip.entryFee || 25)) 
+                            ? `Paid: ${formatINR(currentSlip.totalPayable || ((currentSlip.entryFee || 25) + (currentSlip.freeHitFee || 10)))} (${formatINR(currentSlip.entryFee || 25)} + ${formatINR(currentSlip.freeHitFee || 10)} Spin Wheel)` 
+                            : `Entry: ${formatINR(currentSlip.entryFee || 25)}`} • Placed at ${new Date(currentSlip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Results settle upon match end`
                         : isPendingApproval 
                         ? 'Your win is undergoing standard security checks by the admin.'
-                        : `Entry: ${formatINR(currentSlip.entryFee || 50)} • Submitted ${new Date(currentSlip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : `Entry: ${formatINR(currentSlip.totalPayable || currentSlip.entryFee || 25)} • Submitted ${new Date(currentSlip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                       }
                     </p>
                   </div>
@@ -215,12 +217,12 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
 
                 <div className="text-right sm:border-l sm:border-slate-800 sm:pl-4">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
-                    {isActiveSlip ? 'Potential 100X Win' : isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
+                    {isActiveSlip ? `Potential ${currentSlip.wheelMultiplier || 100}X Win` : isPendingApproval ? 'Pending Cash' : 'Cash Credited'}
                   </span>
                   <span className={`text-2xl font-black font-display ${
                     isActiveSlip ? 'text-amber-400 font-mono' : isPendingApproval ? 'text-amber-400 animate-pulse' : isWon ? 'text-emerald-400' : 'text-slate-500'
                   }`}>
-                    {isActiveSlip ? formatINR((currentSlip.entryFee || 50) * 100) : formatINR(currentSlip.payoutAmount || 0)}
+                    {isActiveSlip ? formatINR((currentSlip.entryFee || 25) * (currentSlip.wheelMultiplier || 100)) : formatINR(currentSlip.payoutAmount || 0)}
                   </span>
                 </div>
               </div>

@@ -38,7 +38,7 @@ export const ReportsManager: React.FC<ReportsManagerProps> = ({
   const handleExportMatches = () => {
     const data = allMatches.filter(m => m.status === 'COMPLETED').map(m => {
       const matchSlips = allSlips.filter(s => s.matchId === m.id);
-      const totalPool = matchSlips.reduce((sum, s) => sum + s.entryFee, 0);
+      const totalPool = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
       const wonSlips = matchSlips.filter(s => s.status === 'WON');
       const payout = wonSlips.reduce((sum, s) => sum + (s.payoutAmount || 0), 0);
       
