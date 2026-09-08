@@ -162,6 +162,26 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                       <span className="px-2 py-0.5 rounded bg-[#131A38] text-[#FFAA00] text-[10px] font-extrabold uppercase border border-[#1A223E]">
                         {slip.series}
                       </span>
+                      
+                      {/* Clear Match & Settlement Lifecycle Badge */}
+                      {match?.status === 'COMPLETED' || slip.status === 'WON' || slip.status === 'LOST' ? (
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase border border-emerald-500/30 flex items-center gap-1">
+                          MATCH COMPLETED
+                        </span>
+                      ) : match?.status === 'LIVE' ? (
+                        <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[10px] font-black uppercase border border-rose-500/30 flex items-center gap-1 animate-pulse">
+                          🔴 LIVE MATCH
+                        </span>
+                      ) : match?.status === 'LOCKED' ? (
+                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase border border-amber-500/30">
+                          IN PLAY
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-black uppercase border border-sky-500/30">
+                          UPCOMING
+                        </span>
+                      )}
+
                       <span className="text-[11px] text-slate-400">
                         Slip #{slip.id.slice(-6).toUpperCase()}
                       </span>
@@ -213,20 +233,26 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                         </div>
                       ) : isWon ? (
                         <div>
-                          <span className="px-2.5 py-1 rounded-full bg-[#FF6B00] text-slate-950 text-xs font-black inline-flex items-center gap-1 shadow-sm">
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-slate-950 text-xs font-black inline-flex items-center gap-1 shadow-md shadow-emerald-500/25">
                             <Trophy className="w-3.5 h-3.5 text-slate-950" />
-                            {slip.multiplierWon}X Cash Won ({slip.streakCount ?? 0}/6 Streak)
+                            SETTLED: WON ({slip.multiplierWon}X Cash)
                           </span>
                           <span className="text-base font-black text-[#4ADE80] block mt-0.5">
                             +{formatINR(slip.payoutAmount || 0)} Credited
                           </span>
+                          <span className="text-[10px] text-slate-400 block font-mono">
+                            {slip.streakCount ?? 0}/6 Streak ({slip.correctCount ?? 0} Correct)
+                          </span>
                         </div>
                       ) : (
                         <div>
-                          <span className="px-2.5 py-1 rounded-full bg-[#131A38] text-slate-400 text-xs font-bold border border-[#1A223E]">
+                          <span className="px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-400 text-xs font-black border border-rose-500/30 inline-flex items-center gap-1">
+                            SETTLED: LOST
+                          </span>
+                          <span className="text-xs font-bold text-slate-300 block mt-0.5">
                             {slip.streakCount ?? 0}/6 Streak ({slip.correctCount ?? 0} Correct)
                           </span>
-                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                          <span className="text-[10px] text-slate-500 block">
                             {slip.streakCount && slip.streakCount >= 3 ? `${slip.multiplierWon}X Payout` : 'No Payout (Streak < 3)'}
                           </span>
                         </div>

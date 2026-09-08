@@ -147,11 +147,25 @@ export const SlipResultModal: React.FC<SlipResultModalProps> = ({
         {/* Top Header */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isSettled ? (
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-black text-[10px] uppercase border border-emerald-500/30 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> MATCH COMPLETED
+                </span>
+              ) : match.status === 'LIVE' ? (
+                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 font-black text-[10px] uppercase border border-rose-500/30 flex items-center gap-1 animate-pulse">
+                  🔴 LIVE MATCH
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 font-black text-[10px] uppercase border border-sky-500/30">
+                  UPCOMING
+                </span>
+              )}
+
               <span className={`px-2 py-0.5 rounded font-bold text-[10px] uppercase border ${
                 isSettled ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
               }`}>
-                {isSettled ? 'Official Match Results & Settlement' : 'Active Prediction Slip'}
+                {isSettled ? 'Official Settlement' : 'Active Slip'}
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 {match.series}
