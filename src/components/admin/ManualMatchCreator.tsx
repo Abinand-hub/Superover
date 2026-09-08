@@ -298,6 +298,8 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   const [seriesName, setSeriesName] = useState("ICC Men's T20 World Cup 2026");
   const [format, setFormat] = useState('T20');
   const [venue, setVenue] = useState('Wankhede Stadium, Mumbai');
+  const [maxEntriesPerUser, setMaxEntriesPerUser] = useState<number>(5);
+  const [totalPool, setTotalPool] = useState<number>(100000);
 
   // Flag Picker Modal State
   const [pickingLogoFor, setPickingLogoFor] = useState<'team1' | 'team2' | null>(null);
@@ -725,10 +727,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
         lockTime: lockTimeIso,
         status: 'UPCOMING',
         format: (format || 'T20') as any,
-        totalPool: 100000,
+        totalPool: Number(totalPool) || 100000,
         totalEntries: 0,
         entryFees: [25, 50, 100],
-        maxEntriesPerUser: 1,
+        maxEntriesPerUser: Number(maxEntriesPerUser) || 5,
         squadTeam1: squad1.map(p => ({ ...p, team: team1Code.trim(), teamName: team1Name.trim() })),
         squadTeam2: squad2.map(p => ({ ...p, team: team2Code.trim(), teamName: team2Name.trim() })),
         questions: configuredQuestions as QuestionDefinition[],
@@ -864,6 +866,59 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   placeholder="e.g. Wankhede Stadium, Mumbai"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
                 />
+              </div>
+            </div>
+
+            {/* Entry Limit & Prize Pool Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#1A223E]">
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 block mb-1.5">
+                  👥 Max Entries Allowed Per Fan:
+                </label>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[1, 3, 5, 10, 20].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setMaxEntriesPerUser(num)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                        maxEntriesPerUser === num
+                          ? 'bg-[#FF6B00] text-slate-950 border-[#FF8800] font-black shadow-md'
+                          : 'bg-[#080C1D] text-slate-300 border-[#1A223E] hover:border-slate-700'
+                      }`}
+                    >
+                      {num} {num === 1 ? 'Entry' : 'Entries'}
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={maxEntriesPerUser}
+                    onChange={(e) => setMaxEntriesPerUser(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-16 px-2 py-1.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold text-center focus:outline-none focus:border-[#FF6B00]"
+                    title="Custom max entries"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Limits how many slips one fan can submit for this fixture.
+                </span>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-400 block mb-1.5">
+                  💰 Total Guaranteed Prize Pool (₹):
+                </label>
+                <input
+                  type="number"
+                  value={totalPool}
+                  onChange={(e) => setTotalPool(Number(e.target.value))}
+                  placeholder="e.g. 100000"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                />
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Displayed as the prize pool banner across lobby cards.
+                </span>
               </div>
             </div>
           </div>

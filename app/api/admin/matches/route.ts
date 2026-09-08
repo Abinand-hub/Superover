@@ -49,13 +49,14 @@ export async function POST(req: NextRequest) {
       totalPool,
       totalEntries: 0,
       entryFees,
+      maxEntriesPerUser: body.maxEntriesPerUser || 5,
       questions,
       squadTeam1,
       squadTeam2,
       liveScore: body.liveScore || '',
     });
 
-    console.log(`✅ Admin created and published match: ${newMatch.title} (${newMatch._id})`);
+    console.log(`✅ Admin created and published match: ${newMatch?.title || title} (${newMatch?._id || 'created'})`);
     return NextResponse.json(newMatch, { status: 201 });
   } catch (error: any) {
     console.error('Admin Create Match Error:', error);

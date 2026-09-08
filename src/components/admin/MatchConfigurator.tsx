@@ -16,7 +16,7 @@ export const MatchConfigurator: React.FC<MatchConfiguratorProps> = ({ matchId, o
   const [isPublishing, setIsPublishing] = useState(false);
   
   const [selectedQuestions, setSelectedQuestions] = useState<QuestionDefinition[]>([]);
-  const [maxEntriesPerUser, setMaxEntriesPerUser] = useState<number>(1);
+  const [maxEntriesPerUser, setMaxEntriesPerUser] = useState<number>(5);
   const [previewBankId, setPreviewBankId] = useState<string>('');
 
   useEffect(() => {

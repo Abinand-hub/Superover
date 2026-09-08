@@ -12,6 +12,7 @@ export interface IMatch extends Document {
   totalPool: number;
   totalEntries: number;
   entryFees: number[];
+  maxEntriesPerUser?: number;
   questions: any[];
   squadTeam1: any[];
   squadTeam2: any[];
@@ -40,7 +41,7 @@ const MatchSchema: Schema = new Schema(
     totalPool: { type: Number, default: 0 },
     totalEntries: { type: Number, default: 0 },
     entryFees: { type: [Number], default: [25, 50, 100] },
-    maxEntriesPerUser: { type: Number, default: 1 },
+    maxEntriesPerUser: { type: Number, default: 5 },
     questions: [{ type: Schema.Types.Mixed }],
     squadTeam1: [{ type: Schema.Types.Mixed }],
     squadTeam2: [{ type: Schema.Types.Mixed }],

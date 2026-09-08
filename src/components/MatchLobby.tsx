@@ -56,14 +56,8 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
       return false;
     }
 
-    // RULE: A user can only predict once per match.
-    // If they have already predicted this match, hide it from the lobby.
-    // They can track it in the 'My Selections' tab instead.
-    const hasPredicted = userSlips.some(slip => slip.matchId === m.id);
-    if (hasPredicted) return false;
-
-    if (activeFilter === 'IPL') return m.series.includes('IPL');
-    if (activeFilter === 'INTL') return m.series.includes('ICC') || m.series.includes('Championship');
+    if (activeFilter === 'IPL') return m.series?.includes('IPL');
+    if (activeFilter === 'INTL') return m.series?.includes('ICC') || m.series?.includes('Championship') || m.series?.includes('T20');
     
     return true; // For UPCOMING
   });
@@ -265,18 +259,20 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
 
                   {/* User already submitted badge */}
                   {hasUserEntered && (
-                    <div className="mt-3 px-3 py-1.5 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/30 flex items-center justify-between text-xs">
-                      <span className="text-[#4ADE80] font-bold flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        {userSlipsForMatch.length} Slip{userSlipsForMatch.length > 1 ? 's' : ''} Submitted
-                      </span>
-                      {isCompleted && (
-                        <span className="text-[#FFAA00] font-black">
-                          {userSlipsForMatch[0].status === 'WON' 
-                            ? `Won ${formatINR(userSlipsForMatch[0].payoutAmount || 0)} (${userSlipsForMatch[0].multiplierWon}X)` 
-                            : '0 / Payout'}
-                        </span>
-                      )}
+                    <div className="mt-3 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{userSlipsForMatch.length}/{match.maxEntriesPerUser || 5} Entries Joined</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewMatchResult(match, userSlipsForMatch[userSlipsForMatch.length - 1]);
+                        }}
+                        className="text-[11px] text-amber-300 hover:text-amber-200 underline font-bold"
+                      >
+                        View / Swap Picks &rarr;
+                      </button>
                     </div>
                   )}
                 </div>
@@ -304,31 +300,46 @@ export const MatchLobby: React.FC<MatchLobbyProps> = ({
                   </button>
                 ) : (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400 font-semibold">Choose Entry:</span>
-                      <div className="flex items-center gap-1.5">
-                        {(match.entryFees || [25, 50, 100]).map((fee) => (
-                          <button
-                            key={fee}
-                            onClick={() => onSelectMatchToPlay(match, fee)}
-                            className="px-2.5 py-1 rounded-lg bg-[#0D122B] hover:bg-[#FF6B00]/20 text-slate-200 hover:text-[#FFAA00] text-xs font-black border border-[#1A223E] hover:border-[#FF6B00]/50 transition-colors"
-                            title={`Play with ₹${fee} entry to gain up to 500X rewards`}
-                          >
-                            ₹{fee}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {userSlipsForMatch.length < (match.maxEntriesPerUser || 5) ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400 font-semibold">
+                            {hasUserEntered ? `Add Entry #${userSlipsForMatch.length + 1} (${(match.maxEntriesPerUser || 5) - userSlipsForMatch.length} Left):` : 'Choose Entry:'}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {(match.entryFees || [25, 50, 100]).map((fee) => (
+                              <button
+                                key={fee}
+                                onClick={() => onSelectMatchToPlay(match, fee)}
+                                className="px-2.5 py-1 rounded-lg bg-[#0D122B] hover:bg-[#FF6B00]/20 text-slate-200 hover:text-[#FFAA00] text-xs font-black border border-[#1A223E] hover:border-[#FF6B00]/50 transition-colors"
+                                title={`Play with ₹${fee} entry to gain up to 500X rewards`}
+                              >
+                                ₹{fee}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
-                    <button
-                      onClick={() => onSelectMatchToPlay(match, 25)}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#FF6B00]/30"
-                      id={`btn-play-match-${match.id}`}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Crack 6 Stats (Gain up to 500X)</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
+                        <button
+                          onClick={() => onSelectMatchToPlay(match, match.entryFees?.[0] || 25)}
+                          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#FF6B00]/30"
+                          id={`btn-play-match-${match.id}`}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span>{hasUserEntered ? `+ Add Entry #${userSlipsForMatch.length + 1} (From ₹${match.entryFees?.[0] || 25})` : 'Crack 6 Stats (Gain up to 500X)'}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => onViewMatchResult(match, userSlipsForMatch[0])}
+                        className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all border border-emerald-500/40 shadow"
+                        id={`btn-view-max-entered-${match.id}`}
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>Max {match.maxEntriesPerUser || 5}/{match.maxEntriesPerUser || 5} Entries Joined • View / Swap Picks</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
