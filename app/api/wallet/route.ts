@@ -31,29 +31,6 @@ export async function GET(req: Request) {
       user.wallet = { depositBalance: 0, winningsBalance: 0, bonusBalance: 0 };
     }
 
-    // Auto-reconcile user's wallet with any won slips or payout transactions
-    const wonSlips = await Slip.find({ 
-      userId: decoded.userId, 
-      status: 'WON', 
-      payoutAmount: { $gt: 0 } 
-    });
-
-    const totalWonFromSlips = wonSlips.reduce((sum: number, s: any) => sum + (s.payoutAmount || 0), 0);
-
-    const withdrawalTxs = await Transaction.find({
-      userId: decoded.userId,
-      type: 'WITHDRAWAL',
-      status: 'SUCCESS'
-    });
-    const totalWithdrawn = withdrawalTxs.reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
-
-    const minExpectedWinnings = Math.max(0, totalWonFromSlips - totalWithdrawn);
-    if (minExpectedWinnings > (user.wallet.winningsBalance || 0)) {
-      user.wallet.winningsBalance = minExpectedWinnings;
-      user.totalWon = Math.max(user.totalWon || 0, totalWonFromSlips);
-      await user.save();
-    }
-
     // Return the formatted wallet
     const walletData = {
       depositBalance: user.wallet.depositBalance || 0,
