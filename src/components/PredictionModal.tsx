@@ -164,9 +164,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     setJackpotMultiplier(multiplier);
     // Directly submit the prediction slip with the won wheel multiplier and paid total fee
     onSubmitSlip(answers, baseStake, finalPayable, multiplier, true, freeHitFee, multiplier);
-    setTimeout(() => {
-      setCurrentView('WHEEL_RESULT');
-    }, 1200);
+    setCurrentView('WHEEL_RESULT');
   };
 
   // --- RENDERERS ---
@@ -716,30 +714,30 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden my-auto flex flex-col max-h-[92vh] min-h-[600px]">
+      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden my-auto flex flex-col max-h-[94vh] sm:max-h-[90vh]">
         {/* Modal Top Header */}
-        <div className="p-4 sm:p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+        <div className="p-3.5 sm:p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-black text-[11px] uppercase border border-amber-500/30">
+              <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-black text-[10px] sm:text-[11px] uppercase border border-amber-500/30">
                 Crack 6 & Gain 500X
               </span>
               <span className="text-xs text-slate-400 font-medium">
                 {match.series}
               </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-white mt-1 font-display flex items-center gap-2">
+            <h2 className="text-base sm:text-xl font-black text-white mt-1 font-display flex items-center gap-2">
               <span>{match.team1.shortName || match.team1.name || match.team1.code}</span>
-              <span className="text-slate-500 text-sm font-semibold">vs</span>
+              <span className="text-slate-500 text-xs sm:text-sm font-semibold">vs</span>
               <span>{match.team2.shortName || match.team2.name || match.team2.code}</span>
             </h2>
           </div>
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
@@ -748,13 +746,12 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
         {currentView === 'STAKE' && renderStakePalette()}
         {currentView === 'FREE_HIT_PROMPT' && renderFreeHitPrompt()}
         {currentView === 'WHEEL' && (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-950">
-            <WheelOfFortune onComplete={handleWheelComplete} />
-            {jackpotMultiplier && (
-              <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-4">
-                <div className="text-xl font-black text-white">Calculating Boost...</div>
-              </div>
-            )}
+          <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-950 overflow-y-auto custom-scrollbar">
+            <WheelOfFortune 
+              baseStake={baseStake}
+              finalPayable={finalPayable}
+              onComplete={handleWheelComplete} 
+            />
           </div>
         )}
         {currentView === 'WHEEL_RESULT' && renderWheelResult()}

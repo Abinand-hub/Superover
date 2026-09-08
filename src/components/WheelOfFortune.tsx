@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 import { api } from '../services/api';
+import { formatINR } from '../utils/payoutCalculator';
 
 interface WheelOfFortuneProps {
   onComplete: (multiplier: number) => void;
+  baseStake?: number;
+  finalPayable?: number;
 }
 
-export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) => {
+export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ 
+  onComplete, 
+  baseStake = 50, 
+  finalPayable 
+}) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
@@ -31,7 +38,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   ]);
 
   useEffect(() => {
-    // Fetch dynamic probabilities from settings
+    // Fetch dynamic probabilities from settings if available
     api.getSettings().then(settings => {
       if (settings && settings.wheelProbabilities && settings.wheelProbabilities.length > 0) {
         const parsed = settings.wheelProbabilities.map((p: any) => ({
@@ -81,13 +88,13 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
       setIsSpinning(false);
       setHasSpun(true);
       setSelectedMultiplier(winningMultiplier);
-      
-      // Notify parent after a short delay so user sees the result
-      setTimeout(() => {
-        onComplete(winningMultiplier);
-      }, 1500);
-      
     }, 5000);
+  };
+
+  const handleConfirmAndSubmit = () => {
+    if (selectedMultiplier !== null) {
+      onComplete(selectedMultiplier);
+    }
   };
 
   // Generate SVG paths for each segment
@@ -132,21 +139,28 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 sm:p-8 bg-slate-900/90 rounded-3xl border border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.15)] backdrop-blur-xl">
-      <h3 className="text-xl font-black text-white font-display mb-2 text-center">
-        Spin for your Jackpot!
-      </h3>
-      <p className="text-sm text-slate-400 mb-6 text-center max-w-xs">
-        Your 6 selections are locked in! Spin the wheel to determine your potential multiplier if you get 6/6 correct.
-      </p>
+    <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center p-4 sm:p-6 bg-slate-900/95 rounded-2xl sm:rounded-3xl border border-amber-500/30 shadow-[0_0_50px_rgba(245,158,11,0.15)] backdrop-blur-xl">
+      <div className="text-center mb-3 sm:mb-4">
+        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-black text-[10px] sm:text-xs uppercase border border-amber-500/30 inline-flex items-center gap-1 mb-1">
+          <Sparkles className="w-3 h-3" />
+          15 JACKPOT MULTIPLIERS
+        </span>
+        <h3 className="text-lg sm:text-2xl font-black text-white font-display">
+          Spin for your Jackpot!
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-400 mt-0.5 max-w-xs mx-auto">
+          Spin the wheel to lock your 6/6 boost multiplier up to <span className="text-amber-400 font-bold">500X</span>!
+        </p>
+      </div>
 
-      <div className="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] mb-8 mt-4 drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+      {/* Wheel Sizing & Responsive Container */}
+      <div className="relative w-[230px] h-[230px] sm:w-[290px] sm:h-[290px] mb-4 sm:mb-6 mt-2 drop-shadow-[0_15px_35px_rgba(0,0,0,0.8)] shrink-0">
         {/* Glow behind wheel */}
-        <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-2xl animate-pulse"></div>
         
         {/* Pointer (Premium Golden Arrow) */}
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_5px_10px_rgba(0,0,0,0.6)]">
-          <svg width="40" height="60" viewBox="0 0 40 60">
+        <div className="absolute -top-5 sm:-top-6 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_5px_10px_rgba(0,0,0,0.8)]">
+          <svg width="34" height="50" viewBox="0 0 40 60" className="sm:w-[40px] sm:h-[60px]">
             <defs>
               <linearGradient id="goldArrowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#fff3a1" />
@@ -209,7 +223,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
                 const textAngle = i * segmentAngle + (segmentAngle / 2);
                 const textRad = (textAngle - 90) * Math.PI / 180;
                 // Place text appropriately along the slice radius
-                const textRadius = segments.length > 8 ? 100 : 95;
+                const textRadius = segments.length > 8 ? 102 : 95;
                 const textX = 150 + textRadius * Math.cos(textRad);
                 const textY = 150 + textRadius * Math.sin(textRad);
                 
@@ -219,20 +233,20 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
                       d={createSegmentPath(i)} 
                       fill={`url(#${grad.id})`}
                       stroke="#ffe699"
-                      strokeWidth="1.5"
+                      strokeWidth="1.2"
                     />
                     <text 
                       x={textX} 
                       y={textY} 
                       fill="#ffffff" 
-                      fontSize={segments.length > 8 ? (mult >= 100 ? "10.5" : "11.5") : (mult >= 200 ? "24" : "18")} 
+                      fontSize={segments.length > 8 ? (mult >= 100 ? "10" : "11") : (mult >= 200 ? "22" : "16")} 
                       fontWeight="900"
                       fontFamily="Outfit, sans-serif"
                       textAnchor="middle" 
                       alignmentBaseline="middle"
                       transform={`rotate(${textAngle + 90}, ${textX}, ${textY})`}
                       filter="url(#glow)"
-                      className="drop-shadow-lg"
+                      className="drop-shadow-md"
                     >
                       {mult}X
                     </text>
@@ -242,10 +256,10 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
             </g>
 
             {/* Premium Gold Rim overlay */}
-            <circle cx="150" cy="150" r="140" fill="none" stroke="url(#metalGrad)" strokeWidth="20" />
+            <circle cx="150" cy="150" r="140" fill="none" stroke="url(#metalGrad)" strokeWidth="18" />
             <circle cx="150" cy="150" r="150" fill="url(#rimGrad)" pointerEvents="none" />
-            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
-            <circle cx="150" cy="150" r="148" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="4" />
+            <circle cx="150" cy="150" r="131" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+            <circle cx="150" cy="150" r="148" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="3" />
             
             {/* Glowing Neon Lights around the rim */}
             {Array.from({ length: 24 }).map((_, i) => {
@@ -257,7 +271,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
               return (
                 <circle 
                   key={`light-${i}`} 
-                  cx={cx} cy={cy} r={isEven ? "4" : "2.5"} 
+                  cx={cx} cy={cy} r={isEven ? "3.5" : "2"} 
                   fill={isEven ? "#ffffff" : "#ffe699"} 
                   filter={isEven ? "url(#glow)" : "none"}
                   opacity={isSpinning ? 0.8 : 1}
@@ -270,33 +284,57 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ onComplete }) =>
             })}
 
             {/* Center Premium Metallic Hub */}
-            <circle cx="150" cy="150" r="22" fill="#111" stroke="url(#metalGrad)" strokeWidth="4" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.7))" />
-            <circle cx="150" cy="150" r="12" fill="url(#metalGrad)" />
-            <circle cx="150" cy="150" r="6" fill="#333" />
+            <circle cx="150" cy="150" r="20" fill="#111" stroke="url(#metalGrad)" strokeWidth="3.5" filter="drop-shadow(0 4px 8px rgba(0,0,0,0.7))" />
+            <circle cx="150" cy="150" r="11" fill="url(#metalGrad)" />
+            <circle cx="150" cy="150" r="5" fill="#333" />
           </svg>
         </div>
       </div>
 
-      {!hasSpun ? (
-        <button
-          onClick={spinWheel}
-          disabled={isSpinning}
-          className={`px-8 py-3 rounded-xl font-black text-white text-lg transition-all shadow-lg shadow-[#FF6B00]/40 ${
-            isSpinning 
-              ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
-              : 'bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:scale-105 active:scale-95 animate-pulse'
-          }`}
-        >
-          {isSpinning ? 'SPINNING...' : 'SPIN WHEEL'}
-        </button>
-      ) : (
-        <div className="text-center animate-bounce mt-2">
-          <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">You landed on</div>
-          <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-[#FFAA00]">
-            {selectedMultiplier}X MULTIPLIER!
+      {/* Action Area: Spin or Submit */}
+      <div className="w-full flex flex-col items-center">
+        {!hasSpun ? (
+          <button
+            onClick={spinWheel}
+            disabled={isSpinning}
+            className={`w-full max-w-xs py-3.5 sm:py-4 px-6 rounded-2xl font-black text-slate-950 text-base sm:text-lg transition-all shadow-xl shadow-[#FF6B00]/40 ${
+              isSpinning 
+                ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-95 animate-pulse'
+            }`}
+          >
+            {isSpinning ? 'SPINNING FOR JACKPOT...' : '🎰 SPIN THE WHEEL!'}
+          </button>
+        ) : (
+          <div className="w-full max-w-xs flex flex-col items-center gap-3 animate-in zoom-in-95 duration-300">
+            {/* Multiplier Won Banner */}
+            <div className="w-full bg-gradient-to-b from-amber-500/20 to-slate-950 border border-amber-500/40 rounded-2xl p-3 sm:p-4 text-center shadow-lg shadow-amber-500/10">
+              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest block">
+                You Landed On
+              </span>
+              <div className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FFAA00] to-yellow-300 font-display mt-0.5">
+                {selectedMultiplier}X JACKPOT!
+              </div>
+              <div className="text-xs text-slate-300 mt-1 flex items-center justify-center gap-1.5 font-medium">
+                <span>Potential 6/6 Win:</span>
+                <span className="font-mono font-bold text-amber-400 text-sm">
+                  {formatINR(baseStake * (selectedMultiplier || 50))}
+                </span>
+              </div>
+            </div>
+
+            {/* Explicit Submit & Enter Button requested by User */}
+            <button
+              onClick={handleConfirmAndSubmit}
+              className="w-full py-3.5 sm:py-4 px-5 rounded-2xl font-black text-slate-950 text-sm sm:text-base bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30 animate-bounce"
+            >
+              <CheckCircle className="w-5 h-5 text-slate-950" />
+              <span>SUBMIT & ENTER MATCH ({selectedMultiplier}X)</span>
+              <ArrowRight className="w-4 h-4 text-slate-950" />
+            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
