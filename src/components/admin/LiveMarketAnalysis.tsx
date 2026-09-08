@@ -379,7 +379,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
         for (let i = 0; i < qIndex; i++) {
           const pastQ = match.questions[i];
           const filterAns = funnelFilters[pastQ.id];
-          if (!filterAns) return false; 
+          if (!filterAns) continue; // If no filter was chosen for this past question, all users remain eligible
           const userAns = getUserAnswerFromSlip(slip.answers, pastQ.id, i);
           if (!checkAnswerMatch(userAns, filterAns, filterAns, playerMap)) return false;
         }
