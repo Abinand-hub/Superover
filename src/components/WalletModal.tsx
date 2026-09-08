@@ -475,7 +475,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
                       id="input-withdraw-upi"
                     />
                     <span className="text-[10px] text-slate-400 block mt-1">
-                      Direct instant IMPS transfer to the bank linked with this UPI ID.
+                      Direct instant 24x7 transfer to your UPI ID (GPay, PhonePe, Paytm, BHIM).
                     </span>
                   </div>
 

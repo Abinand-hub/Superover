@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       referenceId: refCode,
       description: isHighValue 
         ? `High-Value Withdrawal to UPI (${upiId.trim()}) - Under Admin Review`
-        : `Withdrawal to UPI (${upiId.trim()}) - Processing IMPS Payout`,
+        : `Withdrawal to UPI (${upiId.trim()}) - Processing Instant UPI Payout`,
     });
 
     const mappedTx = {

@@ -103,7 +103,8 @@ export const WithdrawalsManager: React.FC = () => {
   };
 
   const handleOpenApprove = (item: WithdrawalItem) => {
-    const suggestedUtr = `IMPS${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${Math.floor(100000 + Math.random() * 900000)}`;
+    const rawVpa = item.paymentMethod?.replace(/^UPI:\s*/i, '').trim() || '';
+    const suggestedUtr = `UPI${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${Math.floor(100000 + Math.random() * 900000)}`;
     setUtrInput(suggestedUtr);
     setActiveModal({ type: 'APPROVE', item });
   };
@@ -511,31 +512,55 @@ export const WithdrawalsManager: React.FC = () => {
             </div>
 
             {/* Payout Summary Box */}
-            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
-              <div className="flex justify-between">
+            <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
                 <span className="text-slate-400">Withdrawal Amount:</span>
-                <span className="font-black text-emerald-400 text-sm">{formatINR(activeModal.item.amount)}</span>
+                <span className="font-black text-emerald-400 text-base">{formatINR(activeModal.item.amount)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Receiver UPI / VPA:</span>
-                <span className="font-mono font-bold text-white">{activeModal.item.paymentMethod || 'UPI'}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Receiver UPI ID:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-white bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                    {activeModal.item.paymentMethod?.replace(/^UPI:\s*/i, '') || 'user@upi'}
+                  </span>
+                  <button
+                    onClick={() => handleCopy(activeModal.item.paymentMethod?.replace(/^UPI:\s*/i, '') || '', 'modal-upi')}
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                    title="Copy UPI ID"
+                  >
+                    {copiedId === 'modal-upi' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
+
+              {/* Direct UPI Pay Link (Opens GPay / PhonePe / Paytm / BHIM) */}
+              {activeModal.type === 'APPROVE' && (
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400">Direct Pay via Phone:</span>
+                  <a
+                    href={`upi://pay?pa=${encodeURIComponent(activeModal.item.paymentMethod?.replace(/^UPI:\s*/i, '').trim() || '')}&pn=${encodeURIComponent(activeModal.item.userName)}&am=${activeModal.item.amount}&cu=INR&tn=SuperOver_Payout`}
+                    className="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <span>⚡ Open UPI App (GPay/PhonePe)</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             {activeModal.type === 'APPROVE' ? (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300 block">
-                  Bank / Gateway UTR Reference Number:
+                  12-Digit UPI Transaction Reference / UTR Number:
                 </label>
                 <input
                   type="text"
                   value={utrInput}
                   onChange={(e) => setUtrInput(e.target.value)}
-                  placeholder="e.g. IMPS240908123456"
+                  placeholder="e.g. 424819284729 or UPI Ref #"
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-emerald-400"
                 />
                 <span className="text-[10px] text-slate-400 block">
-                  This reference number will be visible in the user's wallet passbook.
+                  This 12-digit UPI reference will be visible in the user's wallet passbook.
                 </span>
               </div>
             ) : (

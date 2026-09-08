@@ -49,10 +49,10 @@ export async function POST(req: Request) {
     }
 
     if (action === 'APPROVE') {
-      const finalUtr = utrNumber?.trim() || `IMPS${Date.now().toString().slice(-8)}`;
+      const finalUtr = utrNumber?.trim() || `UPI${Date.now().toString().slice(-8)}`;
       transaction.status = 'SUCCESS';
       transaction.referenceId = finalUtr;
-      transaction.description = `Withdrawn to ${transaction.paymentMethod || 'UPI'} - Dispatched & Approved by Admin (UTR: ${finalUtr})`;
+      transaction.description = `Withdrawn to ${transaction.paymentMethod || 'UPI'} - Dispatched & Approved by Admin (UPI Ref: ${finalUtr})`;
       await transaction.save();
 
       return NextResponse.json({
