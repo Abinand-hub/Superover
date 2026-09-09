@@ -379,7 +379,11 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           const filterAns = funnelFilters[pastQ.id];
           if (!filterAns) continue; // If no filter was chosen for this past question, all users remain eligible
           const userAns = getUserAnswerFromSlip(slip.answers, pastQ.id, i);
-          if (!checkAnswerMatch(userAns, filterAns, filterAns, playerMap)) return false;
+          const userDisplay = resolveDisplayName(userAns, pastQ.type);
+          
+          const isMatch = (userDisplay && userDisplay.trim().toLowerCase() === filterAns.trim().toLowerCase()) ||
+                          checkAnswerMatch(userAns, filterAns, filterAns, playerMap);
+          if (!isMatch) return false;
         }
         return true;
       });
@@ -416,7 +420,9 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
         if (!targetAns) break;
 
         const userAns = getUserAnswerFromSlip(slip.answers, q.id, i);
-        const isCorrect = checkAnswerMatch(userAns, String(targetAns), String(targetAns), playerMap);
+        const userDisplay = resolveDisplayName(userAns, q.type);
+        const isCorrect = (userDisplay && userDisplay.trim().toLowerCase() === String(targetAns).trim().toLowerCase()) ||
+                          checkAnswerMatch(userAns, String(targetAns), String(targetAns), playerMap);
 
         if (isCorrect) {
           if (!isStreakBroken) streak++;

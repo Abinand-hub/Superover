@@ -53,6 +53,14 @@ export function getUserAnswerFromSlip(answers: any, qId: string, idx: number): s
   return '';
 }
 
+function normalizeText(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)/g, '') // remove parenthesized tags like (DG), (BW), (c), (wk), (IND), etc.
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
 export function checkAnswerMatch(
   userAns: string,
   officialAns: string,
@@ -62,39 +70,73 @@ export function checkAnswerMatch(
   if (!userAns) return false;
   if (!officialAns && !officialText) return false;
 
-  const uClean = userAns.trim().toLowerCase();
-  const oClean = (officialAns || '').trim().toLowerCase();
-  const oTextClean = (officialText || '').trim().toLowerCase();
+  const uRaw = userAns.trim();
+  const oRaw = (officialAns || '').trim();
+  const oTextRaw = (officialText || '').trim();
 
-  // 1. Direct string match
+  const uClean = uRaw.toLowerCase();
+  const oClean = oRaw.toLowerCase();
+  const oTextClean = oTextRaw.toLowerCase();
+
+  // 1. Exact string matches
   if (oClean && uClean === oClean) return true;
   if (oTextClean && uClean === oTextClean) return true;
 
-  // 2. Resolve user player name if userAns is an ID
-  const uPlayer = playerMap.get(userAns);
-  const uName = uPlayer?.name?.toLowerCase().trim();
-  const uShort = uPlayer?.shortName?.toLowerCase().trim();
+  // 2. Normalized stripped text matches (removes (c), (wk), (DG), spaces, symbols)
+  const uNorm = normalizeText(uClean);
+  const oNorm = normalizeText(oClean);
+  const oTextNorm = normalizeText(oTextClean);
 
-  // 3. Resolve official player name if officialAns is an ID
-  const oPlayer = playerMap.get(officialAns) || (officialText ? playerMap.get(officialText) : undefined);
-  const oName = oPlayer?.name?.toLowerCase().trim();
-  const oShort = oPlayer?.shortName?.toLowerCase().trim();
+  if (oNorm && uNorm === oNorm) return true;
+  if (oTextNorm && uNorm === oTextNorm) return true;
 
-  // Compare user player name/shortName with official answer
-  if (uName) {
-    if (oClean && uName === oClean) return true;
-    if (oTextClean && uName === oTextClean) return true;
-    if (oName && uName === oName) return true;
-  }
-  if (uShort) {
-    if (oClean && uShort === oClean) return true;
-    if (oTextClean && uShort === oTextClean) return true;
-    if (oShort && uShort === oShort) return true;
+  // 3. Resolve user player
+  let uPlayer = playerMap.get(userAns) || playerMap.get(uRaw) || playerMap.get(uClean);
+  if (!uPlayer) {
+    for (const [id, p] of playerMap.entries()) {
+      if (id.toLowerCase() === uClean || normalizeText(p.name) === uNorm || (p.shortName && normalizeText(p.shortName) === uNorm)) {
+        uPlayer = p;
+        break;
+      }
+    }
   }
 
-  // Compare official player name/shortName with user answer
-  if (oName && uClean === oName) return true;
-  if (oShort && uClean === oShort) return true;
+  // 4. Resolve official player
+  let oPlayer = playerMap.get(officialAns) || (officialText ? playerMap.get(officialText) : undefined) ||
+                playerMap.get(oRaw) || playerMap.get(oClean);
+  if (!oPlayer) {
+    for (const [id, p] of playerMap.entries()) {
+      if (id.toLowerCase() === oClean || normalizeText(p.name) === oNorm || (p.shortName && normalizeText(p.shortName) === oNorm) ||
+          (oTextNorm && (normalizeText(p.name) === oTextNorm || (p.shortName && normalizeText(p.shortName) === oTextNorm)))) {
+        oPlayer = p;
+        break;
+      }
+    }
+  }
+
+  // 5. If both resolved to player objects, compare their IDs or normalized names
+  if (uPlayer && oPlayer) {
+    if (uPlayer.id === oPlayer.id) return true;
+    if (normalizeText(uPlayer.name) === normalizeText(oPlayer.name)) return true;
+  }
+
+  // 6. If user is player, compare with official texts
+  if (uPlayer) {
+    const pNameNorm = normalizeText(uPlayer.name);
+    const pShortNorm = normalizeText(uPlayer.shortName || '');
+    if (oNorm && (pNameNorm === oNorm || (pShortNorm && pShortNorm === oNorm))) return true;
+    if (oTextNorm && (pNameNorm === oTextNorm || (pShortNorm && pShortNorm === oTextNorm))) return true;
+    if (oClean && (oClean.includes(uPlayer.name.toLowerCase()) || (uPlayer.shortName && oClean.includes(uPlayer.shortName.toLowerCase())))) return true;
+    if (oTextClean && (oTextClean.includes(uPlayer.name.toLowerCase()) || (uPlayer.shortName && oTextClean.includes(uPlayer.shortName.toLowerCase())))) return true;
+  }
+
+  // 7. If official is player, compare with user answer
+  if (oPlayer) {
+    const pNameNorm = normalizeText(oPlayer.name);
+    const pShortNorm = normalizeText(oPlayer.shortName || '');
+    if (uNorm && (pNameNorm === uNorm || (pShortNorm && pShortNorm === uNorm))) return true;
+    if (uClean && (uClean.includes(oPlayer.name.toLowerCase()) || (oPlayer.shortName && uClean.includes(oPlayer.shortName.toLowerCase())))) return true;
+  }
 
   return false;
 }
