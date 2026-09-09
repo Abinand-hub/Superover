@@ -223,155 +223,166 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     );
   };
 
-  const renderPlayerPickerPopup = () => {
-    if (!activePlayerQuestionId) return null;
-    const q = match.questions.find(q => q.id === activePlayerQuestionId);
-
+  const renderPlayerPickerDropdown = (q: any) => {
     return (
-      <div className="absolute inset-0 z-20 bg-slate-900 flex flex-col animate-in slide-in-from-bottom-8">
-        <div className="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+      <div className="mt-3 bg-slate-900 border border-slate-700/90 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-200">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
           <div>
-            <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider mb-1">Pick a player for</div>
-            <h3 className="text-white font-bold">{q?.title}</h3>
+            <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider block">
+              Select Player for
+            </span>
+            <span className="text-xs font-bold text-white truncate block">
+              {q.title}
+            </span>
           </div>
           <button 
             onClick={() => setActivePlayerQuestionId(null)}
-            className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white"
+            className="p-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs flex items-center gap-1 transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
+            <span>Close</span>
           </button>
         </div>
         
-        <div className="p-3 border-b border-slate-800 space-y-2.5 bg-slate-900/60">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by player name or role..."
-              value={playerSearch}
-              onChange={(e) => setPlayerSearch(e.target.value)}
-              className="w-full bg-slate-800/90 border border-slate-700/80 rounded-xl py-2 pl-9 pr-4 text-xs text-white placeholder-slate-500 focus:border-amber-500 outline-none"
-            />
-          </div>
-
-          {/* Playing XI / Bench Selector */}
-          <div className="flex items-center gap-1.5">
-            <button 
-              onClick={() => setPlayingFilter('ALL')} 
-              className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors ${playingFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
-            >
-              All Squad
-            </button>
-            <button 
-              onClick={() => setPlayingFilter('PLAYING_XI')} 
-              className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors flex items-center gap-1 ${playingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-emerald-400'}`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Playing XI
-            </button>
-            <button 
-              onClick={() => setPlayingFilter('BENCH')} 
-              className={`px-3 py-1 rounded-lg text-[11px] font-black transition-colors ${playingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
-            >
-              Bench / Sub
-            </button>
-          </div>
-
-          {/* Role & Team Filters */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar text-[11px]">
-            {(() => {
-              const titleLower = (q?.title || '').toLowerCase();
-              const shortTitleLower = (q?.shortTitle || '').toLowerCase();
-              const subTitleLower = (q?.subtitle || '').toLowerCase();
-              
-              const isT1 = titleLower.includes('team 1') || 
-                           titleLower.includes('(team 1)') ||
-                           shortTitleLower.includes('team 1') ||
-                           subTitleLower.includes('team 1') ||
-                           (match.team1?.name && (titleLower.includes(match.team1.name.toLowerCase()) || shortTitleLower.includes(match.team1.name.toLowerCase())));
-
-              const isT2 = titleLower.includes('team 2') || 
-                           titleLower.includes('(team 2)') ||
-                           shortTitleLower.includes('team 2') ||
-                           subTitleLower.includes('team 2') ||
-                           (match.team2?.name && (titleLower.includes(match.team2.name.toLowerCase()) || shortTitleLower.includes(match.team2.name.toLowerCase())));
-
-              if (isT1) {
-                return (
-                  <div className="px-2.5 py-1 rounded-lg font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap flex items-center gap-1">
-                    <span>🏏 Locked to {match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'} Squad Only</span>
-                  </div>
-                );
-              }
-              if (isT2) {
-                return (
-                  <div className="px-2.5 py-1 rounded-lg font-black bg-sky-500/20 text-sky-300 border border-sky-500/30 whitespace-nowrap flex items-center gap-1">
-                    <span>🏏 Locked to {match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'} Squad Only</span>
-                  </div>
-                );
-              }
-              return (
-                <>
-                  <button onClick={() => setTeamFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Teams</button>
-                  <button onClick={() => setTeamFilter('TEAM1')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'}</button>
-                  <button onClick={() => setTeamFilter('TEAM2')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'}</button>
-                </>
-              );
-            })()}
-            <div className="w-px h-3.5 bg-slate-700 mx-0.5"></div>
-            <button onClick={() => setRoleFilter('ALL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
-            <button onClick={() => setRoleFilter('BAT')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BAT' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
-            <button onClick={() => setRoleFilter('BOWL')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BOWL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
-            <button onClick={() => setRoleFilter('AR')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'AR' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⭐ All-Rounders</button>
-            <button onClick={() => setRoleFilter('WK')} className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'WK' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🧤 WK</button>
-          </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by player name or role..."
+            value={playerSearch}
+            onChange={(e) => setPlayerSearch(e.target.value)}
+            className="w-full bg-slate-800/90 border border-slate-700/80 rounded-xl py-1.5 pl-8 pr-3 text-xs text-white placeholder-slate-500 focus:border-amber-500 outline-none"
+          />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {/* Playing XI / Bench Selector */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar">
+          <button 
+            onClick={() => setPlayingFilter('ALL')} 
+            className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black transition-colors whitespace-nowrap ${playingFilter === 'ALL' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+          >
+            All Squad
+          </button>
+          <button 
+            onClick={() => setPlayingFilter('PLAYING_XI')} 
+            className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black transition-colors flex items-center gap-1 whitespace-nowrap ${playingFilter === 'PLAYING_XI' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-emerald-400'}`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Playing XI
+          </button>
+          <button 
+            onClick={() => setPlayingFilter('BENCH')} 
+            className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black transition-colors whitespace-nowrap ${playingFilter === 'BENCH' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'}`}
+          >
+            Bench / Sub
+          </button>
+        </div>
+
+        {/* Role & Team Filters */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar text-[10px] sm:text-[11px]">
+          {(() => {
+            const titleLower = (q?.title || '').toLowerCase();
+            const shortTitleLower = (q?.shortTitle || '').toLowerCase();
+            const subTitleLower = (q?.subtitle || '').toLowerCase();
+            
+            const isT1 = titleLower.includes('team 1') || 
+                         titleLower.includes('(team 1)') ||
+                         shortTitleLower.includes('team 1') ||
+                         subTitleLower.includes('team 1') ||
+                         (match.team1?.name && (titleLower.includes(match.team1.name.toLowerCase()) || shortTitleLower.includes(match.team1.name.toLowerCase())));
+
+            const isT2 = titleLower.includes('team 2') || 
+                         titleLower.includes('(team 2)') ||
+                         shortTitleLower.includes('team 2') ||
+                         subTitleLower.includes('team 2') ||
+                         (match.team2?.name && (titleLower.includes(match.team2.name.toLowerCase()) || shortTitleLower.includes(match.team2.name.toLowerCase())));
+
+            if (isT1) {
+              return (
+                <div className="px-2 py-0.5 rounded-lg font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 whitespace-nowrap flex items-center gap-1">
+                  <span>🏏 {match.team1?.shortName || match.team1?.code || match.team1?.name || 'Team 1'} Only</span>
+                </div>
+              );
+            }
+            if (isT2) {
+              return (
+                <div className="px-2 py-0.5 rounded-lg font-black bg-sky-500/20 text-sky-300 border border-sky-500/30 whitespace-nowrap flex items-center gap-1">
+                  <span>🏏 {match.team2?.shortName || match.team2?.code || match.team2?.name || 'Team 2'} Only</span>
+                </div>
+              );
+            }
+            return (
+              <>
+                <button onClick={() => setTeamFilter('ALL')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Teams</button>
+                <button onClick={() => setTeamFilter('TEAM1')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM1' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team1?.shortName || match.team1?.code || 'Team 1'}</button>
+                <button onClick={() => setTeamFilter('TEAM2')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${teamFilter === 'TEAM2' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{match.team2?.shortName || match.team2?.code || 'Team 2'}</button>
+              </>
+            );
+          })()}
+          <div className="w-px h-3 bg-slate-700 mx-0.5"></div>
+          <button onClick={() => setRoleFilter('ALL')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'ALL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>All Roles</button>
+          <button onClick={() => setRoleFilter('BAT')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BAT' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🏏 Batters</button>
+          <button onClick={() => setRoleFilter('BOWL')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'BOWL' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⚡ Bowlers</button>
+          <button onClick={() => setRoleFilter('AR')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'AR' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>⭐ AR</button>
+          <button onClick={() => setRoleFilter('WK')} className={`px-2 py-0.5 rounded-lg font-bold whitespace-nowrap ${roleFilter === 'WK' ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>🧤 WK</button>
+        </div>
+
+        {/* Scrollable Player Cards List */}
+        <div className="max-h-60 sm:max-h-72 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
           {filteredPlayers.map((p, idx) => {
             const isPlaying = p.isPlaying !== undefined ? p.isPlaying : idx < 11;
+            const isSelected = answers[q.id] === p.id;
 
             return (
               <div
                 key={p.id || `p_${idx}`}
-                onClick={() => handleAnswer(q?.id || activePlayerQuestionId, p.id)}
-                className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/80 hover:bg-slate-800 hover:border-amber-500/50 cursor-pointer transition-all shadow-sm"
+                onClick={() => handleAnswer(q.id, p.id)}
+                className={`flex items-center gap-2.5 p-2 rounded-xl border cursor-pointer transition-all shadow-sm ${
+                  isSelected 
+                    ? 'bg-amber-500/20 border-amber-500 text-white ring-1 ring-amber-500'
+                    : 'bg-slate-800/60 border-slate-700/80 hover:bg-slate-800 hover:border-amber-500/50 text-slate-200'
+                }`}
               >
                 <img 
                   src={p.avatar} 
                   alt={p.name} 
-                  className="w-11 h-11 rounded-xl object-cover bg-slate-700 border border-slate-600 flex-shrink-0"
+                  className="w-9 h-9 rounded-xl object-cover bg-slate-700 border border-slate-600 flex-shrink-0"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=1E293B&color=F59E0B&bold=true`;
                   }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
-                    <h4 className="font-bold text-white text-xs sm:text-sm truncate">{p.name}</h4>
-                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 flex-shrink-0">{p.team}</span>
+                    <h4 className="font-bold text-xs sm:text-sm text-white truncate">{p.name}</h4>
+                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-slate-700 text-slate-300 flex-shrink-0">{p.team}</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
                       p.role === 'BAT' ? 'bg-sky-500/20 text-sky-300' :
                       p.role === 'BOWL' ? 'bg-rose-500/20 text-rose-300' :
                       p.role === 'AR' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
                     }`}>
                       {p.role}
                     </span>
-                    <span className={`text-[10px] font-black ${isPlaying ? 'text-emerald-400' : 'text-slate-400'}`}>
-                      {isPlaying ? '🟢 Playing XI' : '🟡 Bench'}
+                    <span className={`text-[9px] font-black ${isPlaying ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {isPlaying ? '🟢 XI' : '🟡 Bench'}
                     </span>
-                    <span className="text-[10px] text-slate-400 truncate border-l border-slate-700 pl-2">
+                    <span className="text-[9px] text-slate-400 truncate border-l border-slate-700 pl-1.5">
                       {p.careerStatHighlight}
                     </span>
                   </div>
                 </div>
+                {isSelected && (
+                  <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs flex-shrink-0">
+                    ✓
+                  </span>
+                )}
               </div>
             );
           })}
           {filteredPlayers.length === 0 && (
-            <div className="text-center py-10 text-slate-500 text-xs">No players found matching your filters.</div>
+            <div className="text-center py-6 text-slate-500 text-xs">No players found matching your filters.</div>
           )}
         </div>
       </div>
@@ -380,7 +391,6 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
   const renderQuestions = () => (
     <div className="flex-1 overflow-y-auto relative p-4 sm:p-6 space-y-4">
-      {renderPlayerPickerPopup()}
       
       {/* Official Toss Result Banner or Scheduled Toss Notice */}
       {((match as any).tossSummary && (match.status === 'LIVE' || match.status === 'COMPLETED' || new Date(match.startTime).getTime() - Date.now() <= 30 * 60 * 1000)) ? (
@@ -460,27 +470,36 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               {/* Dynamic Input based on Question Type */}
               <div className="mt-3">
                 {q.type === 'PLAYER' && (
-                  <button 
-                    onClick={() => setActivePlayerQuestionId(q.id)}
-                    className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between transition-all ${
-                      isAnswered 
-                        ? 'bg-slate-800/80 border-slate-600' 
-                        : 'bg-amber-500 text-slate-950 border-transparent hover:bg-amber-400 font-bold'
-                    }`}
-                  >
-                    {isAnswered ? (
-                      <div className="flex items-center gap-2">
-                        <img src={playerMap.get(answerId)?.avatar} alt="" className="w-6 h-6 rounded-full" />
-                        <span className="text-white font-semibold text-sm">{playerMap.get(answerId)?.name}</span>
-                        <span className="text-xs text-slate-400 ml-auto bg-slate-900 px-2 py-1 rounded">Change</span>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="text-sm">Pick a Player</span>
-                        <Search className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
+                  <div>
+                    <button 
+                      onClick={() => setActivePlayerQuestionId(activePlayerQuestionId === q.id ? null : q.id)}
+                      className={`w-full py-2.5 px-4 rounded-xl border flex items-center justify-between transition-all ${
+                        isAnswered 
+                          ? 'bg-slate-800/80 border-slate-600' 
+                          : 'bg-amber-500 text-slate-950 border-transparent hover:bg-amber-400 font-bold'
+                      }`}
+                    >
+                      {isAnswered ? (
+                        <div className="flex items-center gap-2">
+                          <img src={playerMap.get(answerId)?.avatar} alt="" className="w-6 h-6 rounded-full" />
+                          <span className="text-white font-semibold text-sm">{playerMap.get(answerId)?.name}</span>
+                          <span className="text-xs text-slate-400 ml-auto bg-slate-900 px-2 py-1 rounded">
+                            {activePlayerQuestionId === q.id ? 'Close ✕' : 'Change'}
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-sm">
+                            {activePlayerQuestionId === q.id ? 'Hide Player List ✕' : 'Pick a Player'}
+                          </span>
+                          <Search className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+
+                    {/* Inline Dropdown Player Drawer */}
+                    {activePlayerQuestionId === q.id && renderPlayerPickerDropdown(q)}
+                  </div>
                 )}
 
                 {(q.type === 'TEAM' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE') && (
@@ -751,6 +770,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
               baseStake={baseStake}
               finalPayable={finalPayable}
               onComplete={handleWheelComplete} 
+              onExit={() => setCurrentView('FREE_HIT_PROMPT')}
             />
           </div>
         )}

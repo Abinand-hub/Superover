@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Sparkles, ArrowRight, CheckCircle, Clock } from 'lucide-react';
+import { Zap, Sparkles, ArrowRight, CheckCircle, ArrowLeft, X } from 'lucide-react';
 import { api } from '../services/api';
 import { formatINR } from '../utils/payoutCalculator';
 
 interface WheelOfFortuneProps {
   onComplete: (multiplier: number) => void;
+  onExit?: () => void;
   baseStake?: number;
   finalPayable?: number;
 }
 
 export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ 
   onComplete, 
+  onExit,
   baseStake = 50, 
   finalPayable 
 }) => {
@@ -18,7 +20,6 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
   const [rotation, setRotation] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedMultiplier, setSelectedMultiplier] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState<number | null>(null);
   
   const [wheelConfig, setWheelConfig] = useState([
     { multiplier: 50, probability: 20 },
@@ -84,32 +85,15 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
     
     setRotation(finalRotation);
     
-    // Stop spinning after animation (5 seconds) and begin 3, 2, 1 auto-entry countdown
+    // Stop spinning after animation (5 seconds)
     setTimeout(() => {
       setIsSpinning(false);
       setHasSpun(true);
       setSelectedMultiplier(winningMultiplier);
-      setCountdown(3);
     }, 5000);
   };
 
-  // 3 -> 2 -> 1 Auto-entry timer
-  useEffect(() => {
-    if (countdown === null || selectedMultiplier === null) return;
-    
-    if (countdown === 0) {
-      onComplete(selectedMultiplier);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setCountdown(prev => (prev !== null ? prev - 1 : null));
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [countdown, selectedMultiplier, onComplete]);
-
-  const handleInstantProceed = () => {
+  const handleConfirmAndSubmit = () => {
     if (selectedMultiplier !== null) {
       onComplete(selectedMultiplier);
     }
@@ -309,7 +293,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
         </div>
       </div>
 
-      {/* Action Area: Spin or Automatic 3, 2, 1 Countdown */}
+      {/* Action Area: Spin or Result with Exit & Submit Buttons */}
       <div className="w-full flex flex-col items-center">
         {!hasSpun ? (
           <button
@@ -341,18 +325,25 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
               </div>
             </div>
 
-            {/* 3, 2, 1 Countdown Timer & Auto-entry pill */}
-            <div className="w-full flex items-center justify-between gap-2 bg-[#0D122B] border border-amber-500/30 px-4 py-2.5 rounded-xl text-xs">
-              <div className="flex items-center gap-2 text-slate-300">
-                <Clock className="w-4 h-4 text-amber-400 animate-spin" />
-                <span>Entering match in <strong className="text-amber-400 text-sm font-mono">{countdown ?? 1}s</strong>...</span>
-              </div>
+            {/* Action Buttons: Confirm & Exit */}
+            <div className="w-full space-y-2">
               <button
-                onClick={handleInstantProceed}
-                className="text-[11px] font-black text-[#FF6B00] hover:text-[#FFAA00] underline"
+                onClick={handleConfirmAndSubmit}
+                className="w-full py-3.5 sm:py-4 px-5 rounded-2xl font-black text-slate-950 text-sm sm:text-base bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30"
               >
-                Enter Now →
+                <CheckCircle className="w-5 h-5 text-slate-950" />
+                <span>CONTINUE WITH {selectedMultiplier}X BOOST →</span>
               </button>
+
+              {onExit && (
+                <button
+                  onClick={onExit}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 border border-slate-700/60"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Exit / Back to Entry</span>
+                </button>
+              )}
             </div>
           </div>
         )}

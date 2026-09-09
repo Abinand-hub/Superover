@@ -55,7 +55,7 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [metrics, setMetrics] = useState<PlatformMetrics>(INITIAL_PLATFORM_METRICS);
 
-  const [activeTab, setActiveTab] = useState<'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules'>('lobby');
+  const [activeTab, setActiveTab] = useState<'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules'>('intro');
 
   const reloadUserData = React.useCallback(async () => {
     try {

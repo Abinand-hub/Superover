@@ -19,21 +19,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#080C1D]/95 backdrop-blur-xl border-t border-[#1A223E] px-4 py-2 shadow-2xl shadow-black flex items-center justify-around">
-      {/* Tab 1: Match Lobby */}
-      <button
-        onClick={() => setActiveTab('lobby')}
-        className={`flex flex-col items-center justify-center gap-1 transition-all ${
-          activeTab === 'lobby' ? 'text-[#FF6B00] scale-105' : 'text-slate-400 hover:text-slate-200'
-        }`}
-        id="mobile-nav-lobby"
-      >
-        <div className={`p-1 rounded-xl transition-all ${activeTab === 'lobby' ? 'bg-[#FF6B00]/20 ring-1 ring-[#FF6B00]/40' : ''}`}>
-          <Zap className="w-5 h-5" />
-        </div>
-        <span className="text-[10px] font-black tracking-tight">Lobby</span>
-      </button>
-
-      {/* Tab 2: How to Play & Rules */}
+      {/* Tab 1: How to Play & Rules */}
       <button
         onClick={() => setActiveTab('intro')}
         className={`flex flex-col items-center justify-center gap-1 transition-all ${
@@ -45,6 +31,20 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           <HelpCircle className="w-5 h-5" />
         </div>
         <span className="text-[10px] font-black tracking-tight">How to Play</span>
+      </button>
+
+      {/* Tab 2: Match Lobby */}
+      <button
+        onClick={() => setActiveTab('lobby')}
+        className={`flex flex-col items-center justify-center gap-1 transition-all ${
+          activeTab === 'lobby' ? 'text-[#FF6B00] scale-105' : 'text-slate-400 hover:text-slate-200'
+        }`}
+        id="mobile-nav-lobby"
+      >
+        <div className={`p-1 rounded-xl transition-all ${activeTab === 'lobby' ? 'bg-[#FF6B00]/20 ring-1 ring-[#FF6B00]/40' : ''}`}>
+          <Zap className="w-5 h-5" />
+        </div>
+        <span className="text-[10px] font-black tracking-tight">Lobby</span>
       </button>
 
       {/* Tab 3: My Selections */}

@@ -53,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo */}
         <div className="flex items-center gap-2 sm:gap-4">
           <button 
-            onClick={() => setActiveTab('lobby')}
+            onClick={() => setActiveTab('intro')}
             className="flex items-center gap-2 sm:gap-2.5 text-left group focus:outline-none"
             id="btn-brand-home"
           >
@@ -79,17 +79,6 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 ml-4 pl-4 border-l border-[#1A223E]">
             <button
-              onClick={() => setActiveTab('lobby')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'lobby'
-                  ? 'bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/40 shadow-sm shadow-[#FF6B00]/10'
-                  : 'text-slate-300 hover:text-white hover:bg-[#0D122B]'
-              }`}
-              id="nav-lobby-tab"
-            >
-              Match Lobby
-            </button>
-            <button
               onClick={() => setActiveTab('intro')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'intro'
@@ -99,6 +88,17 @@ export const Header: React.FC<HeaderProps> = ({
               id="nav-intro-tab"
             >
               How to Play & Rules
+            </button>
+            <button
+              onClick={() => setActiveTab('lobby')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'lobby'
+                  ? 'bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/40 shadow-sm shadow-[#FF6B00]/10'
+                  : 'text-slate-300 hover:text-white hover:bg-[#0D122B]'
+              }`}
+              id="nav-lobby-tab"
+            >
+              Match Lobby
             </button>
             <button
               onClick={() => setActiveTab('my-contests')}
