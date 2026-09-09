@@ -33,7 +33,8 @@ import {
   ArrowDownLeft,
   Calendar,
   Database,
-  TrendingUp
+  TrendingUp,
+  ArrowLeft
 } from 'lucide-react';
 import { 
   CricketMatch, 
@@ -277,6 +278,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // User Inspector & Client Detail State
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
+  // Settlement Dedicated View State (null = match list, matchId = dedicated settlement view)
+  const [activeSettlementMatchId, setActiveSettlementMatchId] = useState<string | null>(null);
+
   // Add Player & Match Modal State
   const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
   const [showCreateMatchModal, setShowCreateMatchModal] = useState<boolean>(false);
@@ -291,6 +295,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const publishingViewRef = React.useRef(publishingView);
   publishingViewRef.current = publishingView;
+
+  const activeSettlementMatchIdRef = React.useRef(activeSettlementMatchId);
+  activeSettlementMatchIdRef.current = activeSettlementMatchId;
 
   const showAddPlayerModalRef = React.useRef(showAddPlayerModal);
   showAddPlayerModalRef.current = showAddPlayerModal;
@@ -324,6 +331,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setPublishingView('config');
     if (typeof window !== 'undefined') {
       window.history.pushState({ subview: 'match-config' }, '', window.location.hash);
+    }
+  }, []);
+
+  const openMatchSettlement = React.useCallback((matchId: string) => {
+    setSelectedMatchIdForSettlement(matchId);
+    setActiveSettlementMatchId(matchId);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ subview: 'match-settlement' }, '', window.location.hash);
     }
   }, []);
 
@@ -363,6 +378,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       if (configuringMatchIdRef.current || publishingViewRef.current === 'config') {
         setConfiguringMatchId(null);
         setPublishingView('list');
+        subviewClosed = true;
+      }
+      if (activeSettlementMatchIdRef.current) {
+        setActiveSettlementMatchId(null);
         subviewClosed = true;
       }
       if (showAddPlayerModalRef.current) {
@@ -539,7 +558,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   const handleEndMatch = (match: CricketMatch) => {
-    setSelectedMatchIdForSettlement(match.id);
+    openMatchSettlement(match.id);
     handleAdminTabChange('settlement');
   };
 
@@ -1445,10 +1464,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <span>Create & Publish a Contest</span>
               </button>
             </div>
-          ) : (
-            <>
-              {/* Interactive Match Boxes Grid */}
-              <div className="space-y-3">
+          ) : (!activeSettlementMatchId || !selectedMatchForSettlement) ? (
+            <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
                     Select a Published Match Box to Settle & Disburse Winnings ({settlementMatches.length} Matches):
@@ -1521,21 +1538,68 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {/* Action CTA Button on Box */}
                         <div className="pt-2 border-t border-[#1A223E] flex items-center justify-between">
                           <span className="text-[10px] text-slate-400 font-bold">
-                            {isCompleted ? '✓ Settled & Locked' : isSelected ? '👉 Selected for Payout' : 'Click to Settle'}
+                            {isCompleted ? '✓ Settled & Locked' : 'Click to Open & Settle'}
                           </span>
-                          <span className={`px-3 py-1 rounded-lg text-xs font-black transition-colors ${
-                            isCompleted
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              : isSelected
-                              ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
-                              : 'bg-slate-800 text-slate-300'
-                          }`}>
-                            {isCompleted ? '✓ Completed' : 'Settle Questions'}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openMatchSettlement(m.id);
+                            }}
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                              isCompleted
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
+                                : 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30 hover:brightness-110 active:scale-95'
+                            }`}
+                          >
+                            {isCompleted ? 'View Settlement' : 'Settle Questions →'}
+                          </button>
                         </div>
-                      </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {/* Dedicated Header with Back Navigation */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#0D122B] border border-[#1A223E] shadow-md">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSettlementMatchId(null)}
+                    className="px-3.5 py-2 rounded-xl bg-[#080C1D] hover:bg-[#1A223E] text-slate-300 hover:text-white text-xs font-bold border border-[#1A223E] flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                    id="btn-back-to-settlement-list"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back to Matches</span>
+                  </button>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded bg-[#080C1D] text-[#FFAA00] text-[10px] font-extrabold uppercase border border-[#1A223E]">
+                        {selectedMatchForSettlement.series}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 ${
+                        selectedMatchForSettlement.status === 'LIVE' ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' :
+                        selectedMatchForSettlement.status === 'COMPLETED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                        selectedMatchForSettlement.status === 'LOCKED' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                        'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                      }`}>
+                        {selectedMatchForSettlement.status === 'LIVE' && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping"></span>}
+                        {selectedMatchForSettlement.status === 'COMPLETED' && '✓ '}
+                        {selectedMatchForSettlement.status}
+                      </span>
+                    </div>
+                    <h3 className="text-sm sm:text-base font-black text-white truncate mt-1">
+                      {selectedMatchForSettlement.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="text-xs text-slate-400 pl-2 sm:pl-0 sm:text-right border-t sm:border-t-0 border-[#1A223E] pt-2 sm:pt-0">
+                  <div className="font-bold text-slate-300">{new Date(selectedMatchForSettlement.startTime || (selectedMatchForSettlement as any).matchStartTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                  <div className="text-[#FFAA00] font-bold text-[11px]">{selectedMatchForSettlement.questions?.length || 0} Prediction Categories</div>
                 </div>
               </div>
 
@@ -1853,7 +1917,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </button>
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* Settled Confirmation Modal Popup */}
