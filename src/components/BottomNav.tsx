@@ -1,11 +1,11 @@
 import React from 'react';
-import { Zap, Trophy, User as UserIcon } from 'lucide-react';
+import { Zap, Trophy, User as UserIcon, HelpCircle } from 'lucide-react';
 import { UserAccount } from '../types';
 
 interface BottomNavProps {
   user: UserAccount;
-  activeTab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules';
-  setActiveTab: (tab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules') => void;
+  activeTab: 'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules';
+  setActiveTab: (tab: 'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules') => void;
   pendingSlipsCount: number;
   openAuthModal: () => void;
 }
@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   openAuthModal,
 }) => {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#080C1D]/95 backdrop-blur-xl border-t border-[#1A223E] px-6 py-2 shadow-2xl shadow-black flex items-center justify-around">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#080C1D]/95 backdrop-blur-xl border-t border-[#1A223E] px-4 py-2 shadow-2xl shadow-black flex items-center justify-around">
       {/* Tab 1: Match Lobby */}
       <button
         onClick={() => setActiveTab('lobby')}
@@ -33,7 +33,21 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <span className="text-[10px] font-black tracking-tight">Lobby</span>
       </button>
 
-      {/* Tab 2: My Selections */}
+      {/* Tab 2: How to Play & Rules */}
+      <button
+        onClick={() => setActiveTab('intro')}
+        className={`flex flex-col items-center justify-center gap-1 transition-all ${
+          activeTab === 'intro' ? 'text-[#FF6B00] scale-105' : 'text-slate-400 hover:text-slate-200'
+        }`}
+        id="mobile-nav-intro"
+      >
+        <div className={`p-1 rounded-xl transition-all ${activeTab === 'intro' ? 'bg-[#FF6B00]/20 ring-1 ring-[#FF6B00]/40' : ''}`}>
+          <HelpCircle className="w-5 h-5" />
+        </div>
+        <span className="text-[10px] font-black tracking-tight">How to Play</span>
+      </button>
+
+      {/* Tab 3: My Selections */}
       <button
         onClick={() => setActiveTab('my-contests')}
         className={`flex flex-col items-center justify-center gap-1 relative transition-all ${
@@ -52,7 +66,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <span className="text-[10px] font-black tracking-tight">Selections</span>
       </button>
 
-      {/* Tab 3: Avatar / Profile Tab */}
+      {/* Tab 4: Avatar / Profile Tab */}
       <button
         onClick={() => {
           if (user.id === 'u_guest') {
@@ -75,9 +89,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <img
               src={user.avatar}
               alt={user.name}
-              className="w-7 h-7 rounded-lg object-cover"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg object-cover"
             />
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#4ADE80] border-2 border-[#080C1D]" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#4ADE80] border-2 border-[#080C1D]" />
           </div>
         )}
         <span className="text-[10px] font-black tracking-tight">Profile</span>

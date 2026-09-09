@@ -14,8 +14,8 @@ import { formatINR } from '../utils/payoutCalculator';
 interface HeaderProps {
   user: UserAccount;
   wallet: Wallet;
-  activeTab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules';
-  setActiveTab: (tab: 'lobby' | 'my-contests' | 'profile' | 'payouts-rules') => void;
+  activeTab: 'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules';
+  setActiveTab: (tab: 'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules') => void;
   openWalletModal: (mode?: 'deposit' | 'withdraw' | 'passbook') => void;
   openAuthModal: () => void;
   pendingSlipsCount: number;
@@ -88,6 +88,17 @@ export const Header: React.FC<HeaderProps> = ({
               id="nav-lobby-tab"
             >
               Match Lobby
+            </button>
+            <button
+              onClick={() => setActiveTab('intro')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'intro'
+                  ? 'bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/40 shadow-sm shadow-[#FF6B00]/10'
+                  : 'text-slate-300 hover:text-white hover:bg-[#0D122B]'
+              }`}
+              id="nav-intro-tab"
+            >
+              How to Play & Rules
             </button>
             <button
               onClick={() => setActiveTab('my-contests')}

@@ -55,7 +55,7 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [metrics, setMetrics] = useState<PlatformMetrics>(INITIAL_PLATFORM_METRICS);
 
-  const [activeTab, setActiveTab] = useState<'lobby' | 'my-contests' | 'profile' | 'payouts-rules'>('lobby');
+  const [activeTab, setActiveTab] = useState<'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules'>('lobby');
 
   const reloadUserData = React.useCallback(async () => {
     try {
@@ -595,13 +595,9 @@ export default function App({ initialMatches = [] }: AppProps) {
       {/* Main Content Area - Optimized for mobile */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
 
-        {/* VIEW 1: MATCH LOBBY & PROMO BANNER */}
+        {/* VIEW 1: MATCH LOBBY (Dedicated Separate Page) */}
         {activeTab === 'lobby' && (
           <div className="space-y-6">
-            <PayoutRuleBanner 
-              onOpenRules={() => setIsRulesModalOpen(true)}
-              onSelectMatchQuick={() => {}}
-            />
             <MatchLobby
               matches={matches}
               userSlips={slips}
@@ -619,7 +615,57 @@ export default function App({ initialMatches = [] }: AppProps) {
           </div>
         )}
 
-        {/* VIEW 2: MY PREDICTIONS / CONTESTED MATCHES ONLY */}
+        {/* VIEW 2: INTRODUCTORY & RULES PAGE */}
+        {(activeTab === 'intro' || activeTab === 'payouts-rules') && (
+          <div className="space-y-6">
+            <PayoutRuleBanner 
+              onOpenRules={() => setIsRulesModalOpen(true)}
+              onSelectMatchQuick={() => setActiveTab('lobby')}
+            />
+            <div className="p-6 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1A223E]">
+                <div>
+                  <h2 className="text-xl font-extrabold text-white font-display flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B00]"></span>
+                    How SuperOver Works
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Simple 3-step real-money cricket prediction gameplay</p>
+                </div>
+
+                <button
+                  onClick={() => setActiveTab('lobby')}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black text-xs inline-flex items-center gap-2 shadow-lg shadow-[#FF6B00]/25 hover:brightness-110 active:scale-95 transition-all self-start sm:self-auto"
+                >
+                  <span>Go to Match Lobby →</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black flex items-center justify-center shadow-md">1</div>
+                  <h3 className="font-bold text-white text-sm">Choose Entry Fee</h3>
+                  <p className="text-slate-400">Join upcoming IPL or International fixtures starting at just ₹25, ₹50, or ₹100.</p>
+                </div>
+                <div 
+                  className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] hover:border-[#FF6B00]/40 transition-colors text-center"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#FF6B00]/20 flex items-center justify-center text-[#FF6B00] mb-3">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-sm">Crack 6 Stats</h3>
+                  <p className="text-xs text-slate-400 mt-1">Select player outcomes (e.g., Top Batter, Most 6s) before the match starts.</p>
+                </div>
+                <div className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black flex items-center justify-center shadow-md">3</div>
+                  <h3 className="font-bold text-white text-sm">Win Up to 500X Cash</h3>
+                  <p className="text-slate-400">Get 3 right = 0.5X refund guard. 4 right = 3X. 5 right = 10X. 6 right = up to 500X Jackpot!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3: MY PREDICTIONS / CONTESTED MATCHES ONLY */}
         {activeTab === 'my-contests' && (
           <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
             <MyContestsView
@@ -637,7 +683,7 @@ export default function App({ initialMatches = [] }: AppProps) {
           </React.Suspense>
         )}
 
-        {/* VIEW 3: PERSONAL DETAILS & PROFILE TAB */}
+        {/* VIEW 4: PERSONAL DETAILS & PROFILE TAB */}
         {activeTab === 'profile' && (
           <React.Suspense fallback={<div className="flex justify-center p-12"><div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin"></div></div>}>
             <PersonalDetailsView
@@ -648,42 +694,6 @@ export default function App({ initialMatches = [] }: AppProps) {
               onGoToLobby={() => setActiveTab('lobby')}
             />
           </React.Suspense>
-        )}
-
-        {/* VIEW 4: 100X PAYOUTS & RULES */}
-        {activeTab === 'payouts-rules' && (
-          <div className="space-y-6">
-            <PayoutRuleBanner 
-              onOpenRules={() => setIsRulesModalOpen(true)}
-            />
-            <div className="p-6 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-xl">
-              <h2 className="text-xl font-extrabold text-white font-display flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B00]"></span>
-                How SuperOver Works
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black flex items-center justify-center shadow-md">1</div>
-                  <h3 className="font-bold text-white text-sm">Choose Entry Fee</h3>
-                  <p className="text-slate-400">Join upcoming IPL or International fixtures starting at just ₹25, ₹50, or ₹100.</p>
-                </div>
-                <div 
-                  className="flex flex-col items-center p-3 sm:p-4 rounded-xl bg-[#0D122B] border border-[#1A223E] hover:border-[#FF6B00]/40 transition-colors text-center"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#FF6B00]/20 flex items-center justify-center text-[#FF6B00] mb-3">
-                    <Target className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-white text-sm">Crack 6 Stats</h3>
-                  <p className="text-xs text-slate-400 mt-1">Select player outcomes (e.g., Top Batter, Most 6s) before the match starts.</p>
-                </div>
-                <div className="p-4 rounded-xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-white font-black flex items-center justify-center shadow-md">3</div>
-                  <h3 className="font-bold text-white text-sm">Win Up to 100X Cash</h3>
-                  <p className="text-slate-400">Get 3 right = 0.5X refund guard. 4 right = 3X. 5 right = 10X. 6 right = 100X Jackpot!</p>
-                </div>
-              </div>
-            </div>
-          </div>
         )}
 
       </main>
