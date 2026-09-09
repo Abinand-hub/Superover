@@ -152,11 +152,11 @@ export const ClientDetailView: React.FC<ClientDetailViewProps> = ({ userId, onBa
           {/* Avatar & User Details */}
           <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0 w-full lg:w-auto">
             <img 
-              src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+              src={user.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(user.name || user.phone || 'User')}&backgroundColor=FF6B00`} 
               alt={user.name} 
               className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-2 border-[#1A223E] object-cover bg-[#0D122B] shrink-0 shadow-md" 
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+                (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(user.name || user.phone || 'User')}&backgroundColor=FF6B00`;
               }}
             />
             <div className="min-w-0 flex-1 space-y-1.5">

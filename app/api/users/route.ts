@@ -8,8 +8,15 @@ export async function GET() {
   try {
     await connectToDatabase();
     
-    // Aggregate users with their transaction and slip data
+    // Aggregate users (excluding admin) with their transaction and slip data
     const users = await User.aggregate([
+      {
+        $match: {
+          role: { $ne: 'ADMIN' },
+          phone: { $ne: '9999999999' },
+          name: { $not: /admin/i }
+        }
+      },
       {
         $lookup: {
           from: 'transactions',
@@ -81,9 +88,9 @@ export async function GET() {
               '$avatar',
               {
                 $concat: [
-                  'https://ui-avatars.com/api/?name=',
+                  'https://api.dicebear.com/9.x/avataaars/svg?seed=',
                   '$name',
-                  '&background=FF6B00&color=fff&bold=true'
+                  '&backgroundColor=FF6B00'
                 ]
               }
             ]
@@ -113,7 +120,7 @@ export async function GET() {
       id: u._id.toString(),
       joinedDate: u.joinedDate || u.createdAt,
       dateJoined: u.dateJoined || u.createdAt,
-      avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`
+      avatar: u.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.phone || 'User')}&backgroundColor=FF6B00`
     }));
 
     return NextResponse.json(mappedUsers);

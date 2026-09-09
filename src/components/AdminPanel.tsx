@@ -771,7 +771,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           { id: 'squads', label: 'Match Squad Viewer', icon: UserPlus },
           { id: 'settlement', label: 'Result Settlement & Payouts', icon: Sparkles },
           { id: 'jackpots', label: 'Jackpot Approvals', icon: Gift },
-          { id: 'users', label: `User Inspector (${metrics.totalUsers})`, icon: Users },
+          { id: 'users', label: `User Inspector (${loadedUsers.filter(u => u.role !== 'ADMIN' && u.phone !== '9999999999' && !u.name.toLowerCase().includes('admin')).length})`, icon: Users },
           { id: 'withdrawals', label: `Withdrawal Queue (${allTransactions.filter(t => t.type === 'WITHDRAWAL' && t.status === 'PENDING').length})`, icon: ArrowUpRight },
           { id: 'financials', label: 'Financial Audit & CSV', icon: FileSpreadsheet },
           { id: 'settings', label: 'Platform Settings', icon: Settings },
@@ -2014,6 +2014,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   {/* Mobile Cards (Visible on screens < md) */}
                   <div className="block md:hidden divide-y divide-[#1A223E]">
                     {loadedUsers
+                      .filter(u => u.role !== 'ADMIN' && u.phone !== '9999999999' && !u.name.toLowerCase().includes('admin'))
                       .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
                       .map(u => {
                         const totalDep = Number(u.totalDeposits || 0);
@@ -2032,17 +2033,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <img 
-                                  src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+                                  src={u.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.phone || 'User')}&backgroundColor=FF6B00`} 
                                   alt={u.name} 
                                   className="w-10 h-10 rounded-xl object-cover bg-[#1A223E] border border-[#1A223E] shrink-0" 
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+                                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.phone || 'User')}&backgroundColor=FF6B00`;
                                   }}
                                 />
                                 <div className="min-w-0">
                                   <div className="font-bold text-white text-sm truncate flex items-center gap-1.5">
                                     {u.name}
-                                    {u.role === 'ADMIN' && <span className="text-[8px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1 py-0.2 rounded">ADMIN</span>}
                                     {u.isBlocked && <span className="text-[8px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1 py-0.2 rounded">BLOCKED</span>}
                                   </div>
                                   <div className="text-[11px] text-slate-400 font-mono">+91 {u.phone}</div>
@@ -2074,7 +2074,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           </div>
                         );
                       })}
-                    {loadedUsers.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch)).length === 0 && (
+                    {loadedUsers.filter(u => u.role !== 'ADMIN' && u.phone !== '9999999999' && !u.name.toLowerCase().includes('admin')).filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch)).length === 0 && (
                       <div className="p-8 text-center text-slate-500 text-xs">No clients found.</div>
                     )}
                   </div>
@@ -2095,6 +2095,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </thead>
                       <tbody className="divide-y divide-[#1A223E]">
                         {loadedUsers
+                          .filter(u => u.role !== 'ADMIN' && u.phone !== '9999999999' && !u.name.toLowerCase().includes('admin'))
                           .filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.phone.includes(userSearch))
                           .map(u => {
                             const totalDep = Number(u.totalDeposits || 0);
@@ -2113,17 +2114,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <td className="p-4">
                                   <div className="flex items-center gap-3">
                                     <img 
-                                      src={u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`} 
+                                      src={u.avatar || `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.phone || 'User')}&backgroundColor=FF6B00`} 
                                       alt={u.name} 
                                       className="w-9 h-9 rounded-xl object-cover bg-[#1A223E] border border-[#1A223E] shadow-sm" 
                                       onError={(e) => {
-                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || 'User')}&background=FF6B00&color=fff&bold=true`;
+                                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(u.name || u.phone || 'User')}&backgroundColor=FF6B00`;
                                       }}
                                     />
                                     <div>
                                       <div className="font-bold text-white flex items-center gap-2">
                                         {u.name} 
-                                        {u.role === 'ADMIN' && <span className="text-[9px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.5 rounded">ADMIN</span>}
                                         {u.isBlocked && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded">BLOCKED</span>}
                                       </div>
                                       <div className="text-xs text-slate-500">{u.phone}</div>

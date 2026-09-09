@@ -53,6 +53,7 @@ export async function POST(req: Request) {
       username,
       password: hashedPassword,
       role: 'FAN',
+      avatar: `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(name || username || phone)}&backgroundColor=FF6B00`,
       wallet: { depositBalance: 0, winningsBalance: 0, bonusBalance: 50 }, // Give 50 bonus for joining
     });
 

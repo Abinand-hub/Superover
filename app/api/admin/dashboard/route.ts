@@ -33,7 +33,7 @@ export async function GET(req: Request) {
       Match.find({}).sort({ matchStartTime: -1 }).lean(),
       Slip.find({}).sort({ submittedAt: -1 }).limit(1000).lean(), // Limit to recent slips for performance
       Transaction.find({}).sort({ createdAt: -1 }).limit(1000).lean(), // Limit to recent transactions
-      User.countDocuments({})
+      User.countDocuments({ role: { $ne: 'ADMIN' }, phone: { $ne: '9999999999' }, name: { $not: /admin/i } })
     ]);
 
     // Process matches
