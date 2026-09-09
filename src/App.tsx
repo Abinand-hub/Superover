@@ -57,6 +57,159 @@ export default function App({ initialMatches = [] }: AppProps) {
 
   const [activeTab, setActiveTab] = useState<'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules'>('intro');
 
+  // Modals
+  const [selectedMatchForPlay, setSelectedMatchForPlay] = useState<{ match: CricketMatch; fee: number } | null>(null);
+  const [selectedMatchForResults, setSelectedMatchForResults] = useState<{ match: CricketMatch; slip?: UserPredictionSlip } | null>(null);
+  const [editingSlipState, setEditingSlipState] = useState<{ match: CricketMatch; slip: UserPredictionSlip } | null>(null);
+  const [walletModalState, setWalletModalState] = useState<{ open: boolean; tab: 'deposit' | 'withdraw' | 'passbook' }>({ open: false, tab: 'deposit' });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
+  const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
+
+  // References for reliable popstate / back-button handling
+  const selectedMatchForPlayRef = React.useRef(selectedMatchForPlay);
+  selectedMatchForPlayRef.current = selectedMatchForPlay;
+
+  const selectedMatchForResultsRef = React.useRef(selectedMatchForResults);
+  selectedMatchForResultsRef.current = selectedMatchForResults;
+
+  const editingSlipStateRef = React.useRef(editingSlipState);
+  editingSlipStateRef.current = editingSlipState;
+
+  const walletModalStateRef = React.useRef(walletModalState);
+  walletModalStateRef.current = walletModalState;
+
+  const isAuthModalOpenRef = React.useRef(isAuthModalOpen);
+  isAuthModalOpenRef.current = isAuthModalOpen;
+
+  const isRulesModalOpenRef = React.useRef(isRulesModalOpen);
+  isRulesModalOpenRef.current = isRulesModalOpen;
+
+  const isResponsibleModalOpenRef = React.useRef(isResponsibleModalOpen);
+  isResponsibleModalOpenRef.current = isResponsibleModalOpen;
+
+  // History synchronized tab change handler
+  const handleTabChange = React.useCallback((tab: 'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules', pushHistory = true) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined' && pushHistory) {
+      const targetHash = '#' + tab;
+      if (window.location.hash !== targetHash) {
+        window.history.pushState({ type: 'tab', tab }, '', targetHash);
+      }
+    }
+  }, []);
+
+  // Modal opening wrappers that push history state so mobile/laptop back button closes modals
+  const openPlayModal = React.useCallback((match: CricketMatch, fee: number) => {
+    setSelectedMatchForPlay({ match, fee });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'play' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  const openResultsModal = React.useCallback((match: CricketMatch, slip?: UserPredictionSlip) => {
+    setSelectedMatchForResults({ match, slip });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'results' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  const openEditingSlipModal = React.useCallback((match: CricketMatch, slip: UserPredictionSlip) => {
+    setEditingSlipState({ match, slip });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'editSlip' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  const openWalletModal = React.useCallback((tab: 'deposit' | 'withdraw' | 'passbook' = 'deposit') => {
+    setWalletModalState({ open: true, tab });
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'wallet' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  const openAuthModal = React.useCallback(() => {
+    setIsAuthModalOpen(true);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'auth' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  const openRulesModal = React.useCallback(() => {
+    setIsRulesModalOpen(true);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'rules' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  const openResponsibleModal = React.useCallback(() => {
+    setIsResponsibleModalOpen(true);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ type: 'modal', modal: 'responsible' }, '', window.location.hash || '#intro');
+    }
+  }, []);
+
+  // Sync with browser back/forward history buttons
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const validTabs = ['intro', 'lobby', 'my-contests', 'profile', 'payouts-rules'];
+    const initialHash = window.location.hash.replace('#', '') as any;
+    if (validTabs.includes(initialHash)) {
+      setActiveTab(initialHash);
+    } else {
+      window.history.replaceState({ type: 'tab', tab: 'intro' }, '', '#intro');
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 1. If any modal is currently open, close it first
+      let modalClosed = false;
+      if (selectedMatchForPlayRef.current) {
+        setSelectedMatchForPlay(null);
+        modalClosed = true;
+      }
+      if (selectedMatchForResultsRef.current) {
+        setSelectedMatchForResults(null);
+        modalClosed = true;
+      }
+      if (editingSlipStateRef.current) {
+        setEditingSlipState(null);
+        modalClosed = true;
+      }
+      if (walletModalStateRef.current.open) {
+        setWalletModalState({ open: false, tab: 'deposit' });
+        modalClosed = true;
+      }
+      if (isAuthModalOpenRef.current) {
+        setIsAuthModalOpen(false);
+        modalClosed = true;
+      }
+      if (isRulesModalOpenRef.current) {
+        setIsRulesModalOpen(false);
+        modalClosed = true;
+      }
+      if (isResponsibleModalOpenRef.current) {
+        setIsResponsibleModalOpen(false);
+        modalClosed = true;
+      }
+
+      if (modalClosed) return;
+
+      // 2. Otherwise update activeTab from URL hash / event state
+      const currentHash = window.location.hash.replace('#', '') as any;
+      if (validTabs.includes(currentHash)) {
+        setActiveTab(currentHash);
+      } else if (event.state && event.state.tab && validTabs.includes(event.state.tab)) {
+        setActiveTab(event.state.tab);
+      } else {
+        setActiveTab('intro');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const reloadUserData = React.useCallback(async () => {
     try {
       const [fetchedMatches, fetchedUser, fetchedWallet, fetchedSlips, fetchedTransactions] = await Promise.all([
@@ -219,15 +372,6 @@ export default function App({ initialMatches = [] }: AppProps) {
     }
   }, [slips, matches, currentUser?.id, transactions.length, wallet.winningsBalance]);
 
-  // Modals
-  const [selectedMatchForPlay, setSelectedMatchForPlay] = useState<{ match: CricketMatch; fee: number } | null>(null);
-  const [selectedMatchForResults, setSelectedMatchForResults] = useState<{ match: CricketMatch; slip?: UserPredictionSlip } | null>(null);
-  const [editingSlipState, setEditingSlipState] = useState<{ match: CricketMatch; slip: UserPredictionSlip } | null>(null);
-  const [walletModalState, setWalletModalState] = useState<{ open: boolean; tab: 'deposit' | 'withdraw' | 'passbook' }>({ open: false, tab: 'deposit' });
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
-  const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
-
   const pendingSlipsCount = slips.filter((s) => s.status === 'PENDING' || s.status === 'LIVE').length;
 
   const handleSignOut = async () => {
@@ -237,7 +381,7 @@ export default function App({ initialMatches = [] }: AppProps) {
       console.error('Logout failed:', e);
     }
     setCurrentUser(INITIAL_USER);
-    setActiveTab('lobby');
+    handleTabChange('lobby');
     setSlips([]);
     setTransactions([]);
     setWallet(INITIAL_WALLET);
@@ -585,9 +729,9 @@ export default function App({ initialMatches = [] }: AppProps) {
         user={currentUser}
         wallet={wallet}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        openWalletModal={(tab = 'deposit') => setWalletModalState({ open: true, tab })}
-        openAuthModal={() => setIsAuthModalOpen(true)}
+        setActiveTab={(tab) => handleTabChange(tab)}
+        openWalletModal={(tab = 'deposit') => openWalletModal(tab)}
+        openAuthModal={openAuthModal}
         pendingSlipsCount={pendingSlipsCount}
         onSignOut={handleSignOut}
       />
@@ -603,13 +747,13 @@ export default function App({ initialMatches = [] }: AppProps) {
               userSlips={slips}
               onSelectMatchToPlay={(match, fee = 25) => {
                 if (currentUser.id === 'u_guest') {
-                  setIsAuthModalOpen(true);
+                  openAuthModal();
                   return;
                 }
-                setSelectedMatchForPlay({ match, fee });
+                openPlayModal(match, fee);
               }}
               onViewMatchResult={(match, slip) => {
-                setSelectedMatchForResults({ match, slip });
+                openResultsModal(match, slip);
               }}
             />
           </div>
@@ -619,8 +763,8 @@ export default function App({ initialMatches = [] }: AppProps) {
         {(activeTab === 'intro' || activeTab === 'payouts-rules') && (
           <div className="space-y-6">
             <PayoutRuleBanner 
-              onOpenRules={() => setIsRulesModalOpen(true)}
-              onSelectMatchQuick={() => setActiveTab('lobby')}
+              onOpenRules={openRulesModal}
+              onSelectMatchQuick={() => handleTabChange('lobby')}
             />
             <div className="p-6 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-6 shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1A223E]">
@@ -633,7 +777,7 @@ export default function App({ initialMatches = [] }: AppProps) {
                 </div>
 
                 <button
-                  onClick={() => setActiveTab('lobby')}
+                  onClick={() => handleTabChange('lobby')}
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black text-xs inline-flex items-center gap-2 shadow-lg shadow-[#FF6B00]/25 hover:brightness-110 active:scale-95 transition-all self-start sm:self-auto"
                 >
                   <span>Go to Match Lobby →</span>
@@ -673,12 +817,12 @@ export default function App({ initialMatches = [] }: AppProps) {
               slips={slips}
               matches={matches}
               onViewSlipDetails={(match, slip) => {
-                setSelectedMatchForResults({ match, slip });
+                openResultsModal(match, slip);
               }}
               onEditSlip={(match, slip) => {
-                setEditingSlipState({ match, slip });
+                openEditingSlipModal(match, slip);
               }}
-              onGoToLobby={() => setActiveTab('lobby')}
+              onGoToLobby={() => handleTabChange('lobby')}
             />
           </React.Suspense>
         )}
@@ -691,7 +835,7 @@ export default function App({ initialMatches = [] }: AppProps) {
               slips={slips}
               transactions={transactions}
               onSignOut={handleSignOut}
-              onGoToLobby={() => setActiveTab('lobby')}
+              onGoToLobby={() => handleTabChange('lobby')}
             />
           </React.Suspense>
         )}
@@ -711,10 +855,10 @@ export default function App({ initialMatches = [] }: AppProps) {
             </div>
 
             <div className="flex items-center gap-4 text-xs text-slate-400">
-              <button onClick={() => setIsRulesModalOpen(true)} className="hover:text-white transition-colors">
+              <button onClick={openRulesModal} className="hover:text-white transition-colors">
                 Rules & FAQs
               </button>
-              <button onClick={() => setIsResponsibleModalOpen(true)} className="hover:text-white transition-colors">
+              <button onClick={openResponsibleModal} className="hover:text-white transition-colors">
                 Responsible Gaming
               </button>
             </div>
@@ -732,9 +876,9 @@ export default function App({ initialMatches = [] }: AppProps) {
       <BottomNav
         user={currentUser}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => handleTabChange(tab)}
         pendingSlipsCount={pendingSlipsCount}
-        openAuthModal={() => setIsAuthModalOpen(true)}
+        openAuthModal={openAuthModal}
       />
 
       {/* ALL MODALS (Lazy Loaded) */}
@@ -757,7 +901,7 @@ export default function App({ initialMatches = [] }: AppProps) {
             onOpenDeposit={() => {
               setSelectedMatchForPlay(null);
               setEditingSlipState(null);
-              setWalletModalState({ open: true, tab: 'deposit' });
+              openWalletModal('deposit');
             }}
           />
         )}
@@ -771,11 +915,11 @@ export default function App({ initialMatches = [] }: AppProps) {
             onUpdateSlip={handleUpdateSlip}
             onEditSlip={(match, slip) => {
               setSelectedMatchForResults(null);
-              setEditingSlipState({ match, slip });
+              openEditingSlipModal(match, slip);
             }}
             onPlayAnother={() => {
               setSelectedMatchForResults(null);
-              setActiveTab('lobby');
+              handleTabChange('lobby');
             }}
           />
         )}
@@ -810,7 +954,6 @@ export default function App({ initialMatches = [] }: AppProps) {
               };
               setCurrentUser(enrichedUser);
               setWallet(user.wallet);
-              // We no longer manage allUsers here
               setIsAuthModalOpen(false);
             }}
           />

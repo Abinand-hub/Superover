@@ -270,6 +270,131 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [loadedUsers, setLoadedUsers] = useState<UserAccount[]>(allUsers);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
+  // Publishing State
+  const [publishingView, setPublishingView] = useState<'list' | 'config'>('list');
+  const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
+
+  // User Inspector & Client Detail State
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  // Add Player & Match Modal State
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
+  const [showCreateMatchModal, setShowCreateMatchModal] = useState<boolean>(false);
+  const [showSettledModal, setShowSettledModal] = useState<boolean>(false);
+
+  // Refs for reliable popstate / back-button handling in Admin
+  const selectedClientIdRef = React.useRef(selectedClientId);
+  selectedClientIdRef.current = selectedClientId;
+
+  const configuringMatchIdRef = React.useRef(configuringMatchId);
+  configuringMatchIdRef.current = configuringMatchId;
+
+  const publishingViewRef = React.useRef(publishingView);
+  publishingViewRef.current = publishingView;
+
+  const showAddPlayerModalRef = React.useRef(showAddPlayerModal);
+  showAddPlayerModalRef.current = showAddPlayerModal;
+
+  const showCreateMatchModalRef = React.useRef(showCreateMatchModal);
+  showCreateMatchModalRef.current = showCreateMatchModal;
+
+  const showSettledModalRef = React.useRef(showSettledModal);
+  showSettledModalRef.current = showSettledModal;
+
+  // Helper to change admin tab with history sync
+  const handleAdminTabChange = React.useCallback((tab: typeof adminTab, pushHistory = true) => {
+    setAdminTab(tab);
+    if (typeof window !== 'undefined' && pushHistory) {
+      const targetHash = '#admin-' + tab;
+      if (window.location.hash !== targetHash) {
+        window.history.pushState({ type: 'adminTab', tab }, '', targetHash);
+      }
+    }
+  }, []);
+
+  const openClientDetail = React.useCallback((clientId: string) => {
+    setSelectedClientId(clientId);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ subview: 'client-detail' }, '', window.location.hash);
+    }
+  }, []);
+
+  const openMatchConfig = React.useCallback((matchId: string) => {
+    setConfiguringMatchId(matchId);
+    setPublishingView('config');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ subview: 'match-config' }, '', window.location.hash);
+    }
+  }, []);
+
+  const openAddPlayerModal = React.useCallback(() => {
+    setShowAddPlayerModal(true);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ modal: 'add-player' }, '', window.location.hash);
+    }
+  }, []);
+
+  const openCreateMatchModal = React.useCallback(() => {
+    setShowCreateMatchModal(true);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ modal: 'create-match' }, '', window.location.hash);
+    }
+  }, []);
+
+  // History / Back-button listener for Admin Panel
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const validTabs = ['overview', 'publishing', 'questionBank', 'matches', 'squads', 'settlement', 'jackpots', 'users', 'withdrawals', 'financials', 'market', 'settings'];
+    const currentHash = window.location.hash.replace('#admin-', '').replace('#', '');
+    if (validTabs.includes(currentHash)) {
+      setAdminTab(currentHash as any);
+    } else {
+      window.history.replaceState({ type: 'adminTab', tab: 'market' }, '', '#admin-market');
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      // 1. Close any open subview or modal first
+      let subviewClosed = false;
+      if (selectedClientIdRef.current) {
+        setSelectedClientId(null);
+        subviewClosed = true;
+      }
+      if (configuringMatchIdRef.current || publishingViewRef.current === 'config') {
+        setConfiguringMatchId(null);
+        setPublishingView('list');
+        subviewClosed = true;
+      }
+      if (showAddPlayerModalRef.current) {
+        setShowAddPlayerModal(false);
+        subviewClosed = true;
+      }
+      if (showCreateMatchModalRef.current) {
+        setShowCreateMatchModal(false);
+        subviewClosed = true;
+      }
+      if (showSettledModalRef.current) {
+        setShowSettledModal(false);
+        subviewClosed = true;
+      }
+
+      if (subviewClosed) return;
+
+      // 2. Otherwise update adminTab from URL hash
+      const hash = window.location.hash.replace('#admin-', '').replace('#', '');
+      if (validTabs.includes(hash)) {
+        setAdminTab(hash as any);
+      } else if (event.state && event.state.tab && validTabs.includes(event.state.tab)) {
+        setAdminTab(event.state.tab);
+      } else {
+        setAdminTab('market');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   useEffect(() => {
     if (adminTab === 'users' && loadedUsers.length === 0) {
       setIsLoadingUsers(true);
@@ -281,10 +406,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       });
     }
   }, [adminTab, loadedUsers.length]);
-
-  // Publishing State
-  const [publishingView, setPublishingView] = useState<'list' | 'config'>('list');
-  const [configuringMatchId, setConfiguringMatchId] = useState<string | null>(null);
 
   // Published Squad Matches (Strictly UPCOMING / LIVE / LOCKED matches with configured questions)
   const publishedMatches = matches.filter(m => 
@@ -303,8 +424,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const currentMatchForSquad = publishedMatches.find((m) => m.id === selectedMatchForSquad) || publishedMatches[0];
 
-  // Add Player Modal State
-  const [showAddPlayerModal, setShowAddPlayerModal] = useState<boolean>(false);
+  // Add Player Form Fields
   const [newPlayerName, setNewPlayerName] = useState<string>('');
   const [newPlayerShortName, setNewPlayerShortName] = useState<string>('');
   const [newPlayerRole, setNewPlayerRole] = useState<PlayerRole>('BAT');
@@ -335,7 +455,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [settlementSuccessMessage, setSettlementSuccessMessage] = useState<string>('');
   const [isSettling, setIsSettling] = useState<boolean>(false);
   const [settledResultInfo, setSettledResultInfo] = useState<{ matchTitle: string; summary: string; settledAt: string } | null>(null);
-  const [showSettledModal, setShowSettledModal] = useState<boolean>(false);
   const [reopenSettlementId, setReopenSettlementId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -364,10 +483,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [inspectedUser, setInspectedUser] = useState<UserAccount | null>(null);
   const [bonusCreditAmount, setBonusCreditAmount] = useState<number>(50);
   const [bonusCreditNote, setBonusCreditNote] = useState<string>('Promotional Skill Reward');
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  // Create Match Modal State
-  const [showCreateMatchModal, setShowCreateMatchModal] = useState<boolean>(false);
+  // Create Match Form State
   const [newMatchTitle, setNewMatchTitle] = useState<string>('India vs Australia');
   const [newMatchSeries, setNewMatchSeries] = useState<string>('ICC T20 World Cup 2026');
   const [newMatchFormat, setNewMatchFormat] = useState<string>('T20');
@@ -423,7 +540,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleEndMatch = (match: CricketMatch) => {
     setSelectedMatchIdForSettlement(match.id);
-    setAdminTab('settlement');
+    handleAdminTabChange('settlement');
   };
 
   const handleToggleLock = (match: CricketMatch) => {
@@ -663,7 +780,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           return (
             <button
               key={tab.id}
-              onClick={() => setAdminTab(tab.id as any)}
+              onClick={() => handleAdminTabChange(tab.id as any)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
                 adminTab === tab.id
                   ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black shadow-md shadow-[#FF6B00]/30'
@@ -762,13 +879,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </p>
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <button
-                  onClick={() => setAdminTab('matches')}
+                  onClick={() => handleAdminTabChange('matches')}
                   className="py-2.5 px-3 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 font-bold text-xs border border-purple-500/40 text-center"
                 >
                   Manage Match Status →
                 </button>
                 <button
-                  onClick={() => setAdminTab('squads')}
+                  onClick={() => handleAdminTabChange('squads')}
                   className="py-2.5 px-3 rounded-xl bg-[#FF6B00]/20 hover:bg-[#FF6B00]/30 text-[#FF8800] font-bold text-xs border border-[#FF6B00]/40 text-center"
                 >
                   Edit Squad Players →
@@ -925,7 +1042,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <button
                       onClick={() => {
                         setSelectedMatchForSquad(match.id);
-                        setAdminTab('squads');
+                        handleAdminTabChange('squads');
                       }}
                       className="px-3 py-2 rounded-xl bg-[#080C1D] hover:bg-[#131A38] text-[#FF8800] text-xs font-bold border border-[#FF6B00]/40 flex items-center gap-1"
                     >
@@ -996,7 +1113,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 The Match Squad Viewer displays squads only for matches with active published contests. Configure and publish a match in the Match Publishing tab to inspect its players.
               </p>
               <button
-                onClick={() => setAdminTab('publishing')}
+                onClick={() => handleAdminTabChange('publishing')}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs shadow-md shadow-[#FF6B00]/25 transition-all inline-flex items-center gap-2"
               >
                 <Calendar className="w-4 h-4" />
@@ -1321,7 +1438,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 Settlement and winnings distribution only applies to published matches with configured prediction questions.
               </p>
               <button
-                onClick={() => setAdminTab('publishing')}
+                onClick={() => handleAdminTabChange('publishing')}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 text-slate-950 font-black text-xs shadow-md shadow-[#FF6B00]/25 transition-all inline-flex items-center gap-2"
               >
                 <Calendar className="w-4 h-4" />
@@ -1781,7 +1898,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <button
                     onClick={() => {
                       setShowSettledModal(false);
-                      setAdminTab('market');
+                      handleAdminTabChange('market');
                     }}
                     className="flex-1 py-3 rounded-xl bg-[#1A223E] hover:bg-[#253055] text-white font-bold text-xs transition-colors"
                   >
@@ -1909,7 +2026,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         return (
                           <div 
                             key={u.id}
-                            onClick={() => setSelectedClientId(u.id)}
+                            onClick={() => openClientDetail(u.id)}
                             className="p-3.5 space-y-2.5 active:bg-[#131A38] cursor-pointer transition-colors"
                           >
                             <div className="flex items-center justify-between gap-3">
@@ -1990,7 +2107,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             return (
                               <tr 
                                 key={u.id} 
-                                onClick={() => setSelectedClientId(u.id)}
+                                onClick={() => openClientDetail(u.id)}
                                 className="text-slate-300 hover:bg-[#131A38] cursor-pointer transition-colors"
                               >
                                 <td className="p-4">
@@ -2523,14 +2640,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           onCreateMatch={onCreateMatch}
           onUpdateMatch={onUpdateMatch}
           onReloadData={onReloadData}
-          onGoToLifecycle={() => setAdminTab('matches')}
+          onGoToLifecycle={() => handleAdminTabChange('matches')}
           onGoToSettle={(matchId) => {
             setSelectedMatchIdForSettlement(matchId);
-            setAdminTab('settlement');
+            handleAdminTabChange('settlement');
           }}
           onGoToSquads={(matchId) => {
             setSelectedMatchForSquad(matchId);
-            setAdminTab('squads');
+            handleAdminTabChange('squads');
           }}
         />
       )}
