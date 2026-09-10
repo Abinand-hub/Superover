@@ -58,6 +58,7 @@ export const PersonalDetailsView: React.FC<PersonalDetailsViewProps> = ({
   const totalDepositedAmount = depositsList.reduce((sum, t) => sum + t.amount, 0);
   const totalWithdrawnAmount = withdrawalsList.filter(t => t.status === 'SUCCESS').reduce((sum, t) => sum + t.amount, 0);
   const contestsPlayedCount = userSlips.length || user.totalContestsJoined || 0;
+  const contestsWonCount = userSlips.filter(s => s.status === 'WON' || (s.payoutAmount && s.payoutAmount > 0)).length;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-in fade-in duration-200">
@@ -194,10 +195,10 @@ export const PersonalDetailsView: React.FC<PersonalDetailsViewProps> = ({
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2">
-          {/* Contests Played */}
-          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
+          {/* 1. Contests Played */}
+          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-[#FF6B00]/40 transition-all flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contest Played</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contests Played</span>
               <Trophy className="w-4 h-4 text-[#FFAA00]" />
             </div>
             <span className="text-2xl font-black text-white font-display mt-3">
@@ -206,40 +207,40 @@ export const PersonalDetailsView: React.FC<PersonalDetailsViewProps> = ({
             <span className="text-[11px] text-slate-400 mt-1">Total selections</span>
           </div>
 
-          {/* Total Money Added */}
-          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
+          {/* 2. Contest Won */}
+          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-emerald-500/40 transition-all flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Money Added</span>
-              <ArrowDownLeft className="w-4 h-4 text-[#FFAA00]" />
-            </div>
-            <span className="text-2xl font-black text-[#FFAA00] font-display mt-3">
-              {formatINR(totalDepositedAmount)}
-            </span>
-            <span className="text-[11px] text-slate-400 mt-1">{depositsList.length} instant UPI deposits</span>
-          </div>
-
-          {/* Total Won Payouts */}
-          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Won Payouts</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contest Won</span>
               <Award className="w-4 h-4 text-[#4ADE80]" />
             </div>
             <span className="text-2xl font-black text-[#4ADE80] font-display mt-3">
+              {contestsWonCount}
+            </span>
+            <span className="text-[11px] text-emerald-400/80 mt-1">{contestsWonCount === 1 ? 'Winning entry' : 'Winning entries'}</span>
+          </div>
+
+          {/* 3. Total Payout Earned */}
+          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-amber-500/40 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Payout Earned</span>
+              <Sparkles className="w-4 h-4 text-[#FFAA00]" />
+            </div>
+            <span className="text-2xl font-black text-[#FFAA00] font-display mt-3">
               {formatINR(totalWonAmount)}
             </span>
             <span className="text-[11px] text-slate-400 mt-1">Disbursed winnings</span>
           </div>
 
-          {/* Total Withdrawal */}
-          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
+          {/* 4. Total Money Withdrawn */}
+          <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-sky-500/40 transition-all flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Withdrawal</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Money Withdrawn</span>
               <ArrowUpRight className="w-4 h-4 text-sky-400" />
             </div>
             <span className="text-2xl font-black text-sky-400 font-display mt-3">
               {formatINR(totalWithdrawnAmount)}
             </span>
-            <span className="text-[11px] text-slate-400 mt-1">{withdrawalsList.length} transfers to UPI</span>
+            <span className="text-[11px] text-slate-400 mt-1">{withdrawalsList.filter(t => t.status === 'SUCCESS').length} transfers to UPI</span>
           </div>
         </div>
       </div>

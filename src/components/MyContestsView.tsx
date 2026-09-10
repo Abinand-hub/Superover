@@ -256,19 +256,23 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
             return (
               <div
                 key={group.matchKey}
-                className={`rounded-3xl border transition-all overflow-hidden shadow-lg ${
-                  group.hasWonAny
-                    ? 'bg-gradient-to-b from-[#FF6B00]/10 via-[#0D122B] to-[#0D122B] border-[#FF6B00]/40'
+                className={`rounded-3xl border transition-all duration-300 overflow-hidden shadow-xl ${
+                  isExpanded
+                    ? 'border-2 border-[#FF6B00] ring-4 ring-[#FF6B00]/25 shadow-2xl shadow-[#FF6B00]/20 bg-gradient-to-b from-[#FF6B00]/15 via-[#0D122B] to-[#0D122B]'
+                    : group.hasWonAny
+                    ? 'bg-gradient-to-b from-emerald-500/10 via-[#0D122B] to-[#0D122B] border-emerald-500/40 hover:border-emerald-500/70'
                     : isLive
-                    ? 'bg-[#0D122B] border-red-500/40'
-                    : 'bg-[#0D122B] border-[#1A223E] hover:border-[#2A355E]'
+                    ? 'bg-[#0D122B] border-rose-500/40 hover:border-rose-500/70'
+                    : 'bg-[#0D122B] border-[#1A223E] hover:border-[#334175]'
                 }`}
                 id={`match-folder-${group.matchKey}`}
               >
                 {/* MATCH FOLDER HEADER / PARENT CARD */}
                 <div 
                   onClick={() => toggleMatchExpanded(group.matchKey)}
-                  className="p-4 sm:p-5 cursor-pointer select-none transition-colors hover:bg-[#131A38]/40"
+                  className={`p-4 sm:p-5 cursor-pointer select-none transition-colors ${
+                    isExpanded ? 'bg-[#131A38]/80 border-b border-[#FF6B00]/30' : 'hover:bg-[#131A38]/40'
+                  }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     {/* Left: Series, Status, Folder Badge, Match Title */}
@@ -298,8 +302,12 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                         )}
 
                         {/* Folder Entry Count Badge */}
-                        <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-indigo-500/25 to-purple-500/25 text-indigo-300 text-[10px] font-black border border-indigo-500/40 inline-flex items-center gap-1">
-                          {isExpanded ? <FolderOpen className="w-3 h-3 text-[#FFAA00]" /> : <Folder className="w-3 h-3 text-[#FFAA00]" />}
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border inline-flex items-center gap-1 transition-all ${
+                          isExpanded 
+                            ? 'bg-[#FF6B00] text-slate-950 border-[#FF6B00] shadow-sm shadow-[#FF6B00]/30' 
+                            : 'bg-gradient-to-r from-indigo-500/25 to-purple-500/25 text-indigo-300 border-indigo-500/40'
+                        }`}>
+                          {isExpanded ? <FolderOpen className="w-3 h-3 text-slate-950" /> : <Folder className="w-3 h-3 text-[#FFAA00]" />}
                           {group.slips.length} {group.slips.length === 1 ? 'Entry Placed' : 'Entries Placed'}
                         </span>
                       </div>
@@ -359,11 +367,15 @@ export const MyContestsView: React.FC<MyContestsViewProps> = ({
                           e.stopPropagation();
                           toggleMatchExpanded(group.matchKey);
                         }}
-                        className="px-3.5 py-2 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-white text-xs font-bold flex items-center gap-1.5 border border-[#1A223E] hover:border-[#FFAA00]/40 transition-all ml-2"
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ml-2 border ${
+                          isExpanded
+                            ? 'bg-[#FF6B00] text-slate-950 border-[#FF6B00] font-black shadow-md shadow-[#FF6B00]/30 hover:brightness-110'
+                            : 'bg-[#131A38] hover:bg-[#1A223E] text-white border-[#1A223E] hover:border-[#FFAA00]/40'
+                        }`}
                       >
-                        {isExpanded ? <FolderOpen className="w-3.5 h-3.5 text-[#FFAA00]" /> : <Folder className="w-3.5 h-3.5 text-[#FFAA00]" />}
+                        {isExpanded ? <FolderOpen className="w-3.5 h-3.5 text-slate-950" /> : <Folder className="w-3.5 h-3.5 text-[#FFAA00]" />}
                         <span>{isExpanded ? 'Collapse' : `View ${group.slips.length} Slips`}</span>
-                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-white' : ''}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-slate-950' : 'text-slate-400'}`} />
                       </button>
                     </div>
                   </div>

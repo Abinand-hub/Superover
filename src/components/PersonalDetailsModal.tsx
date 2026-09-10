@@ -14,7 +14,8 @@ import {
   EyeOff, 
   Fingerprint,
   Calendar,
-  LogOut
+  LogOut,
+  Sparkles
 } from 'lucide-react';
 import { UserAccount, UserPredictionSlip, WalletTransaction } from '../types';
 import { formatINR } from '../utils/payoutCalculator';
@@ -57,6 +58,7 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
   const totalDepositedAmount = depositsList.reduce((sum, t) => sum + t.amount, 0);
   const totalWithdrawnAmount = withdrawalsList.filter(t => t.status === 'SUCCESS').reduce((sum, t) => sum + t.amount, 0);
   const contestsPlayedCount = userSlips.length || user.totalContestsJoined || 0;
+  const contestsWonCount = userSlips.filter(s => s.status === 'WON' || (s.payoutAmount && s.payoutAmount > 0)).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050816]/85 backdrop-blur-md animate-in fade-in duration-200">
@@ -74,42 +76,31 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-black text-white">{user.name}</h2>
+                <h3 className="text-base font-black text-white font-display">{user.name}</h3>
                 <span className="px-2 py-0.5 rounded-full bg-[#4ADE80]/15 text-[#4ADE80] text-[10px] font-black border border-[#4ADE80]/30">
-                  Active Player
+                  Active
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Personal Details & Account Overview</p>
+              <p className="text-xs text-slate-400 mt-0.5">Ref ID: {user.refId || user.id || 'N/A'}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-[#131A38] text-slate-400 hover:text-white hover:bg-[#1A223E] transition-colors"
+            className="w-8 h-8 rounded-xl bg-[#131A38] text-slate-400 hover:text-white flex items-center justify-center border border-[#1A223E] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-4">
-          {/* Section 1: Registration Credentials & Identity */}
+        {/* Scrollable Content Body */}
+        <div className="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+          {/* Section 1: Personal Details */}
           <div className="space-y-2.5">
-            <span className="text-[10px] font-black text-[#FF8800] uppercase tracking-wider block">
-              Registration Information
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+              Registration Identity
             </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-              {/* User / Ref ID */}
-              <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center shrink-0">
-                  <Fingerprint className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 block">User / Ref ID</span>
-                  <span className="font-bold text-white truncate block">{user.refId || user.id || 'N/A'}</span>
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {/* Full Name */}
               <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-[#FF6B00]/15 text-[#FF6B00] flex items-center justify-center shrink-0">
@@ -117,7 +108,7 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 block">Full Name</span>
-                  <span className="font-bold text-white truncate block">{user.name}</span>
+                  <span className="font-bold text-white text-xs truncate block">{user.name}</span>
                 </div>
               </div>
 
@@ -127,25 +118,25 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
                   <Phone className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 block">Phone Number</span>
-                  <span className="font-bold text-white truncate block">{user.phone || 'N/A'}</span>
+                  <span className="text-[10px] text-slate-400 block">Phone</span>
+                  <span className="font-bold text-white text-xs truncate block">{user.phone}</span>
                 </div>
               </div>
 
               {/* Email */}
-              <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center gap-3 sm:col-span-2">
                 <div className="w-8 h-8 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
                   <Mail className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 block">Email Address</span>
-                  <span className="font-bold text-white truncate block">{user.email || `${user.phone}@superover.in`}</span>
+                  <span className="font-bold text-white text-xs truncate block">{user.email || `${user.phone}@superover.in`}</span>
                 </div>
               </div>
             </div>
 
-            {/* Password Field with reveal toggle */}
-            <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between gap-3 text-xs">
+            {/* Password */}
+            <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E] flex items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0">
                   <KeyRound className="w-4 h-4" />
@@ -175,10 +166,10 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
             </span>
 
             <div className="grid grid-cols-2 gap-2.5">
-              {/* Contest Played */}
-              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
+              {/* 1. Contests Played */}
+              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-[#FF6B00]/40 transition-all flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contest Played</span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contests Played</span>
                   <Trophy className="w-4 h-4 text-[#FFAA00]" />
                 </div>
                 <span className="text-xl font-black text-white font-display mt-2">
@@ -187,40 +178,40 @@ export const PersonalDetailsModal: React.FC<PersonalDetailsModalProps> = ({
                 <span className="text-[10px] text-slate-500 mt-0.5">Total selections placed</span>
               </div>
 
-              {/* Total Money Added */}
-              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
+              {/* 2. Contest Won */}
+              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-emerald-500/40 transition-all flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Money Added</span>
-                  <ArrowDownLeft className="w-4 h-4 text-[#FFAA00]" />
-                </div>
-                <span className="text-xl font-black text-[#FFAA00] font-display mt-2">
-                  {formatINR(totalDepositedAmount)}
-                </span>
-                <span className="text-[10px] text-slate-500 mt-0.5">{depositsList.length} instant UPI deposits</span>
-              </div>
-
-              {/* Total Won Payouts */}
-              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Won Payouts</span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Contest Won</span>
                   <Award className="w-4 h-4 text-[#4ADE80]" />
                 </div>
                 <span className="text-xl font-black text-[#4ADE80] font-display mt-2">
-                  {formatINR(totalWonAmount)}
+                  {contestsWonCount}
                 </span>
-                <span className="text-[10px] text-slate-500 mt-0.5">Winnings disbursed to wallet</span>
+                <span className="text-[10px] text-emerald-400/80 mt-0.5">{contestsWonCount === 1 ? 'Winning entry' : 'Winning entries'}</span>
               </div>
 
-              {/* Total Withdrawal */}
-              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] flex flex-col justify-between">
+              {/* 3. Total Payout Earned */}
+              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-amber-500/40 transition-all flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Withdrawal</span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Payout Earned</span>
+                  <Sparkles className="w-4 h-4 text-[#FFAA00]" />
+                </div>
+                <span className="text-xl font-black text-[#FFAA00] font-display mt-2">
+                  {formatINR(totalWonAmount)}
+                </span>
+                <span className="text-[10px] text-slate-500 mt-0.5">Disbursed winnings</span>
+              </div>
+
+              {/* 4. Total Money Withdrawn */}
+              <div className="p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E] hover:border-sky-500/40 transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Money Withdrawn</span>
                   <ArrowUpRight className="w-4 h-4 text-sky-400" />
                 </div>
                 <span className="text-xl font-black text-sky-400 font-display mt-2">
                   {formatINR(totalWithdrawnAmount)}
                 </span>
-                <span className="text-[10px] text-slate-500 mt-0.5">{withdrawalsList.length} transfers to UPI</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">{withdrawalsList.filter(t => t.status === 'SUCCESS').length} transfers to UPI</span>
               </div>
             </div>
           </div>
