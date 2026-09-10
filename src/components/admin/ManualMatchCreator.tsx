@@ -28,7 +28,10 @@ import {
   Database,
   Plus,
   ArrowLeft,
-  Eye
+  Eye,
+  Bookmark,
+  BookmarkCheck,
+  Save
 } from 'lucide-react';
 import { formatINR } from '../../utils/payoutCalculator';
 import { getTeamLogoUrl, PRESET_LOGO_CATALOG, TEAM_LOGO_MAP } from '../../utils/teamLogoHelper';
@@ -277,6 +280,114 @@ const PRESET_TEAMS: Record<string, { name: string; code: string; logoUrl: string
       { name: 'Harshit Rana', shortName: 'H. Rana', role: 'BOWL' },
       { name: 'Varun Chakaravarthy', shortName: 'V. Chakaravarthy', role: 'BOWL' },
     ]
+  },
+  ROT: {
+    name: 'Rotterdam Dockers',
+    code: 'ROT',
+    logoUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=160&auto=format&fit=crop&q=80',
+    squad: [
+      { name: 'Bas de Leede', shortName: 'B. de Leede', role: 'AR' },
+      { name: 'Max O\'Dowd', shortName: 'M. O\'Dowd', role: 'BAT' },
+      { name: 'Scott Edwards', shortName: 'S. Edwards', role: 'WK' },
+      { name: 'Vikramjit Singh', shortName: 'V. Singh', role: 'BAT' },
+      { name: 'Colin Ackermann', shortName: 'C. Ackermann', role: 'AR' },
+      { name: 'Teja Nidamanuru', shortName: 'T. Nidamanuru', role: 'BAT' },
+      { name: 'Roelof van der Merwe', shortName: 'R. v.d. Merwe', role: 'AR' },
+      { name: 'Logan van Beek', shortName: 'L. van Beek', role: 'BOWL' },
+      { name: 'Aryan Dutt', shortName: 'A. Dutt', role: 'BOWL' },
+      { name: 'Paul van Meekeren', shortName: 'P. v Meekeren', role: 'BOWL' },
+      { name: 'Vivian Kingma', shortName: 'V. Kingma', role: 'BOWL' },
+    ]
+  },
+  GLA: {
+    name: 'Glasgow Cosmics',
+    code: 'GLA',
+    logoUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=160&auto=format&fit=crop&q=80',
+    squad: [
+      { name: 'George Munsey', shortName: 'G. Munsey', role: 'BAT' },
+      { name: 'Michael Jones', shortName: 'M. Jones', role: 'BAT' },
+      { name: 'Brandon McMullen', shortName: 'B. McMullen', role: 'AR' },
+      { name: 'Richie Berrington', shortName: 'R. Berrington', role: 'BAT' },
+      { name: 'Matthew Cross', shortName: 'M. Cross', role: 'WK' },
+      { name: 'Michael Leask', shortName: 'M. Leask', role: 'AR' },
+      { name: 'Chris Greaves', shortName: 'C. Greaves', role: 'AR' },
+      { name: 'Mark Watt', shortName: 'M. Watt', role: 'BOWL' },
+      { name: 'Christopher Sole', shortName: 'C. Sole', role: 'BOWL' },
+      { name: 'Brad Wheal', shortName: 'B. Wheal', role: 'BOWL' },
+      { name: 'Safyaan Sharif', shortName: 'S. Sharif', role: 'BOWL' },
+    ]
+  },
+  BW: {
+    name: 'Belfast Wolves',
+    code: 'BW',
+    logoUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=160&auto=format&fit=crop&q=80',
+    squad: [
+      { name: 'Paul Stirling', shortName: 'P. Stirling', role: 'BAT' },
+      { name: 'Andrew Balbirnie', shortName: 'A. Balbirnie', role: 'BAT' },
+      { name: 'Lorcan Tucker', shortName: 'L. Tucker', role: 'WK' },
+      { name: 'Harry Tector', shortName: 'H. Tector', role: 'BAT' },
+      { name: 'Curtis Campher', shortName: 'C. Campher', role: 'AR' },
+      { name: 'George Dockrell', shortName: 'G. Dockrell', role: 'AR' },
+      { name: 'Mark Adair', shortName: 'M. Adair', role: 'AR' },
+      { name: 'Barry McCarthy', shortName: 'B. McCarthy', role: 'BOWL' },
+      { name: 'Craig Young', shortName: 'C. Young', role: 'BOWL' },
+      { name: 'Josh Little', shortName: 'J. Little', role: 'BOWL' },
+      { name: 'Ben White', shortName: 'B. White', role: 'BOWL' },
+    ]
+  },
+  AF: {
+    name: 'Amsterdam Flames',
+    code: 'AF',
+    logoUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=160&auto=format&fit=crop&q=80',
+    squad: [
+      { name: 'Wesley Barresi', shortName: 'W. Barresi', role: 'BAT' },
+      { name: 'Michael Levitt', shortName: 'M. Levitt', role: 'BAT' },
+      { name: 'Sybrand Engelbrecht', shortName: 'S. Engelbrecht', role: 'BAT' },
+      { name: 'Noah Croes', shortName: 'N. Croes', role: 'WK' },
+      { name: 'Saqib Zulfiqar', shortName: 'S. Zulfiqar', role: 'AR' },
+      { name: 'Shariz Ahmad', shortName: 'S. Ahmad', role: 'AR' },
+      { name: 'Kyle Klein', shortName: 'K. Klein', role: 'BOWL' },
+      { name: 'Ryan Klein', shortName: 'R. Klein', role: 'BOWL' },
+      { name: 'Daniel Doram', shortName: 'D. Doram', role: 'BOWL' },
+      { name: 'Fred Klaassen', shortName: 'F. Klaassen', role: 'BOWL' },
+      { name: 'Timm van der Gugten', shortName: 'T. v.d. Gugten', role: 'BOWL' },
+    ]
+  },
+  BR: {
+    name: 'Barbados Royals',
+    code: 'BR',
+    logoUrl: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=160&auto=format&fit=crop&q=80',
+    squad: [
+      { name: 'Rovman Powell', shortName: 'R. Powell', role: 'BAT' },
+      { name: 'Quinton de Kock', shortName: 'Q. de Kock', role: 'WK' },
+      { name: 'David Miller', shortName: 'D. Miller', role: 'BAT' },
+      { name: 'Rahkeem Cornwall', shortName: 'R. Cornwall', role: 'AR' },
+      { name: 'Jason Holder', shortName: 'J. Holder', role: 'AR' },
+      { name: 'Alick Athanaze', shortName: 'A. Athanaze', role: 'BAT' },
+      { name: 'Obed McCoy', shortName: 'O. McCoy', role: 'BOWL' },
+      { name: 'Maheesh Theekshana', shortName: 'M. Theekshana', role: 'BOWL' },
+      { name: 'Naveen-ul-Haq', shortName: 'Naveen-ul-Haq', role: 'BOWL' },
+      { name: 'Keshav Maharaj', shortName: 'K. Maharaj', role: 'BOWL' },
+      { name: 'Ramon Simmonds', shortName: 'R. Simmonds', role: 'BOWL' },
+    ]
+  },
+  TKR: {
+    name: 'Trinbago Knight Riders',
+    code: 'TKR',
+    logoUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=160&auto=format&fit=crop&q=80',
+    squad: [
+      { name: 'Kieron Pollard', shortName: 'K. Pollard', role: 'AR' },
+      { name: 'Nicholas Pooran', shortName: 'N. Pooran', role: 'WK' },
+      { name: 'Andre Russell', shortName: 'A. Russell', role: 'AR' },
+      { name: 'Sunil Narine', shortName: 'S. Narine', role: 'AR' },
+      { name: 'Jason Roy', shortName: 'J. Roy', role: 'BAT' },
+      { name: 'Tim David', shortName: 'T. David', role: 'BAT' },
+      { name: 'Dwayne Bravo', shortName: 'D. Bravo', role: 'AR' },
+      { name: 'Akeal Hosein', shortName: 'A. Hosein', role: 'BOWL' },
+      { name: 'Waqar Salamkheil', shortName: 'W. Salamkheil', role: 'BOWL' },
+      { name: 'Terrance Hinds', shortName: 'T. Hinds', role: 'BOWL' },
+      { name: 'Jayden Seales', shortName: 'J. Seales', role: 'BOWL' },
+    ]
   }
 };
 
@@ -409,12 +520,189 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [previewMatchData, setPreviewMatchData] = useState<CricketMatch | null>(null);
 
-  // Auto-detect logo when team code or name changes
+  // ---------------------------------------------------------------------------
+  // DYNAMIC TOURNAMENT & TEAM/SQUAD AUTO-SAVE REGISTRY (Per User Request)
+  // ---------------------------------------------------------------------------
+  const [customSavedTournaments, setCustomSavedTournaments] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('superover_custom_tournaments');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [customSavedTeams, setCustomSavedTeams] = useState<Record<string, { name: string; code: string; logoUrl: string; squad: { name: string; shortName: string; role: PlayerRole }[] }>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const saved = localStorage.getItem('superover_saved_teams_registry');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [savedFeedbackMessage, setSavedFeedbackMessage] = useState<string | null>(null);
+  const [teamCategoryFilter, setTeamCategoryFilter] = useState<'ALL' | 'CUSTOM' | 'IPL' | 'EUROPEAN' | 'CPL' | 'INTERNATIONAL'>('ALL');
+  const [teamPresetSearch, setTeamPresetSearch] = useState<string>('');
+
+  // Unified Tournaments list (Built-in + Saved Custom + Harvested from allMatches)
+  const allAvailableTournaments = useMemo(() => {
+    const set = new Set<string>();
+    const defaults = [
+      'ETPL 2026',
+      'CPL 2026',
+      'IPL 2026',
+      'European T20 Premier League 2026',
+      'ICC T20 World Cup 2026',
+      'Big Bash League 2026',
+      'Pakistan Super League 2026',
+      'The Hundred 2026',
+      'Caribbean Premier League 2026',
+      'International Bilateral Series'
+    ];
+    defaults.forEach(t => set.add(t));
+    customSavedTournaments.forEach(t => t && set.add(t.trim()));
+    allMatches.forEach(m => {
+      if (m.series && m.series.trim()) set.add(m.series.trim());
+    });
+    return Array.from(set);
+  }, [customSavedTournaments, allMatches]);
+
+  // Unified Teams & Squads dictionary (PRESET_TEAMS + Harvested from allMatches + Saved Custom)
+  const allAvailableTeams = useMemo(() => {
+    const map: Record<string, { name: string; code: string; logoUrl: string; category?: string; squad: { name: string; shortName: string; role: PlayerRole }[] }> = {
+      ...PRESET_TEAMS
+    };
+
+    // Harvest from all existing matches in database
+    allMatches.forEach(m => {
+      if (m.team1?.code && m.squadTeam1 && m.squadTeam1.length > 0) {
+        const code = m.team1.code.toUpperCase().trim();
+        if (!map[code] || map[code].squad.length === 0) {
+          map[code] = {
+            name: m.team1.name || code,
+            code,
+            logoUrl: m.team1.logoUrl || getTeamLogoUrl(code, m.team1.name),
+            category: 'Recent',
+            squad: m.squadTeam1.map(p => ({
+              name: p.name,
+              shortName: p.shortName || p.name,
+              role: p.role || 'BAT'
+            }))
+          };
+        }
+      }
+      if (m.team2?.code && m.squadTeam2 && m.squadTeam2.length > 0) {
+        const code = m.team2.code.toUpperCase().trim();
+        if (!map[code] || map[code].squad.length === 0) {
+          map[code] = {
+            name: m.team2.name || code,
+            code,
+            logoUrl: m.team2.logoUrl || getTeamLogoUrl(code, m.team2.name),
+            category: 'Recent',
+            squad: m.squadTeam2.map(p => ({
+              name: p.name,
+              shortName: p.shortName || p.name,
+              role: p.role || 'BAT'
+            }))
+          };
+        }
+      }
+    });
+
+    // Merge custom saved teams from localStorage (highest priority)
+    Object.entries(customSavedTeams).forEach(([code, data]) => {
+      if (data && data.code) {
+        map[code.toUpperCase()] = {
+          ...data,
+          category: 'Saved Custom'
+        };
+      }
+    });
+
+    return map;
+  }, [customSavedTeams, allMatches]);
+
+  const saveCustomTournament = (name: string, silent = false) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setCustomSavedTournaments(prev => {
+      if (prev.includes(trimmed)) return prev;
+      const next = [trimmed, ...prev];
+      try {
+        localStorage.setItem('superover_custom_tournaments', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    if (!silent) {
+      setSavedFeedbackMessage(`✅ Tournament "${trimmed}" saved for future match prompts!`);
+      setTimeout(() => setSavedFeedbackMessage(null), 3000);
+    }
+  };
+
+  const saveCustomTeam = (teamObj: { name: string; code: string; logoUrl: string; squad: Player[] }, silent = false) => {
+    const code = teamObj.code.trim().toUpperCase();
+    const name = teamObj.name.trim();
+    if (!code || !name) {
+      if (!silent) alert('Please enter both team name and code before saving.');
+      return;
+    }
+    const squadToSave = teamObj.squad.map(p => ({
+      name: p.name,
+      shortName: p.shortName || p.name,
+      role: p.role || 'BAT'
+    }));
+
+    setCustomSavedTeams(prev => {
+      const next = {
+        ...prev,
+        [code]: {
+          name,
+          code,
+          logoUrl: teamObj.logoUrl || getTeamLogoUrl(code, name),
+          squad: squadToSave
+        }
+      };
+      try {
+        localStorage.setItem('superover_saved_teams_registry', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    if (!silent) {
+      setSavedFeedbackMessage(`✅ Saved "${name} (${code})" with ${squadToSave.length} players for future matches!`);
+      setTimeout(() => setSavedFeedbackMessage(null), 3500);
+    }
+  };
+
+  // Auto-detect logo & auto-load squad when team code or name changes
   const handleTeam1Change = (name: string, code: string) => {
     setTeam1Name(name);
     setTeam1Code(code);
     const autoLogo = getTeamLogoUrl(code, name);
     if (autoLogo) setTeam1Logo(autoLogo);
+
+    // If matches a known saved preset team and squad is currently empty, autofill squad
+    const matched = allAvailableTeams[code.toUpperCase()] || Object.values(allAvailableTeams).find(t => t.name.toLowerCase() === name.trim().toLowerCase());
+    if (matched && matched.squad && matched.squad.length > 0 && squad1.length === 0) {
+      setSquad1(
+        matched.squad.map((pl, idx) => ({
+          id: `p_${matched.code.toLowerCase()}_${idx + 1}`,
+          name: pl.name,
+          shortName: pl.shortName || pl.name,
+          team: matched.code,
+          teamName: matched.name,
+          role: pl.role || 'BAT',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+          country: matched.name,
+          recentForm: ['45', '1/18', '28*'],
+          careerStatHighlight: 'Key Player'
+        }))
+      );
+      if (matched.logoUrl && !team1Logo) setTeam1Logo(matched.logoUrl);
+    }
   };
 
   const handleTeam2Change = (name: string, code: string) => {
@@ -422,52 +710,76 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     setTeam2Code(code);
     const autoLogo = getTeamLogoUrl(code, name);
     if (autoLogo) setTeam2Logo(autoLogo);
+
+    // If matches a known saved preset team and squad is currently empty, autofill squad
+    const matched = allAvailableTeams[code.toUpperCase()] || Object.values(allAvailableTeams).find(t => t.name.toLowerCase() === name.trim().toLowerCase());
+    if (matched && matched.squad && matched.squad.length > 0 && squad2.length === 0) {
+      setSquad2(
+        matched.squad.map((pl, idx) => ({
+          id: `p_${matched.code.toLowerCase()}_${idx + 1}`,
+          name: pl.name,
+          shortName: pl.shortName || pl.name,
+          team: matched.code,
+          teamName: matched.name,
+          role: pl.role || 'BAT',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+          country: matched.name,
+          recentForm: ['52', '2/22', '41*'],
+          careerStatHighlight: 'Key Player'
+        }))
+      );
+      if (matched.logoUrl && !team2Logo) setTeam2Logo(matched.logoUrl);
+    }
   };
 
-  // Handle Preset Selection for Team 1
+  // 1-Click Preset Selection for Team 1
   const applyPresetTeam1 = (code: string) => {
-    const p = PRESET_TEAMS[code];
+    const p = allAvailableTeams[code.toUpperCase()] || Object.values(allAvailableTeams).find(t => t.code.toUpperCase() === code.toUpperCase() || t.name.toLowerCase() === code.toLowerCase());
     if (!p) return;
     setTeam1Name(p.name);
     setTeam1Code(p.code);
-    setTeam1Logo(p.logoUrl);
-    setSquad1(
-      p.squad.map((pl, idx) => ({
-        id: `p_${code.toLowerCase()}_${idx + 1}`,
-        name: pl.name,
-        shortName: pl.shortName,
-        team: p.code,
-        teamName: p.name,
-        role: pl.role,
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        country: p.name,
-        recentForm: ['45', '1/18', '28*'],
-        careerStatHighlight: 'Key Player'
-      }))
-    );
+    setTeam1Logo(p.logoUrl || getTeamLogoUrl(p.code, p.name));
+    if (p.squad && p.squad.length > 0) {
+      setSquad1(
+        p.squad.map((pl, idx) => ({
+          id: `p_${p.code.toLowerCase()}_${idx + 1}`,
+          name: pl.name,
+          shortName: pl.shortName || pl.name,
+          team: p.code,
+          teamName: p.name,
+          role: pl.role || 'BAT',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+          country: p.name,
+          recentForm: ['45', '1/18', '28*'],
+          careerStatHighlight: 'Key Player'
+        }))
+      );
+    }
   };
 
-  // Handle Preset Selection for Team 2
+  // 1-Click Preset Selection for Team 2
   const applyPresetTeam2 = (code: string) => {
-    const p = PRESET_TEAMS[code];
+    const p = allAvailableTeams[code.toUpperCase()] || Object.values(allAvailableTeams).find(t => t.code.toUpperCase() === code.toUpperCase() || t.name.toLowerCase() === code.toLowerCase());
     if (!p) return;
     setTeam2Name(p.name);
     setTeam2Code(p.code);
-    setTeam2Logo(p.logoUrl);
-    setSquad2(
-      p.squad.map((pl, idx) => ({
-        id: `p_${code.toLowerCase()}_${idx + 1}`,
-        name: pl.name,
-        shortName: pl.shortName,
-        team: p.code,
-        teamName: p.name,
-        role: pl.role,
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-        country: p.name,
-        recentForm: ['52', '2/22', '41*'],
-        careerStatHighlight: 'Key Player'
-      }))
-    );
+    setTeam2Logo(p.logoUrl || getTeamLogoUrl(p.code, p.name));
+    if (p.squad && p.squad.length > 0) {
+      setSquad2(
+        p.squad.map((pl, idx) => ({
+          id: `p_${p.code.toLowerCase()}_${idx + 1}`,
+          name: pl.name,
+          shortName: pl.shortName || pl.name,
+          team: p.code,
+          teamName: p.name,
+          role: pl.role || 'BAT',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+          country: p.name,
+          recentForm: ['52', '2/22', '41*'],
+          careerStatHighlight: 'Key Player'
+        }))
+      );
+    }
   };
 
   // Select Flag from Modal
@@ -726,6 +1038,30 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Auto-save tournament to registry
+      if (seriesName.trim()) {
+        saveCustomTournament(seriesName.trim(), true);
+      }
+
+      // Auto-save both teams with squad rosters to registry
+      if (team1Name.trim() && team1Code.trim()) {
+        saveCustomTeam({
+          name: team1Name.trim(),
+          code: team1Code.trim(),
+          logoUrl: team1Logo.trim() || getTeamLogoUrl(team1Code, team1Name),
+          squad: squad1
+        }, true);
+      }
+
+      if (team2Name.trim() && team2Code.trim()) {
+        saveCustomTeam({
+          name: team2Name.trim(),
+          code: team2Code.trim(),
+          logoUrl: team2Logo.trim() || getTeamLogoUrl(team2Code, team2Name),
+          squad: squad2
+        }, true);
+      }
+
       await onCreateMatch(previewMatchData);
       setShowPreviewModal(false);
       setSuccessMessage(`✅ Match "${previewMatchData.title}" successfully created and published! Redirecting to Match Lifecycle...`);
@@ -793,18 +1129,48 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               1. Match General Information
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">
-                  Series / Tournament Name:
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-400">
+                    Series / Tournament Name:
+                  </label>
+                  <span className="text-[10px] text-slate-500">Auto-saved for future prompts</span>
+                </div>
+                
                 <input
                   type="text"
+                  list="tournament-presets-list"
                   value={seriesName}
                   onChange={(e) => setSeriesName(e.target.value)}
-                  placeholder="e.g. ICC T20 World Cup 2026"
+                  placeholder="e.g. ETPL 2026, CPL 2026, IPL 2026..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
                 />
+
+                <datalist id="tournament-presets-list">
+                  {allAvailableTournaments.map((tourn) => (
+                    <option key={tourn} value={tourn} />
+                  ))}
+                </datalist>
+
+                {/* Quick 1-Click Tournament Prompts */}
+                <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-500 font-bold mr-1">Prompts:</span>
+                  {allAvailableTournaments.slice(0, 8).map((tourn) => (
+                    <button
+                      key={tourn}
+                      type="button"
+                      onClick={() => setSeriesName(tourn)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all border ${
+                        seriesName.toLowerCase() === tourn.toLowerCase()
+                          ? 'bg-[#FF6B00]/20 text-[#FF8800] border-[#FF6B00]/50 font-black'
+                          : 'bg-[#080C1D] text-slate-400 hover:text-white border-[#1A223E] hover:border-slate-700'
+                      }`}
+                    >
+                      + {tourn}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -900,38 +1266,113 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
 
           {/* Teams Setup Card */}
           <div className="p-6 rounded-3xl bg-[#0D122B] border border-[#1A223E] space-y-4 shadow-xl">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#FFAA00]" />
-              2. Competing Teams & Flags Setup
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[#FFAA00]" />
+                2. Competing Teams & Squad Presets
+              </h3>
+              {savedFeedbackMessage && (
+                <span className="text-xs font-bold text-emerald-400 animate-pulse bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-500/30">
+                  {savedFeedbackMessage}
+                </span>
+              )}
+            </div>
 
-            {/* Quick Preset Selector Buttons */}
-            <div className="space-y-2">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                ⚡ Quick 1-Click Team Presets:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {Object.keys(PRESET_TEAMS).map((code) => (
+            {/* Quick Preset Selector Section with Category Filter & Search */}
+            <div className="space-y-2.5 p-3.5 rounded-2xl bg-[#080C1D] border border-[#1A223E]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                  ⚡ 1-Click Load Team & Squad to {activeSquadTab === 'team1' ? 'Team 1' : 'Team 2'}:
+                </span>
+
+                <div className="relative">
+                  <Search className="w-3 h-3 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={teamPresetSearch}
+                    onChange={(e) => setTeamPresetSearch(e.target.value)}
+                    placeholder="Search preset team..."
+                    className="pl-7 pr-2.5 py-1 rounded-lg bg-[#0D122B] border border-[#1A223E] text-white text-[11px] placeholder:text-slate-500 focus:outline-none focus:border-[#FF6B00] w-36 sm:w-44"
+                  />
+                </div>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+                {[
+                  { id: 'ALL', label: 'All Teams' },
+                  { id: 'CUSTOM', label: '⭐ Saved / Recent' },
+                  { id: 'EUROPEAN', label: '🌍 European T20' },
+                  { id: 'CPL', label: '🌴 CPL' },
+                  { id: 'IPL', label: '🏆 IPL' },
+                  { id: 'INTERNATIONAL', label: '🏏 International' },
+                ].map((cat) => (
                   <button
-                    key={code}
+                    key={cat.id}
                     type="button"
-                    onClick={() => {
-                      if (activeSquadTab === 'team1') applyPresetTeam1(code);
-                      else applyPresetTeam2(code);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-[#080C1D] hover:bg-[#131A38] text-slate-300 hover:text-white border border-[#1A223E] text-[11px] font-bold transition-all flex items-center gap-1.5"
+                    onClick={() => setTeamCategoryFilter(cat.id as any)}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                      teamCategoryFilter === cat.id
+                        ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black shadow-sm'
+                        : 'bg-[#131A38] text-slate-400 hover:text-white border border-[#1A223E]'
+                    }`}
                   >
-                    <img 
-                      src={PRESET_TEAMS[code].logoUrl} 
-                      alt={code} 
-                      className="w-3.5 h-3.5 object-contain rounded-sm"
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                    />
-                    <span>+ {code} to {activeSquadTab === 'team1' ? 'Team 1' : 'Team 2'}</span>
+                    {cat.label}
                   </button>
                 ))}
               </div>
+
+              {/* Preset Chips */}
+              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto custom-scrollbar pt-1">
+                {Object.entries(allAvailableTeams)
+                  .filter(([code, t]) => {
+                    if (teamPresetSearch) {
+                      const q = teamPresetSearch.toLowerCase();
+                      if (!code.toLowerCase().includes(q) && !t.name.toLowerCase().includes(q)) return false;
+                    }
+                    if (teamCategoryFilter === 'CUSTOM') return t.category === 'Saved Custom' || t.category === 'Recent';
+                    if (teamCategoryFilter === 'EUROPEAN') return ['ROT', 'GLA', 'BW', 'AF'].includes(code);
+                    if (teamCategoryFilter === 'CPL') return ['BR', 'TKR', 'SKNP', 'GAW'].includes(code);
+                    if (teamCategoryFilter === 'IPL') return ['CSK', 'MI', 'RCB', 'KKR'].includes(code);
+                    if (teamCategoryFilter === 'INTERNATIONAL') return ['IND', 'AUS', 'ENG', 'SA', 'PAK', 'NZ', 'WI'].includes(code);
+                    return true;
+                  })
+                  .map(([code, t]) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => {
+                        if (activeSquadTab === 'team1') applyPresetTeam1(code);
+                        else applyPresetTeam2(code);
+                      }}
+                      className="px-2 py-1 rounded-lg bg-[#0D122B] hover:bg-[#131A38] text-slate-300 hover:text-white border border-[#1A223E] hover:border-[#FF6B00]/40 text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                      title={`${t.name} • ${t.squad?.length || 0} players`}
+                    >
+                      <img 
+                        src={t.logoUrl || getTeamLogoUrl(code, t.name)} 
+                        alt={code} 
+                        className="w-3.5 h-3.5 object-contain rounded-sm"
+                        onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                      />
+                      <span>+ {code}</span>
+                      <span className="text-[9px] text-slate-500 font-mono">({t.squad?.length || 0})</span>
+                    </button>
+                  ))}
+              </div>
             </div>
+
+            {/* Datalists for Input Autocomplete */}
+            <datalist id="team-name-suggestions">
+              {Object.values(allAvailableTeams).map((t) => (
+                <option key={t.code + t.name} value={t.name}>{t.code} ({t.squad?.length || 0} players)</option>
+              ))}
+            </datalist>
+
+            <datalist id="team-code-suggestions">
+              {Object.values(allAvailableTeams).map((t) => (
+                <option key={t.code} value={t.code}>{t.name}</option>
+              ))}
+            </datalist>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               {/* Team 1 Box */}
@@ -960,9 +1401,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Full Name:</label>
                   <input
                     type="text"
+                    list="team-name-suggestions"
                     value={team1Name}
                     onChange={(e) => handleTeam1Change(e.target.value, team1Code)}
-                    placeholder="e.g. India"
+                    placeholder="e.g. Rotterdam Dockers"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold"
                   />
                 </div>
@@ -971,9 +1413,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Code (3-4 Letters):</label>
                   <input
                     type="text"
+                    list="team-code-suggestions"
                     value={team1Code}
                     onChange={(e) => handleTeam1Change(team1Name, e.target.value.toUpperCase())}
-                    placeholder="e.g. IND"
+                    placeholder="e.g. ROT"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold uppercase"
                   />
                 </div>
@@ -988,6 +1431,16 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                     className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-[11px] font-mono"
                   />
                 </div>
+
+                {/* Save Team 1 to Presets */}
+                <button
+                  type="button"
+                  onClick={() => saveCustomTeam({ name: team1Name, code: team1Code, logoUrl: team1Logo, squad: squad1 })}
+                  className="w-full py-1.5 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 hover:text-white border border-[#1A223E] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Save className="w-3 h-3 text-[#FFAA00]" />
+                  <span>Save Team 1 & Squad ({squad1.length}) for Future</span>
+                </button>
               </div>
 
               {/* Team 2 Box */}
@@ -1016,9 +1469,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Full Name:</label>
                   <input
                     type="text"
+                    list="team-name-suggestions"
                     value={team2Name}
                     onChange={(e) => handleTeam2Change(e.target.value, team2Code)}
-                    placeholder="e.g. Australia"
+                    placeholder="e.g. Glasgow Cosmics"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold"
                   />
                 </div>
@@ -1027,9 +1481,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   <label className="text-[10px] text-slate-400 font-bold block mb-1">Code (3-4 Letters):</label>
                   <input
                     type="text"
+                    list="team-code-suggestions"
                     value={team2Code}
                     onChange={(e) => handleTeam2Change(team2Name, e.target.value.toUpperCase())}
-                    placeholder="e.g. AUS"
+                    placeholder="e.g. GLA"
                     className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-white text-xs font-bold uppercase"
                   />
                 </div>
@@ -1044,6 +1499,16 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                     className="w-full px-3 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] text-slate-300 text-[11px] font-mono"
                   />
                 </div>
+
+                {/* Save Team 2 to Presets */}
+                <button
+                  type="button"
+                  onClick={() => saveCustomTeam({ name: team2Name, code: team2Code, logoUrl: team2Logo, squad: squad2 })}
+                  className="w-full py-1.5 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-300 hover:text-white border border-[#1A223E] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Save className="w-3 h-3 text-sky-400" />
+                  <span>Save Team 2 & Squad ({squad2.length}) for Future</span>
+                </button>
               </div>
             </div>
           </div>
