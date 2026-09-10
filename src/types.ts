@@ -195,3 +195,28 @@ export interface FAQItem {
   answer: string;
   category: 'GAMEPLAY' | 'PAYOUTS' | 'WALLET' | 'LEGAL';
 }
+
+export interface BannerItem {
+  id: string;
+  imageUrl: string;
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  linkTab?: 'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules';
+  actionText?: string;
+  isActive: boolean;
+  order?: number;
+}
+
+export interface PlatformSettings {
+  flashMessage: string;
+  flashBadge?: string;
+  isFlashActive?: boolean;
+  banners?: BannerItem[];
+  homeBanners?: string[];
+  wheelProbabilities: {
+    multiplier?: number;
+    segment?: string;
+    probability: number;
+  }[];
+}

@@ -41,6 +41,9 @@ export async function PUT(req: Request) {
       settings = new PlatformSettings(data);
     } else {
       settings.flashMessage = data.flashMessage ?? settings.flashMessage;
+      settings.flashBadge = data.flashBadge ?? settings.flashBadge;
+      settings.isFlashActive = data.isFlashActive !== undefined ? data.isFlashActive : settings.isFlashActive;
+      settings.banners = data.banners ?? settings.banners;
       settings.homeBanners = data.homeBanners ?? settings.homeBanners;
       settings.wheelProbabilities = data.wheelProbabilities ?? settings.wheelProbabilities;
       settings.updatedAt = new Date();

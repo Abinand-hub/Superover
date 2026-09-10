@@ -6,6 +6,8 @@ import { Target, Award, Crosshair, ShieldCheck, Zap, Flame, HelpCircle } from 'l
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
 import { LogoLoader } from './components/Loader';
+import { FlashTicker } from './components/FlashTicker';
+import { BannerCarousel } from './components/BannerCarousel';
 const PredictionModal = React.lazy(() => import('./components/PredictionModal').then(m => ({ default: m.PredictionModal })));
 const SlipResultModal = React.lazy(() => import('./components/SlipResultModal').then(m => ({ default: m.SlipResultModal })));
 const MyContestsView = React.lazy(() => import('./components/MyContestsView').then(m => ({ default: m.MyContestsView })));
@@ -23,7 +25,9 @@ import {
   UserAccount, 
   UserPredictionSlip, 
   Wallet, 
-  WalletTransaction 
+  WalletTransaction,
+  BannerItem,
+  PlatformSettings
 } from './types';
 
 import { 
@@ -33,7 +37,10 @@ import {
   INITIAL_SLIPS, 
   INITIAL_TRANSACTIONS, 
   INITIAL_USER, 
-  INITIAL_WALLET 
+  INITIAL_WALLET,
+  DEFAULT_BANNERS,
+  DEFAULT_FLASH_MESSAGE,
+  DEFAULT_FLASH_BADGE
 } from './data/initialData';
 
 import { settlePredictionSlip } from './utils/payoutCalculator';
@@ -54,6 +61,13 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [slips, setSlips] = useState<UserPredictionSlip[]>(INITIAL_SLIPS);
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [metrics, setMetrics] = useState<PlatformMetrics>(INITIAL_PLATFORM_METRICS);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
+    flashMessage: DEFAULT_FLASH_MESSAGE,
+    flashBadge: DEFAULT_FLASH_BADGE,
+    isFlashActive: true,
+    banners: DEFAULT_BANNERS,
+    wheelProbabilities: []
+  });
 
   const [activeTab, setActiveTab] = useState<'lobby' | 'intro' | 'my-contests' | 'profile' | 'payouts-rules'>('intro');
 
@@ -251,14 +265,16 @@ export default function App({ initialMatches = [] }: AppProps) {
           fetchedWallet,
           fetchedSlips,
           fetchedTransactions,
-          fetchedMetrics
+          fetchedMetrics,
+          fetchedSettings
         ] = await Promise.all([
           matchesPromise,
           api.getCurrentUser(),
           api.getWallet(),
           api.getSlips(),
           api.getTransactions(),
-          api.getMetrics()
+          api.getMetrics(),
+          api.getSettings().catch(() => null)
         ]);
 
         if (initialMatches.length === 0) {
@@ -269,6 +285,16 @@ export default function App({ initialMatches = [] }: AppProps) {
         setSlips(fetchedSlips);
         setTransactions(fetchedTransactions);
         setMetrics(fetchedMetrics);
+        if (fetchedSettings && !fetchedSettings.error) {
+          setPlatformSettings(prev => ({
+            ...prev,
+            flashMessage: fetchedSettings.flashMessage ?? prev.flashMessage,
+            flashBadge: fetchedSettings.flashBadge ?? prev.flashBadge,
+            isFlashActive: fetchedSettings.isFlashActive !== undefined ? fetchedSettings.isFlashActive : prev.isFlashActive,
+            banners: (fetchedSettings.banners && fetchedSettings.banners.length > 0) ? fetchedSettings.banners : prev.banners,
+            wheelProbabilities: fetchedSettings.wheelProbabilities ?? prev.wheelProbabilities,
+          }));
+        }
       } catch (err) {
         console.error("Failed to fetch from API", err);
       } finally {
@@ -758,6 +784,19 @@ export default function App({ initialMatches = [] }: AppProps) {
         {/* VIEW 2: INTRODUCTORY & RULES PAGE */}
         {(activeTab === 'intro' || activeTab === 'payouts-rules') && (
           <div className="space-y-6">
+            {/* Flash Message Bar with solid left badge and animated marquee text */}
+            <FlashTicker 
+              message={platformSettings.flashMessage}
+              badge={platformSettings.flashBadge}
+              isActive={platformSettings.isFlashActive}
+            />
+
+            {/* Responsive Auto & Manual Banner Carousel */}
+            <BannerCarousel 
+              banners={platformSettings.banners || DEFAULT_BANNERS}
+              onNavigateTab={handleTabChange}
+            />
+
             <PayoutRuleBanner 
               onOpenRules={openRulesModal}
               onSelectMatchQuick={() => handleTabChange('lobby')}

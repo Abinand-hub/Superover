@@ -693,3 +693,42 @@ export const INITIAL_FAQS: FAQItem[] = [
     category: 'GAMEPLAY',
   },
 ];
+
+export const DEFAULT_FLASH_MESSAGE = '⚡ Mega Jackpot Live: Predict 6 Stats in CSK vs MI & Win up to 500X Instant Cash! Guaranteed UPI Payouts within 5 minutes.';
+export const DEFAULT_FLASH_BADGE = 'News 📰';
+
+export const DEFAULT_BANNERS = [
+  {
+    id: 'banner_1',
+    title: 'IPL 2026 Mega Jackpot',
+    subtitle: 'Predict 6 cricket stats correctly to trigger the Wheel of Fortune for up to 500X Multiplier!',
+    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=1200&q=80',
+    badge: '🔥 HOT CONTEST',
+    linkTab: 'lobby' as const,
+    actionText: 'Enter Match Lobby →',
+    isActive: true,
+    order: 1
+  },
+  {
+    id: 'banner_2',
+    title: 'Instant Automated UPI Payouts',
+    subtitle: 'Matches settle within 10 minutes of the final ball with direct withdrawal to GPay, PhonePe, and Paytm.',
+    imageUrl: 'https://images.unsplash.com/photo-1531415074868-036b1c57e329?auto=format&fit=crop&w=1200&q=80',
+    badge: '⚡ INSTANT SETTLEMENT',
+    linkTab: 'intro' as const,
+    actionText: 'View Payout Rules →',
+    isActive: true,
+    order: 2
+  },
+  {
+    id: 'banner_3',
+    title: '50% Refund Safety Guard',
+    subtitle: 'Even with 3 right out of 6, you get back 50% of your entry fee instantly. No zero-sum regret!',
+    imageUrl: 'https://images.unsplash.com/photo-1512719994953-eabf50895df7?auto=format&fit=crop&w=1200&q=80',
+    badge: '🛡️ RISK PROTECTION',
+    linkTab: 'intro' as const,
+    actionText: 'Learn How to Play →',
+    isActive: true,
+    order: 3
+  }
+];
