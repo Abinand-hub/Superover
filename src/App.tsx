@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
-import { Target, Award, Crosshair, ShieldCheck, Zap, Flame, HelpCircle } from 'lucide-react';
+import { Target, Award, Crosshair, ShieldCheck, Zap, Flame, HelpCircle, CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 import { PayoutRuleBanner } from './components/PayoutRuleBanner';
 import { MatchLobby } from './components/MatchLobby';
 import { LogoLoader } from './components/Loader';
@@ -79,6 +79,26 @@ export default function App({ initialMatches = [] }: AppProps) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isResponsibleModalOpen, setIsResponsibleModalOpen] = useState<boolean>(false);
+
+  // Modern In-App Floating Toast Notification System (Replaces browser alert modals)
+  const [toast, setToast] = useState<{
+    type: 'success' | 'error' | 'info';
+    title?: string;
+    message: string;
+  } | null>(null);
+
+  const showToast = React.useCallback((message: string, type: 'success' | 'error' | 'info' = 'success', title?: string) => {
+    setToast({ message, type, title });
+  }, []);
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // References for reliable popstate / back-button handling
   const selectedMatchForPlayRef = React.useRef(selectedMatchForPlay);
@@ -476,7 +496,7 @@ export default function App({ initialMatches = [] }: AppProps) {
       }
     } catch (error) {
       console.error('Failed to submit slip:', error);
-      alert('Failed to submit prediction. Please check your balance or try again.');
+      showToast('Failed to submit prediction. Please check your balance or try again.', 'error', 'Submission Failed');
     }
   };
 
@@ -487,11 +507,11 @@ export default function App({ initialMatches = [] }: AppProps) {
       if (response && response.slip) {
         setSlips((prev) => prev.map((s) => (s.id === slipId ? { ...s, answers } : s)));
         setEditingSlipState(null);
-        alert('✅ Lineup updated! Your swapped players have been saved successfully.');
+        showToast('Your swapped players have been saved successfully.', 'success', 'Lineup Updated!');
       }
     } catch (error: any) {
       console.error('Failed to update slip:', error);
-      alert(error.message || 'Failed to update prediction slip.');
+      showToast(error.message || 'Failed to update prediction slip.', 'error', 'Update Failed');
     }
   };
 
@@ -513,12 +533,12 @@ export default function App({ initialMatches = [] }: AppProps) {
         if (data.transaction) {
           setTransactions((prev) => [data.transaction, ...prev]);
         }
-        
+        showToast(`₹${payload.amount || 0} has been added to your wallet!`, 'success', 'Deposit Successful');
         console.log('Deposit successful!', data);
       }
     } catch (error) {
       console.error('Deposit Error:', error);
-      alert('Failed to verify payment. Please try again or contact support.');
+      showToast('Failed to verify payment. Please try again or contact support.', 'error', 'Payment Failed');
     }
   };
 
@@ -1024,6 +1044,51 @@ export default function App({ initialMatches = [] }: AppProps) {
         )}
 
       </React.Suspense>
+
+      {/* Modern Floating In-App Toast Notification (Glassmorphic) */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] w-[92%] max-w-md pointer-events-auto transition-all animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`p-4 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-start gap-3.5 transition-all ${
+            toast.type === 'success' 
+              ? 'bg-[#0A1224]/95 border-emerald-500/50 shadow-emerald-950/50 text-emerald-100'
+              : toast.type === 'error'
+              ? 'bg-[#180A0A]/95 border-rose-500/50 shadow-rose-950/50 text-rose-100'
+              : 'bg-[#0D122B]/95 border-sky-500/50 shadow-sky-950/50 text-sky-100'
+          }`}>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+              toast.type === 'success' 
+                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' 
+                : toast.type === 'error' 
+                ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' 
+                : 'bg-sky-500/20 border-sky-500/40 text-sky-400'
+            }`}>
+              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 animate-pulse" />}
+              {toast.type === 'error' && <AlertCircle className="w-5 h-5" />}
+              {toast.type === 'info' && <Info className="w-5 h-5" />}
+            </div>
+
+            <div className="flex-1 min-w-0 pr-1">
+              {toast.title && (
+                <h4 className="text-sm font-black tracking-wide text-white mb-0.5">
+                  {toast.title}
+                </h4>
+              )}
+              <p className="text-xs font-semibold leading-relaxed text-slate-200">
+                {toast.message}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0 -mr-1 -mt-1"
+              aria-label="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
