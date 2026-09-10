@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
+  CheckCircle2,
   Download,
   RefreshCw,
   ChevronRight,
@@ -30,12 +31,25 @@ interface LiveMarketAnalysisProps {
   matches: CricketMatch[];
   slips: UserPredictionSlip[];
   users?: UserAccount[];
+  initialView?: 'LIVE' | 'FINISHED';
 }
 
-export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches, slips, users = [] }) => {
+export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ 
+  matches, 
+  slips, 
+  users = [],
+  initialView = 'LIVE'
+}) => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [funnelFilters, setFunnelFilters] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [marketView, setMarketView] = useState<'LIVE' | 'FINISHED'>(initialView);
+
+  useEffect(() => {
+    if (initialView) {
+      setMarketView(initialView);
+    }
+  }, [initialView]);
 
   // Winnings Table Filter State
   const [winningsFilter, setWinningsFilter] = useState<'ALL' | 'WINNERS_ONLY' | 'TOP_TIER'>('ALL');
@@ -115,31 +129,103 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
   };
 
   // -------------------------------------------------------------------------
-  // SCREEN 1: LIVE MARKET ANALYSIS (List Page)
+  // SCREEN 1: LIVE MARKET ANALYSIS & FINISHED EVENTS ARCHIVE (List Page)
   // Columns: Match ID | Match Name | Total Entries | Total Collection | Status | Action
   // -------------------------------------------------------------------------
   const renderMatchList = () => {
-    const activeMatchIds = new Set(matches.map(m => m.id));
-    const relevantSlips = slips.filter(s => activeMatchIds.has(s.matchId));
+    const liveMatches = matches.filter(m => m.status !== 'COMPLETED');
+    const finishedMatches = matches.filter(m => m.status === 'COMPLETED');
+    const displayedMatches = marketView === 'LIVE' ? liveMatches : finishedMatches;
+
+    const displayedMatchIds = new Set(displayedMatches.map(m => m.id));
+    const relevantSlips = slips.filter(s => displayedMatchIds.has(s.matchId));
     const totalPlatformEntries = relevantSlips.length;
     const totalPlatformCollection = relevantSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
 
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
+        {/* Category Mode Switch: Live & Open Markets VS Finished Events Archive */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1.5 rounded-2xl bg-[#080C1D] border border-[#1A223E]">
+          <div className="flex items-center gap-1.5 flex-1">
+            <button
+              onClick={() => setMarketView('LIVE')}
+              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${
+                marketView === 'LIVE'
+                  ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>⚡ Live & Open Markets</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                marketView === 'LIVE' ? 'bg-slate-950/40 text-slate-950' : 'bg-[#131A38] text-slate-300'
+              }`}>
+                {liveMatches.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setMarketView('FINISHED')}
+              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${
+                marketView === 'FINISHED'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>🏁 Finished Events Archive</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                marketView === 'FINISHED' ? 'bg-slate-950/40 text-slate-950' : 'bg-[#131A38] text-slate-300'
+              }`}>
+                {finishedMatches.length}
+              </span>
+            </button>
+          </div>
+
+          <div className="px-3 text-[11px] text-slate-400 font-medium hidden md:block">
+            {marketView === 'LIVE' ? (
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Active open contests & in-play fixtures (Settled matches excluded)
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                Settled fixtures with payout audits & historic breakdown
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
-                ⚡ ORGANIZER RISK & WINNINGS INTELLIGENCE
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                marketView === 'LIVE'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                  : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+              }`}>
+                {marketView === 'LIVE' ? '⚡ LIVE & OPEN CONTESTS (NON-SETTLED)' : '🏁 SETTLED & COMPLETED EVENTS ARCHIVE'}
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2.5 font-display">
-              <TrendingUp className="w-6 h-6 text-[#FF6B00]" />
-              Live Market Analysis
+              {marketView === 'LIVE' ? (
+                <>
+                  <TrendingUp className="w-6 h-6 text-[#FF6B00]" />
+                  Live Market Analysis
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                  Finished Events Archive
+                </>
+              )}
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Select a match to inspect prediction funnels, user picks distribution, and simulate real-time platform liability & user winnings.
+              {marketView === 'LIVE' 
+                ? 'Select an active match to inspect prediction funnels, user picks distribution, and simulate real-time platform liability & user winnings.'
+                : 'Inspect completed and settled fixtures to audit official outcomes, payouts distributed to winners, and net organizer profit.'}
             </p>
           </div>
 
@@ -156,16 +242,18 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
           </div>
         </div>
 
-        {/* Matches Table / Cards as per PRD Screen 1 */}
+        {/* Matches Table / Cards */}
         <div className="bg-[#0D122B] border border-[#1A223E] rounded-2xl overflow-hidden shadow-xl">
           {/* Mobile Card List (Zero Horizontal Scroll / Swipe Needed) */}
           <div className="block md:hidden p-3.5 space-y-3">
-            {matches.length === 0 ? (
+            {displayedMatches.length === 0 ? (
               <div className="p-8 text-center text-slate-500 text-xs">
-                No active or published matches available.
+                {marketView === 'LIVE'
+                  ? 'No active or open matches available right now. Create a match or view Finished Events Archive.'
+                  : 'No finished or settled events archived yet.'}
               </div>
             ) : (
-              matches.map((match) => {
+              displayedMatches.map((match) => {
                 const matchSlips = slips.filter(s => s.matchId === match.id);
                 const totalEntries = matchSlips.length;
                 const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
@@ -232,7 +320,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                       className="w-full py-2.5 px-3 bg-gradient-to-r from-[#FF6B00] to-[#FF8800] hover:brightness-110 active:scale-[0.98] text-slate-950 font-black text-xs rounded-xl transition-all shadow-md shadow-[#FF6B00]/25 flex items-center justify-center gap-1.5"
                     >
                       <TrendingUp className="w-4 h-4 text-slate-950" />
-                      <span>View Funnel Analysis</span>
+                      <span>{marketView === 'LIVE' ? 'View Funnel Analysis' : 'View Settled Analysis & Payouts'}</span>
                     </button>
                   </div>
                 );
@@ -254,14 +342,16 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1A223E]">
-                {matches.length === 0 ? (
+                {displayedMatches.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                      No active or published matches available.
+                      {marketView === 'LIVE'
+                        ? 'No active or open matches available right now. Create a match or view Finished Events Archive.'
+                        : 'No finished or settled events archived yet.'}
                     </td>
                   </tr>
                 ) : (
-                  matches.map((match) => {
+                  displayedMatches.map((match) => {
                     const matchSlips = slips.filter(s => s.matchId === match.id);
                     const totalEntries = matchSlips.length;
                     const totalCollection = matchSlips.reduce((sum, s) => sum + (s.totalPayable || s.entryFee || 0), 0);
@@ -322,7 +412,7 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
                             id={`btn-view-funnel-${match.id}`}
                           >
                             <TrendingUp className="w-3.5 h-3.5" />
-                            <span>View Funnel Analysis</span>
+                            <span>{marketView === 'LIVE' ? 'View Funnel Analysis' : 'View Settled Analysis & Payouts'}</span>
                           </button>
                         </td>
                       </tr>
@@ -516,8 +606,12 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({ matches,
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black tracking-wider uppercase border border-indigo-500/30">
-                  LIVE FUNNEL & USER WINNINGS ANALYSIS
+                <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase border ${
+                  match.status === 'COMPLETED'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                }`}>
+                  {match.status === 'COMPLETED' ? '🏁 SETTLED FIXTURE & PAYOUT AUDIT' : 'LIVE FUNNEL & RISK SIMULATOR'}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">ID: {match.id.substring(0, 10)}...</span>
               </div>
