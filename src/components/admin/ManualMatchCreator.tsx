@@ -26,7 +26,9 @@ import {
   HelpCircle,
   RotateCcw,
   Database,
-  Plus
+  Plus,
+  ArrowLeft,
+  Eye
 } from 'lucide-react';
 import { formatINR } from '../../utils/payoutCalculator';
 import { getTeamLogoUrl, PRESET_LOGO_CATALOG, TEAM_LOGO_MAP } from '../../utils/teamLogoHelper';
@@ -403,6 +405,10 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Pre-Publish Review Modal State
+  const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
+  const [previewMatchData, setPreviewMatchData] = useState<CricketMatch | null>(null);
+
   // Auto-detect logo when team code or name changes
   const handleTeam1Change = (name: string, code: string) => {
     setTeam1Name(name);
@@ -520,33 +526,18 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     const teamCode = activeSquadTab === 'team1' ? team1Code : team2Code;
     const teamN = activeSquadTab === 'team1' ? team1Name : team2Name;
 
-    const newPlayers: Player[] = lines.map((line, idx) => {
-      let role: PlayerRole = 'BAT';
-      let name = line;
-      if (line.toLowerCase().includes('(bowl)') || line.toLowerCase().includes('- bowl')) {
-        role = 'BOWL';
-        name = line.replace(/\(bowl\)|- bowl/gi, '').trim();
-      } else if (line.toLowerCase().includes('(wk)') || line.toLowerCase().includes('- wk')) {
-        role = 'WK';
-        name = line.replace(/\(wk\)|- wk/gi, '').trim();
-      } else if (line.toLowerCase().includes('(ar)') || line.toLowerCase().includes('- ar')) {
-        role = 'AR';
-        name = line.replace(/\(ar\)|- ar/gi, '').trim();
-      }
-
-      return {
-        id: `p_${teamCode.toLowerCase()}_${Date.now()}_${idx}`,
-        name,
-        shortName: name.split(' ').pop() || name,
-        team: teamCode,
-        teamName: teamN,
-        role,
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        country: teamN,
-        recentForm: ['40', '1/20'],
-        careerStatHighlight: 'Squad Member'
-      };
-    });
+    const newPlayers: Player[] = lines.map((name, idx) => ({
+      id: `p_${teamCode.toLowerCase()}_${Date.now()}_${idx}`,
+      name,
+      shortName: name.split(' ').pop() || name,
+      team: teamCode,
+      teamName: teamN,
+      role: 'BAT',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      country: teamN,
+      recentForm: ['25', '1/20'],
+      careerStatHighlight: 'Squad Player'
+    }));
 
     if (activeSquadTab === 'team1') {
       setSquad1([...squad1, ...newPlayers]);
@@ -566,64 +557,30 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     }
   };
 
-  // Update a specific question by Admin
-  const handleUpdateQuestion = (index: number, field: string, value: any) => {
+  // Update Player Role
+  const handleUpdatePlayerRole = (team: 'team1' | 'team2', playerId: string, newRole: PlayerRole) => {
+    if (team === 'team1') {
+      setSquad1(squad1.map(p => p.id === playerId ? { ...p, role: newRole } : p));
+    } else {
+      setSquad2(squad2.map(p => p.id === playerId ? { ...p, role: newRole } : p));
+    }
+  };
+
+  // Update Question in Custom Questions List
+  const handleUpdateQuestion = (index: number, field: keyof PredictionQuestion, value: any) => {
     const updated = [...customQuestions];
     updated[index] = { ...updated[index], [field]: value };
     setCustomQuestions(updated);
   };
 
-  // Select Question from Question Bank to slot into questions
-  const handleSelectFromBank = (bankQ: typeof MASTER_QUESTION_BANK[0]['questions'][0]) => {
-    if (questionBankModalIndex === null) {
-      // Add as new question if under 6
-      if (customQuestions.length >= 6) {
-        alert('Contests are standard 6 questions. Please swap an existing question or remove one.');
-        return;
-      }
-      const newQ: PredictionQuestion = {
-        id: `q_custom_${Date.now()}`,
-        number: customQuestions.length + 1,
-        title: bankQ.title,
-        shortTitle: bankQ.shortTitle,
-        subtitle: bankQ.subtitle,
-        type: bankQ.type as any,
-        optionsType: bankQ.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
-        options: [],
-        criteria: bankQ.criteria as any,
-        iconName: bankQ.iconName as any,
-        badgeColor: 'bg-purple-900 text-purple-400'
-      };
-      setCustomQuestions([...customQuestions, newQ]);
-    } else {
-      // Swap question at index
-      const updated = [...customQuestions];
-      updated[questionBankModalIndex] = {
-        ...updated[questionBankModalIndex],
-        title: bankQ.title,
-        shortTitle: bankQ.shortTitle,
-        subtitle: bankQ.subtitle,
-        type: bankQ.type as any,
-        optionsType: bankQ.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
-        criteria: bankQ.criteria as any,
-        iconName: bankQ.iconName as any
-      };
-      setCustomQuestions(updated);
-    }
-    setQuestionBankModalIndex(null);
-  };
-
-  // Helper to handle direct question bank dropdown change for slot `index`
-  const handleSelectQuestionDropdown = (index: number, selectedShortTitle: string) => {
-    const allBankQuestions = dynamicCategories.flatMap(cat => cat.questions);
-    const found = allBankQuestions.find(q => q.shortTitle === selectedShortTitle);
-    if (!found) return;
-
+  // Select Question from Bank for a slot
+  const handleSelectQuestionFromBank = (slotIndex: number, bankQuestion: typeof MASTER_QUESTION_BANK[0]['questions'][0]) => {
     const updated = [...customQuestions];
-    updated[index] = {
-      ...updated[index],
-      title: found.title,
+    const found = bankQuestion;
+    updated[slotIndex] = {
+      ...updated[slotIndex],
       shortTitle: found.shortTitle,
+      title: found.title,
       subtitle: found.subtitle,
       type: found.type as any,
       optionsType: found.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
@@ -631,12 +588,26 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
       iconName: found.iconName as any
     };
     setCustomQuestions(updated);
+    setQuestionBankModalIndex(null);
   };
 
-  // Create & Publish Match to Database
-  const handlePublishMatch = async () => {
+  const handleSelectFromBank = (bankQ: typeof MASTER_QUESTION_BANK[0]['questions'][0]) => {
+    if (questionBankModalIndex !== null) {
+      handleSelectQuestionFromBank(questionBankModalIndex, bankQ);
+    }
+  };
+
+  const handleSelectQuestionDropdown = (index: number, selectedShortTitle: string) => {
+    const allBankQuestions = dynamicCategories.flatMap(cat => cat.questions);
+    const found = allBankQuestions.find(q => q.shortTitle === selectedShortTitle);
+    if (!found) return;
+    handleSelectQuestionFromBank(index, found);
+  };
+
+  // Step 1: Initiate Publish - Validate and Open Match Preview Modal
+  const handleInitiatePublish = () => {
     if (!team1Name.trim() || !team2Name.trim()) {
-      alert('Please enter both team names.');
+      alert('Please enter both team names before publishing.');
       return;
     }
 
@@ -645,110 +616,119 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
       return;
     }
 
+    const matchStart = new Date(startDateTime);
+    const startTimeIso = isNaN(matchStart.getTime()) 
+      ? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() 
+      : matchStart.toISOString();
+
+    const lockTimeIso = new Date(new Date(startTimeIso).getTime() - 15 * 60 * 1000).toISOString();
+
+    const squad1PlayerNames = squad1.map(p => p.name);
+    const squad2PlayerNames = squad2.map(p => p.name);
+    const allPlayerNames = [...squad1PlayerNames, ...squad2PlayerNames];
+
+    // Build Questions populated with strictly segregated squad options
+    const configuredQuestions = customQuestions.map(q => {
+      const titleLower = (q.title || '').toLowerCase();
+      const shortTitleLower = (q.shortTitle || '').toLowerCase();
+      const subTitleLower = (q.subtitle || '').toLowerCase();
+
+      const isTeam1Strict = titleLower.includes('team 1') || 
+                            titleLower.includes('(team 1)') ||
+                            shortTitleLower.includes('team 1') ||
+                            subTitleLower.includes('team 1');
+
+      const isTeam2Strict = titleLower.includes('team 2') || 
+                            titleLower.includes('(team 2)') ||
+                            shortTitleLower.includes('team 2') ||
+                            subTitleLower.includes('team 2');
+
+      if (q.type === 'TEAM') {
+        return {
+          ...q,
+          optionsType: 'FIXED' as const,
+          options: [team1Name.trim() || 'Team 1', team2Name.trim() || 'Team 2']
+        };
+      }
+
+      if (q.type === 'PLAYER' || q.optionsType === 'DYNAMIC_SQUAD') {
+        if (isTeam1Strict) {
+          return {
+            ...q,
+            optionsType: 'DYNAMIC_SQUAD' as const,
+            options: squad1PlayerNames
+          };
+        } else if (isTeam2Strict) {
+          return {
+            ...q,
+            optionsType: 'DYNAMIC_SQUAD' as const,
+            options: squad2PlayerNames
+          };
+        } else {
+          return {
+            ...q,
+            optionsType: 'DYNAMIC_SQUAD' as const,
+            options: allPlayerNames
+          };
+        }
+      }
+
+      return q;
+    });
+
+    const matchId = `match_${Date.now()}`;
+    const constructedMatch: CricketMatch = {
+      id: matchId,
+      title: `${team1Name.trim()} vs ${team2Name.trim()}`,
+      series: seriesName.trim() || 'Featured Series',
+      matchNumber: `Match ${allMatches.length + 1}`,
+      team1: {
+        code: team1Code.trim() || 'T1',
+        name: team1Name.trim(),
+        shortName: team1Code.trim() || 'T1',
+        logoUrl: team1Logo.trim() || getTeamLogoUrl(team1Code, team1Name),
+        color: '#FF6B00',
+        accentColor: '#FF8800',
+        flagOrLogo: '🏏',
+      },
+      team2: {
+        code: team2Code.trim() || 'T2',
+        name: team2Name.trim(),
+        shortName: team2Code.trim() || 'T2',
+        logoUrl: team2Logo.trim() || getTeamLogoUrl(team2Code, team2Name),
+        color: '#004C97',
+        accentColor: '#00C8FF',
+        flagOrLogo: '⚡',
+      },
+      venue: venue.trim() || 'Cricket Stadium',
+      city: venue.split(',')[1]?.trim() || 'Host City',
+      startTime: startTimeIso,
+      lockTime: lockTimeIso,
+      status: 'UPCOMING',
+      format: (format || 'T20') as any,
+      totalPool: Number(totalPool) || 100000,
+      totalEntries: 0,
+      entryFees: [25, 50, 100],
+      maxEntriesPerUser: Number(maxEntriesPerUser) || 5,
+      squadTeam1: squad1.map(p => ({ ...p, team: team1Code.trim(), teamName: team1Name.trim() })),
+      squadTeam2: squad2.map(p => ({ ...p, team: team2Code.trim(), teamName: team2Name.trim() })),
+      questions: configuredQuestions as QuestionDefinition[],
+    };
+
+    setPreviewMatchData(constructedMatch);
+    setShowPreviewModal(true);
+  };
+
+  // Step 2: Confirm and Publish Match Live to DB
+  const handleConfirmPublish = async () => {
+    if (!previewMatchData) return;
+
     setIsSubmitting(true);
 
     try {
-      const matchStart = new Date(startDateTime);
-      const startTimeIso = isNaN(matchStart.getTime()) 
-        ? new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() 
-        : matchStart.toISOString();
-
-      const lockTimeIso = new Date(new Date(startTimeIso).getTime() - 15 * 60 * 1000).toISOString();
-
-      const squad1PlayerNames = squad1.map(p => p.name);
-      const squad2PlayerNames = squad2.map(p => p.name);
-      const allPlayerNames = [...squad1PlayerNames, ...squad2PlayerNames];
-
-      // Build Questions populated with strictly segregated squad options
-      const configuredQuestions = customQuestions.map(q => {
-        const titleLower = (q.title || '').toLowerCase();
-        const shortTitleLower = (q.shortTitle || '').toLowerCase();
-        const subTitleLower = (q.subtitle || '').toLowerCase();
-
-        const isTeam1Strict = titleLower.includes('team 1') || 
-                              titleLower.includes('(team 1)') ||
-                              shortTitleLower.includes('team 1') ||
-                              subTitleLower.includes('team 1');
-
-        const isTeam2Strict = titleLower.includes('team 2') || 
-                              titleLower.includes('(team 2)') ||
-                              shortTitleLower.includes('team 2') ||
-                              subTitleLower.includes('team 2');
-
-        if (q.type === 'TEAM') {
-          return {
-            ...q,
-            optionsType: 'FIXED',
-            options: [team1Name.trim() || 'Team 1', team2Name.trim() || 'Team 2']
-          };
-        }
-
-        if (q.type === 'PLAYER' || q.optionsType === 'DYNAMIC_SQUAD') {
-          if (isTeam1Strict) {
-            return {
-              ...q,
-              optionsType: 'DYNAMIC_SQUAD',
-              options: squad1PlayerNames
-            };
-          } else if (isTeam2Strict) {
-            return {
-              ...q,
-              optionsType: 'DYNAMIC_SQUAD',
-              options: squad2PlayerNames
-            };
-          } else {
-            return {
-              ...q,
-              optionsType: 'DYNAMIC_SQUAD',
-              options: allPlayerNames
-            };
-          }
-        }
-
-        return q;
-      });
-
-      const matchId = `match_${Date.now()}`;
-      const newMatch: CricketMatch = {
-        id: matchId,
-        title: `${team1Name.trim()} vs ${team2Name.trim()}`,
-        series: seriesName.trim() || 'Featured Series',
-        matchNumber: `Match ${allMatches.length + 1}`,
-        team1: {
-          code: team1Code.trim() || 'T1',
-          name: team1Name.trim(),
-          shortName: team1Code.trim() || 'T1',
-          logoUrl: team1Logo.trim() || getTeamLogoUrl(team1Code, team1Name),
-          color: '#FF6B00',
-          accentColor: '#FF8800',
-          flagOrLogo: '🏏',
-        },
-        team2: {
-          code: team2Code.trim() || 'T2',
-          name: team2Name.trim(),
-          shortName: team2Code.trim() || 'T2',
-          logoUrl: team2Logo.trim() || getTeamLogoUrl(team2Code, team2Name),
-          color: '#004C97',
-          accentColor: '#00C8FF',
-          flagOrLogo: '⚡',
-        },
-        venue: venue.trim() || 'Cricket Stadium',
-        city: venue.split(',')[1]?.trim() || 'Host City',
-        startTime: startTimeIso,
-        lockTime: lockTimeIso,
-        status: 'UPCOMING',
-        format: (format || 'T20') as any,
-        totalPool: Number(totalPool) || 100000,
-        totalEntries: 0,
-        entryFees: [25, 50, 100],
-        maxEntriesPerUser: Number(maxEntriesPerUser) || 5,
-        squadTeam1: squad1.map(p => ({ ...p, team: team1Code.trim(), teamName: team1Name.trim() })),
-        squadTeam2: squad2.map(p => ({ ...p, team: team2Code.trim(), teamName: team2Name.trim() })),
-        questions: configuredQuestions as QuestionDefinition[],
-      };
-
-      await onCreateMatch(newMatch);
-      setSuccessMessage(`✅ Match "${newMatch.title}" successfully created and published! Redirecting to Match Lifecycle...`);
+      await onCreateMatch(previewMatchData);
+      setShowPreviewModal(false);
+      setSuccessMessage(`✅ Match "${previewMatchData.title}" successfully created and published! Redirecting to Match Lifecycle...`);
 
       setTimeout(() => {
         if (onGoToLifecycle) {
@@ -1336,16 +1316,16 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               </div>
             </div>
 
-            {/* CREATE & PUBLISH BUTTON */}
+            {/* CREATE & PUBLISH BUTTON (TRIGGERS PREVIEW FIRST) */}
             <button
               type="button"
-              onClick={handlePublishMatch}
+              onClick={handleInitiatePublish}
               disabled={isSubmitting}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF6B00]/30 transition-all disabled:opacity-50"
               id="btn-publish-manual-match"
             >
               <Flame className="w-5 h-5 fill-current" />
-              <span>{isSubmitting ? 'Publishing Contest...' : '🚀 Create & Publish Contest Live'}</span>
+              <span>{isSubmitting ? 'Publishing Contest...' : '🔥 🚀 Create & Publish Contest Live'}</span>
             </button>
           </div>
         </div>
@@ -1543,6 +1523,238 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MATCH PREVIEW & VERIFICATION MODAL BEFORE PUBLISHING */}
+      {showPreviewModal && previewMatchData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-[#050816]/90 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-[#0D122B] border border-indigo-500/40 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 border-b border-[#1A223E] flex items-center justify-between bg-[#080C1D] flex-shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#FF6B00]/20 to-[#FFAA00]/20 text-[#FFAA00] text-[10px] font-black uppercase border border-[#FFAA00]/30 flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    PRE-PUBLISH PREVIEW & AUDIT
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">Format: {previewMatchData.format}</span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-black text-white font-display">
+                  Review Contest Before Going Live
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Carefully verify match metadata, squads, and all 6 scoring criteria below. Click Back &amp; Edit to make changes.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(false)}
+                className="w-9 h-9 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-400 hover:text-white border border-[#1A223E] flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 scrollbar-thin">
+              {/* Card 1: Match Header Info */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-[#1A223E]">
+                  <span className="text-xs font-bold text-[#FFAA00] uppercase tracking-wider">
+                    {previewMatchData.series}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-black uppercase border border-sky-500/30">
+                    Status: UPCOMING
+                  </span>
+                </div>
+
+                {/* Match Teams VS Banner */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center text-center">
+                  <div className="p-3 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center gap-3 justify-center sm:justify-start">
+                    <img
+                      src={previewMatchData.team1.logoUrl}
+                      alt={previewMatchData.team1.name}
+                      className="w-10 h-10 object-contain rounded-lg flex-shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                    />
+                    <div className="text-left">
+                      <div className="font-black text-white text-sm">{previewMatchData.team1.name}</div>
+                      <div className="text-xs text-slate-400 font-mono font-bold">{previewMatchData.team1.code}</div>
+                    </div>
+                  </div>
+
+                  <div className="text-center font-black text-slate-400 text-xs font-mono">
+                    <div className="w-8 h-8 rounded-full bg-[#131A38] border border-[#1A223E] flex items-center justify-center mx-auto text-[#FF6B00] font-black mb-1">
+                      VS
+                    </div>
+                    <span>{previewMatchData.venue}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center gap-3 justify-center sm:justify-end">
+                    <div className="text-right">
+                      <div className="font-black text-white text-sm">{previewMatchData.team2.name}</div>
+                      <div className="text-xs text-slate-400 font-mono font-bold">{previewMatchData.team2.code}</div>
+                    </div>
+                    <img
+                      src={previewMatchData.team2.logoUrl}
+                      alt={previewMatchData.team2.name}
+                      className="w-10 h-10 object-contain rounded-lg flex-shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                    />
+                  </div>
+                </div>
+
+                {/* Match Timings & Pool Details */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
+                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Start Time</span>
+                    <span className="text-white font-mono font-bold">
+                      {new Date(previewMatchData.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Contest Lock</span>
+                    <span className="text-amber-400 font-mono font-bold">15 Min Before Start</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Total Prize Pool</span>
+                    <span className="text-emerald-400 font-mono font-black">₹{previewMatchData.totalPool.toLocaleString()}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
+                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Max Slips / User</span>
+                    <span className="text-white font-mono font-bold">{previewMatchData.maxEntriesPerUser || 5} Entries</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Squad Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-xs">{previewMatchData.team1.name} Squad</span>
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black font-mono">
+                      {previewMatchData.squadTeam1.length} Players
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+                    {previewMatchData.squadTeam1.map((p) => (
+                      <span key={p.id} className="px-2 py-0.5 rounded-lg bg-[#0D122B] text-slate-300 text-[10px] font-medium border border-[#1A223E]">
+                        {p.name} ({p.role})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-xs">{previewMatchData.team2.name} Squad</span>
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black font-mono">
+                      {previewMatchData.squadTeam2.length} Players
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
+                    {previewMatchData.squadTeam2.map((p) => (
+                      <span key={p.id} className="px-2 py-0.5 rounded-lg bg-[#0D122B] text-slate-300 text-[10px] font-medium border border-[#1A223E]">
+                        {p.name} ({p.role})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: 6 Questions & Scoring Criteria (As in 2nd image) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-[#1A223E]">
+                  <span className="font-black text-white text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#FF6B00]" />
+                    6 Contest Questions &amp; Scoring Criteria
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono">All 6 questions will be presented to users</span>
+                </div>
+
+                <div className="space-y-3">
+                  {previewMatchData.questions.map((q, idx) => {
+                    const titleLower = (q.title || '').toLowerCase();
+                    const shortTitleLower = (q.shortTitle || '').toLowerCase();
+                    const subTitleLower = (q.subtitle || '').toLowerCase();
+
+                    const isTeam1Strict = titleLower.includes('team 1') || titleLower.includes('(team 1)') || shortTitleLower.includes('team 1') || subTitleLower.includes('team 1');
+                    const isTeam2Strict = titleLower.includes('team 2') || titleLower.includes('(team 2)') || shortTitleLower.includes('team 2') || subTitleLower.includes('team 2');
+
+                    let scopeBadge = '👥 Both Teams Players';
+                    let scopeBg = 'bg-teal-500/15 text-teal-300 border-teal-500/30';
+
+                    if (q.type === 'TEAM') {
+                      scopeBadge = '🏆 Pick Team Winner';
+                      scopeBg = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                    } else if (isTeam1Strict) {
+                      scopeBadge = `🏏 ${previewMatchData.team1.code} Squad Only`;
+                      scopeBg = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
+                    } else if (isTeam2Strict) {
+                      scopeBadge = `⚡ ${previewMatchData.team2.code} Squad Only`;
+                      scopeBg = 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+                    }
+
+                    return (
+                      <div
+                        key={q.id || idx}
+                        className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-[#FF6B00]/20 text-[#FF8800] text-[10px] font-black border border-[#FF6B00]/40">
+                              #{idx + 1} Question #{idx + 1}:
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${scopeBg}`}>
+                              {scopeBadge}
+                            </span>
+                          </div>
+
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {q.options?.length || 0} Option Choices
+                          </span>
+                        </div>
+
+                        <div className="space-y-1 pl-1">
+                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Question Display Title:</div>
+                          <div className="text-sm font-black text-white">{q.title}</div>
+                        </div>
+
+                        <div className="space-y-1 pl-1 pt-1 border-t border-[#131A38]">
+                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Subtitle / Scoring Criteria:</div>
+                          <div className="text-xs text-slate-300 font-medium">{q.subtitle || 'Standard cricket scoring rules apply'}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer CTA Buttons */}
+            <div className="p-4 sm:p-5 border-t border-[#1A223E] bg-[#080C1D] flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowPreviewModal(false)}
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-[#131A38] hover:bg-[#1A223E] text-slate-200 hover:text-white text-xs font-black flex items-center justify-center gap-2 border border-[#1A223E] transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>← Back &amp; Edit Details</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmPublish}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF6B00]/30 transition-all disabled:opacity-50"
+              >
+                <Flame className="w-5 h-5 fill-current" />
+                <span>{isSubmitting ? 'Publishing Contest...' : '🚀 Confirm &amp; Publish Live to Fan Lobby'}</span>
+              </button>
             </div>
           </div>
         </div>
