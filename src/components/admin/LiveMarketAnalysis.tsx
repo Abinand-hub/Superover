@@ -7,6 +7,9 @@ import {
   Download,
   RefreshCw,
   ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
   Search,
   ShieldCheck,
   Users,
@@ -73,6 +76,18 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({
     winningsINR?: number;
     hasWon?: boolean;
   } | null>(null);
+
+  // Expanded User Folders in Funnel Breakdown
+  const [expandedUserKeys, setExpandedUserKeys] = useState<Set<string>>(new Set());
+
+  const toggleUserExpanded = (userKey: string) => {
+    setExpandedUserKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(userKey)) next.delete(userKey);
+      else next.add(userKey);
+      return next;
+    });
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -144,55 +159,6 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({
 
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
-        {/* Category Mode Switch: Live & Open Markets VS Finished Events Archive */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1.5 rounded-2xl bg-[#080C1D] border border-[#1A223E]">
-          <div className="flex items-center gap-1.5 flex-1">
-            <button
-              onClick={() => setMarketView('LIVE')}
-              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${marketView === 'LIVE'
-                  ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span>⚡ Live & Open Markets</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${marketView === 'LIVE' ? 'bg-slate-950/40 text-slate-950' : 'bg-[#131A38] text-slate-300'
-                }`}>
-                {liveMatches.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setMarketView('FINISHED')}
-              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 ${marketView === 'FINISHED'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md shadow-emerald-500/30'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                }`}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>🏁 Finished Events Archive</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${marketView === 'FINISHED' ? 'bg-slate-950/40 text-slate-950' : 'bg-[#131A38] text-slate-300'
-                }`}>
-                {finishedMatches.length}
-              </span>
-            </button>
-          </div>
-
-          <div className="px-3 text-[11px] text-slate-400 font-medium hidden md:block">
-            {marketView === 'LIVE' ? (
-              <span className="flex items-center gap-1.5 text-emerald-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Active open contests & in-play fixtures (Settled matches excluded)
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-slate-300">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                Settled fixtures with payout audits & historic breakdown
-              </span>
-            )}
-          </div>
-        </div>
-
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -583,6 +549,77 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({
       document.body.removeChild(link);
     };
 
+    // Group all slips for this match by user (1 Folder per User)
+    const groupedUsersWithWinnings = (() => {
+      const groupsMap = new Map<string, {
+        userKey: string;
+        userName: string;
+        userPhone: string;
+        userId: string;
+        entriesCount: number;
+        totalStake: number;
+        totalWinningsINR: number;
+        bestStreak: number;
+        bestMultiplier: number;
+        freeHitCount: number;
+        hasWon: boolean;
+        entries: Array<{
+          slip: UserPredictionSlip;
+          streak: number;
+          multiplier: number;
+          winningsINR: number;
+          hasWon: boolean;
+          entryIndex: number;
+        }>;
+      }>();
+
+      evaluatedSlipsWithWinnings.forEach(item => {
+        const s = item.slip;
+        const key = (s.userId || s.userPhone || s.userName || `user_${s.id}`).trim().toLowerCase();
+        const stake = s.totalPayable || (s.entryFee ? (s.freeHit ? s.entryFee + (s.freeHitFee || 10) : s.entryFee) : 50);
+
+        if (!groupsMap.has(key)) {
+          groupsMap.set(key, {
+            userKey: key,
+            userName: s.userName || 'SuperOver Fan',
+            userPhone: s.userPhone || '',
+            userId: s.userId || '',
+            entriesCount: 0,
+            totalStake: 0,
+            totalWinningsINR: 0,
+            bestStreak: 0,
+            bestMultiplier: 0,
+            freeHitCount: 0,
+            hasWon: false,
+            entries: []
+          });
+        }
+
+        const group = groupsMap.get(key)!;
+        group.entriesCount += 1;
+        group.totalStake += stake;
+        group.totalWinningsINR += item.winningsINR;
+        group.bestStreak = Math.max(group.bestStreak, item.streak);
+        group.bestMultiplier = Math.max(group.bestMultiplier, item.multiplier);
+        if (s.freeHit) group.freeHitCount += 1;
+        if (item.hasWon) group.hasWon = true;
+        group.entries.push({
+          ...item,
+          entryIndex: group.entriesCount
+        });
+      });
+
+      return Array.from(groupsMap.values());
+    })();
+
+    const expandAllUsers = () => {
+      setExpandedUserKeys(new Set(groupedUsersWithWinnings.map(g => g.userKey)));
+    };
+
+    const collapseAllUsers = () => {
+      setExpandedUserKeys(new Set());
+    };
+
     return (
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Back Button & Match Title Bar */}
@@ -737,44 +774,61 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({
         </div>
 
         {/* ========================================================================= */}
-        {/* NEW SECTION: INDIVIDUAL USER WINNINGS BREAKDOWN (WHICH USER GOT HOW MUCH)  */}
+        {/* SECTION: USER ENTRIES BREAKDOWN (1 FOLDER PER USER)                      */}
         {/* ========================================================================= */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[#0D122B] border border-emerald-500/40 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1A223E]">
             <div>
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-[#FFAA00]" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <Folder className="w-5 h-5 text-[#FF6B00]" />
                 <h3 className="text-base font-black text-white font-display">
-                  User Winnings & Cash Payouts Breakdown
+                  User Entries & Payouts Breakdown
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
-                  {totalWinnersCount} / {matchSlips.length} Users Won Cash
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">
+                  {groupedUsersWithWinnings.length} Unique Users • {matchSlips.length} Total Slips
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Detailed list showing exactly which user achieved what streak and won how many rupees (₹).
+                All entries for each user are grouped into 1 folder. Click any folder to expand and audit their specific slips.
               </p>
             </div>
 
-            {/* Filter Tabs & Search */}
+            {/* Filter Tabs, Search & Expand Controls */}
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={expandAllUsers}
+                className="px-2.5 py-1.5 rounded-lg bg-[#131A38] hover:bg-[#1A223E] text-slate-300 hover:text-white text-xs font-bold border border-[#1A223E] transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+                <span>Expand All</span>
+              </button>
+              <button
+                type="button"
+                onClick={collapseAllUsers}
+                className="px-2.5 py-1.5 rounded-lg bg-[#131A38] hover:bg-[#1A223E] text-slate-300 hover:text-white text-xs font-bold border border-[#1A223E] transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <Folder className="w-3.5 h-3.5 text-slate-400" />
+                <span>Collapse All</span>
+              </button>
+
               <div className="flex rounded-xl bg-[#080C1D] border border-[#1A223E] p-1 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => setWinningsFilter('ALL')}
-                  className={`px-3 py-1 rounded-lg transition-colors ${winningsFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${winningsFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
                     }`}
                 >
-                  All Users ({matchSlips.length})
+                  All ({groupedUsersWithWinnings.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setWinningsFilter('WINNERS_ONLY')}
-                  className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1 ${winningsFilter === 'WINNERS_ONLY' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+                  className={`px-3 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer ${winningsFilter === 'WINNERS_ONLY' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
                     }`}
                 >
                   <Award className="w-3 h-3" />
-                  <span>Winners Only ({totalWinnersCount})</span>
+                  <span>Winners ({groupedUsersWithWinnings.filter(u => u.hasWon).length})</span>
                 </button>
               </div>
 
@@ -791,263 +845,209 @@ export const LiveMarketAnalysis: React.FC<LiveMarketAnalysisProps> = ({
             </div>
           </div>
 
-          {/* Mobile User Winnings Card List (Zero Horizontal Scroll / Swipe Needed) */}
-          <div className="block md:hidden p-3.5 space-y-2.5">
+          {/* User Folders List (1 Folder Per User) */}
+          <div className="space-y-3">
             {(() => {
-              const filtered = evaluatedSlipsWithWinnings.filter(item => {
-                if (winningsFilter === 'WINNERS_ONLY' && !item.hasWon) return false;
+              const filteredGroups = groupedUsersWithWinnings.filter((group) => {
+                if (winningsFilter === 'WINNERS_ONLY' && !group.hasWon) return false;
                 if (winningsSearch) {
                   const q = winningsSearch.toLowerCase();
-                  const s = item.slip;
-                  return (
-                    (s.userName || '').toLowerCase().includes(q) ||
-                    (s.userPhone || '').toLowerCase().includes(q) ||
-                    (s.userId || '').toLowerCase().includes(q)
-                  );
+                  const matchName = (group.userName || '').toLowerCase().includes(q);
+                  const matchPhone = (group.userPhone || '').toLowerCase().includes(q);
+                  const matchId = (group.userId || '').toLowerCase().includes(q);
+                  const matchSlip = group.entries.some(e => e.slip.id.toLowerCase().includes(q));
+                  return matchName || matchPhone || matchId || matchSlip;
                 }
                 return true;
               });
 
-              if (filtered.length === 0) {
+              if (filteredGroups.length === 0) {
                 return (
-                  <div className="p-6 text-center text-slate-500 text-xs">
+                  <div className="p-8 text-center text-slate-500 text-xs bg-[#080C1D] rounded-xl border border-[#1A223E]">
                     No users found matching current filters.
                   </div>
                 );
               }
 
-              return filtered.map((item) => {
-                const s = item.slip;
-                const hasWon = item.hasWon;
+              return filteredGroups.map((group) => {
+                const isExpanded = expandedUserKeys.has(group.userKey);
+                const hasWon = group.hasWon;
 
                 return (
                   <div
-                    key={s.id}
-                    className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${hasWon
-                      ? 'bg-emerald-950/20 border-emerald-500/40 shadow-sm shadow-emerald-500/10'
-                      : 'bg-[#080C1D] border-[#1A223E]'
-                      }`}
+                    key={group.userKey}
+                    className={`rounded-2xl border transition-all overflow-hidden ${
+                      hasWon
+                        ? 'bg-[#080C1D] border-emerald-500/40 shadow-md shadow-emerald-500/10'
+                        : 'bg-[#080C1D] border-[#1A223E]'
+                    }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs font-mono ${hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
-                          }`}>
-                          {(s.userName || 'U')[0].toUpperCase()}
+                    {/* User Folder Header (Clickable to Expand / Collapse) */}
+                    <div
+                      onClick={() => toggleUserExpanded(group.userKey)}
+                      className={`p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 cursor-pointer transition-colors ${
+                        isExpanded ? 'bg-[#131A38]/70 border-b border-[#1A223E]' : 'hover:bg-[#131A38]/40'
+                      }`}
+                    >
+                      {/* Left: Identity & Entries Count */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm font-mono shrink-0 ${
+                          hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-[#131A38] text-slate-300 border border-[#1A223E]'
+                        }`}>
+                          {(group.userName || 'U')[0].toUpperCase()}
                         </div>
                         <div>
-                          <span className="font-bold text-white text-xs block">{s.userName || 'SuperOver Fan'}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">{s.userPhone || s.userId || 'N/A'}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-white text-sm">{group.userName}</span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FF6B00]/15 text-[#FF8800] border border-[#FF6B00]/30 text-[10px] font-black">
+                              <Folder className="w-3 h-3" />
+                              <span>{group.entriesCount} {group.entriesCount === 1 ? 'Entry' : 'Entries'}</span>
+                            </span>
+                            {group.freeHitCount > 0 && (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                                {group.freeHitCount} Spin Wheel
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-mono block mt-0.5">
+                            {group.userPhone || group.userId || 'N/A'}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        {hasWon ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-sm font-black text-emerald-400 font-mono">
-                              +₹{item.winningsINR.toLocaleString()}
+                      {/* Right: Aggregated Stats & Toggle */}
+                      <div className="flex items-center gap-4 self-end md:self-auto flex-wrap">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">Total Stake</span>
+                          <span className="text-xs sm:text-sm font-black text-white font-mono">₹{group.totalStake.toLocaleString()}</span>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">Best Streak</span>
+                          <span className={`text-xs sm:text-sm font-black font-mono ${group.bestStreak >= 3 ? 'text-amber-400' : 'text-slate-300'}`}>
+                            {group.bestStreak}/6 {group.bestMultiplier > 0 ? `(${group.bestMultiplier}X)` : ''}
+                          </span>
+                        </div>
+
+                        <div className="text-right min-w-[90px]">
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">Total Won</span>
+                          {hasWon ? (
+                            <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono flex items-center justify-end gap-1">
+                              <Sparkles className="w-3 h-3 text-emerald-400" />
+                              +₹{group.totalWinningsINR.toLocaleString()}
                             </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-500 font-mono">₹0</span>
-                        )}
-                        <span className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase inline-block mt-0.5 ${hasWon ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
-                          }`}>
-                          {hasWon ? `WON ${item.multiplier}X` : 'NO WIN'}
-                        </span>
+                          ) : (
+                            <span className="text-xs font-mono text-slate-500">₹0</span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleUserExpanded(group.userKey);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all border ${
+                            isExpanded
+                              ? 'bg-[#FF6B00] text-slate-950 border-[#FF6B00] shadow-sm shadow-[#FF6B00]/20'
+                              : 'bg-[#131A38] text-slate-300 hover:text-white border-[#1A223E]'
+                          }`}
+                        >
+                          <span>{isExpanded ? 'Collapse' : `Expand (${group.entriesCount})`}</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-[#131A38] text-[10px]">
-                      <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
-                        <span className="text-slate-400 block font-bold">STAKE</span>
-                        <span className="text-slate-200 font-mono font-bold">₹{s.totalPayable || (s.entryFee ? (s.freeHit ? s.entryFee + (s.freeHitFee || 10) : s.entryFee) : 50)}</span>
-                      </div>
-                      <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
-                        <span className="text-slate-400 block font-bold">STREAK</span>
-                        <span className={`font-mono font-bold ${item.streak >= 3 ? 'text-emerald-400' : 'text-slate-300'
-                          }`}>
-                          {item.streak}/6
-                        </span>
-                      </div>
-                      <div className="p-1.5 rounded bg-[#0D122B] border border-[#1A223E]/60 text-center">
-                        <span className="text-slate-400 block font-bold">TIER</span>
-                        <span className="text-[#FFAA00] font-mono font-bold">{item.multiplier}X</span>
-                      </div>
-                    </div>
+                    {/* Expanded Individual Entries List */}
+                    {isExpanded && (
+                      <div className="p-4 bg-[#080C1D] border-t border-[#1A223E] space-y-2.5">
+                        <div className="text-[11px] font-bold text-slate-400 flex items-center justify-between pb-2 border-b border-[#1A223E]">
+                          <span>Individual Prediction Entries submitted by <strong>{group.userName}</strong>:</span>
+                          <span className="text-slate-500">Click &quot;View Answers&quot; on any entry to see Q1-Q6 picks</span>
+                        </div>
 
-                    <button
-                      onClick={() => setSelectedSlipForAnswers({
-                        slip: s,
-                        streak: item.streak,
-                        multiplier: item.multiplier,
-                        winningsINR: item.winningsINR,
-                        hasWon: item.hasWon
-                      })}
-                      className="w-full py-2 px-3 rounded-xl bg-[#FF6B00]/15 hover:bg-[#FF6B00]/25 active:scale-98 text-[#FF8800] border border-[#FF6B00]/40 text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Inspect Predictions / Answers (Q1 to Q{match.questions.length})</span>
-                    </button>
+                        <div className="space-y-2">
+                          {group.entries.map((entryItem, entryIdx) => {
+                            const slip = entryItem.slip;
+                            const stake = slip.totalPayable || (slip.entryFee ? (slip.freeHit ? slip.entryFee + (slip.freeHitFee || 10) : slip.entryFee) : 50);
+                            const entryWon = entryItem.hasWon;
+
+                            return (
+                              <div
+                                key={slip.id || entryIdx}
+                                className={`p-3 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-3 transition-colors ${
+                                  entryWon
+                                    ? 'bg-emerald-950/20 border-emerald-500/30'
+                                    : 'bg-[#0D122B] border-[#1A223E]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="px-2 py-0.5 rounded-md bg-[#131A38] text-slate-300 font-black text-xs border border-[#1A223E] font-mono">
+                                    Entry #{entryIdx + 1}
+                                  </span>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-mono font-bold text-slate-200">
+                                        Slip #{slip.id ? slip.id.substring(0, 8).toUpperCase() : `SLIP_${entryIdx + 1}`}
+                                      </span>
+                                      {slip.submittedAt && (
+                                        <span className="text-[10px] text-slate-500">
+                                          • {new Date(slip.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                      <span>Stake: <strong>₹{stake}</strong> {slip.freeHit ? `(₹${slip.entryFee} + ₹${slip.freeHitFee || 10} Spin)` : ''}</span>
+                                      <span>•</span>
+                                      <span>Streak: <strong className={entryItem.streak >= 3 ? 'text-amber-400' : 'text-slate-300'}>{entryItem.streak}/6</strong></span>
+                                      <span>•</span>
+                                      <span>Tier: <strong>{entryItem.multiplier > 0 ? `${entryItem.multiplier}X` : '0X'}</strong></span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 self-end md:self-auto">
+                                  <div className="text-right">
+                                    {entryWon ? (
+                                      <span className="text-xs font-black text-emerald-400 font-mono">
+                                        +₹{entryItem.winningsINR.toLocaleString()}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs font-mono text-slate-500">₹0</span>
+                                    )}
+                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase block mt-0.5 ${
+                                      entryWon ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
+                                    }`}>
+                                      {entryWon ? 'WON' : 'NO WIN'}
+                                    </span>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedSlipForAnswers({
+                                      slip: slip,
+                                      streak: entryItem.streak,
+                                      multiplier: entryItem.multiplier,
+                                      winningsINR: entryItem.winningsINR,
+                                      hasWon: entryItem.hasWon
+                                    })}
+                                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF6B00]/20 to-[#FF8800]/20 hover:from-[#FF6B00]/40 hover:to-[#FF8800]/40 text-[#FF8800] hover:text-white border border-[#FF6B00]/40 font-sans font-bold text-xs transition-all shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>View Answers</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               });
             })()}
-          </div>
-
-          {/* Desktop User Winnings Table (Hidden on Mobile) */}
-          <div className="hidden md:block overflow-x-auto border-t md:border-t-0 border-[#1A223E]">
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead className="bg-[#131A38] text-slate-400 uppercase text-[10px] tracking-wider border-b border-[#1A223E]">
-                <tr>
-                  <th className="px-4 py-3.5 font-bold">User Name & Identity</th>
-                  <th className="px-4 py-3.5 font-bold">Entry Stake</th>
-                  <th className="px-4 py-3.5 font-bold">Consecutive Streak</th>
-                  <th className="px-4 py-3.5 font-bold">Multiplier Tier</th>
-                  <th className="px-4 py-3.5 font-bold">Free Hit Status</th>
-                  <th className="px-4 py-3.5 font-bold text-right">Rupees Won (₹ Cash Payout)</th>
-                  <th className="px-4 py-3.5 font-bold text-center">Status</th>
-                  <th className="px-4 py-3.5 font-bold text-center">User Answers</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1A223E] font-mono text-[11px]">
-                {(() => {
-                  const filtered = evaluatedSlipsWithWinnings.filter(item => {
-                    if (winningsFilter === 'WINNERS_ONLY' && !item.hasWon) return false;
-                    if (winningsSearch) {
-                      const q = winningsSearch.toLowerCase();
-                      const s = item.slip;
-                      return (
-                        (s.userName || '').toLowerCase().includes(q) ||
-                        (s.userPhone || '').toLowerCase().includes(q) ||
-                        (s.userId || '').toLowerCase().includes(q)
-                      );
-                    }
-                    return true;
-                  });
-
-                  if (filtered.length === 0) {
-                    return (
-                      <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-slate-500 font-sans">
-                          No users found matching current filters.
-                        </td>
-                      </tr>
-                    );
-                  }
-
-                  return filtered.map((item) => {
-                    const s = item.slip;
-                    const hasWon = item.hasWon;
-
-                    return (
-                      <tr
-                        key={s.id}
-                        className={`transition-colors ${hasWon
-                          ? 'bg-emerald-950/15 hover:bg-emerald-950/30'
-                          : 'hover:bg-[#131A38]/40'
-                          }`}
-                      >
-                        {/* User identity */}
-                        <td className="px-4 py-3 font-sans">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs font-mono ${hasWon ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
-                              }`}>
-                              {(s.userName || 'U')[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <span className="font-bold text-white block">{s.userName || 'SuperOver Fan'}</span>
-                              <span className="text-[10px] text-slate-400 font-mono">{s.userPhone || s.userId || 'N/A'}</span>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Entry Stake */}
-                        <td className="px-4 py-3 text-slate-200">
-                          {s.freeHit || (s.totalPayable && s.totalPayable > (s.entryFee || 25)) ? (
-                            <div>
-                              <span className="font-bold text-white">₹{s.totalPayable || ((s.entryFee || 25) + (s.freeHitFee || 10))}</span>
-                              <span className="text-[10px] text-amber-400 block font-normal">(₹{s.entryFee || 25} + ₹{s.freeHitFee || 10} Spin)</span>
-                            </div>
-                          ) : (
-                            <span>₹{s.entryFee || 50}</span>
-                          )}
-                        </td>
-
-                        {/* Streak */}
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-black ${item.streak === 6 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
-                            item.streak >= 3 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
-                              'bg-slate-800 text-slate-400'
-                            }`}>
-                            {item.streak} / 6 Streak
-                          </span>
-                        </td>
-
-                        {/* Multiplier */}
-                        <td className="px-4 py-3">
-                          <span className={`font-bold ${item.multiplier > 0 ? 'text-[#FFAA00]' : 'text-slate-500'}`}>
-                            {item.multiplier > 0 ? `${item.multiplier}X` : '0X'}
-                          </span>
-                        </td>
-
-                        {/* Free Hit */}
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.freeHit ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-500'
-                            }`}>
-                            {s.freeHit ? `ACTIVE (${s.wheelMultiplier || 50}X)` : 'NO'}
-                          </span>
-                        </td>
-
-                        {/* Rupees Won (Prominent Payout Column) */}
-                        <td className="px-4 py-3 text-right">
-                          {hasWon ? (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-sm font-black text-emerald-400 font-mono">
-                                +₹{item.winningsINR.toLocaleString()}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-500 font-mono">
-                              ₹0
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Status badge */}
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase font-sans ${hasWon
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                            : 'bg-slate-800 text-slate-500'
-                            }`}>
-                            {hasWon ? `WON ₹${item.winningsINR}` : 'NO WIN'}
-                          </span>
-                        </td>
-
-                        {/* User Answers Action */}
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => setSelectedSlipForAnswers({
-                              slip: s,
-                              streak: item.streak,
-                              multiplier: item.multiplier,
-                              winningsINR: item.winningsINR,
-                              hasWon: item.hasWon
-                            })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF6B00]/20 to-[#FF8800]/20 hover:from-[#FF6B00]/35 hover:to-[#FF8800]/35 text-[#FF8800] hover:text-white border border-[#FF6B00]/40 font-sans font-bold text-[11px] transition-all shadow-sm active:scale-95 cursor-pointer"
-                            title="View all 6 question answers submitted by this user"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>View Answers</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
           </div>
         </div>
 
