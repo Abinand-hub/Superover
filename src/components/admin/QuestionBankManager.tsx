@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { QuestionBankItem, QuestionType } from '../../types';
-import { Database, Plus, RefreshCw, Loader2, Save, X, Star, Shield, AlertTriangle, Trophy, Ticket, Hash } from 'lucide-react';
+import { Database, Plus, RefreshCw, Loader2, Save, X, Star, Shield, AlertTriangle, Trophy, Ticket, Hash, Trash2 } from 'lucide-react';
 
 const ICONS = {
   BAT: { label: 'Bat', icon: Star, color: 'text-orange-400' },
@@ -57,6 +57,19 @@ export const QuestionBankManager: React.FC = () => {
 
   const handleRemoveOption = (index: number) => {
     setOptions(options.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteQuestion = async (id?: string) => {
+    if (!id) return;
+    if (confirm('Are you sure you want to delete this question from the Question Bank?')) {
+      try {
+        await api.deleteQuestionBank(id);
+        await loadBank();
+      } catch (e) {
+        console.error(e);
+        alert('Failed to delete question');
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -284,11 +297,21 @@ export const QuestionBankManager: React.FC = () => {
                 <div className={`p-2 rounded-lg bg-slate-800 ${iconColor}`}>
                   <IconComp className="w-5 h-5" />
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">{q.type}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${q.optionsType === 'DYNAMIC_SQUAD' ? 'bg-blue-900/30 text-blue-400' : 'bg-orange-900/30 text-orange-400'}`}>
-                    {q.optionsType === 'DYNAMIC_SQUAD' ? 'AUTO-SQUAD' : 'FIXED OPTION'}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">{q.type}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${q.optionsType === 'DYNAMIC_SQUAD' ? 'bg-blue-900/30 text-blue-400' : 'bg-orange-900/30 text-orange-400'}`}>
+                      {q.optionsType === 'DYNAMIC_SQUAD' ? 'AUTO-SQUAD' : 'FIXED OPTION'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteQuestion(q._id)}
+                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 transition-colors ml-1"
+                    title="Delete Question"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
               <h3 className="text-md font-bold text-white mb-1">{q.shortTitle}</h3>

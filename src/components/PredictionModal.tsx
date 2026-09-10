@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, Award, Crosshair, Zap, ShieldCheck, Flame, Target, Check, 
-  Search, ArrowRight, CheckCircle2, ChevronRight, AlertCircle
+  Search, ArrowRight, ArrowLeft, CheckCircle2, ChevronRight, AlertCircle
 } from 'lucide-react';
 import { CricketMatch, Player, PlayerRole, QuestionDefinition, UserAccount, Wallet } from '../types';
 import { formatINR, PAYOUT_TIERS } from '../utils/payoutCalculator';
@@ -15,6 +15,8 @@ interface PredictionModalProps {
   initialAnswers?: Record<string, string>;
   editingSlipId?: string;
   onClose: () => void;
+  onGoToLobby?: () => void;
+  onGoToMyContests?: () => void;
   onSubmitSlip: (answers: Record<string, string>, entryFee: number, totalPaid: number, jackpotMultiplier: number, freeHit: boolean, freeHitFee: number, wheelMultiplier?: number) => void;
   onUpdateSlip?: (slipId: string, answers: Record<string, string>) => void;
   onOpenDeposit: () => void;
@@ -28,6 +30,8 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   initialAnswers = {},
   editingSlipId,
   onClose,
+  onGoToLobby,
+  onGoToMyContests,
   onSubmitSlip,
   onUpdateSlip,
   onOpenDeposit,
@@ -37,6 +41,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   // View states
   const [activePlayerQuestionId, setActivePlayerQuestionId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'QUESTIONS' | 'STAKE' | 'FREE_HIT_PROMPT' | 'WHEEL' | 'WHEEL_RESULT'>('QUESTIONS');
+  const [isFreeHitUsed, setIsFreeHitUsed] = useState<boolean>(false);
   
   // Stake states
   const [selectedFee, setSelectedFee] = useState<number>(initialFee);
@@ -157,10 +162,14 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
       onOpenDeposit();
       return;
     }
+    setIsFreeHitUsed(false);
+    setJackpotMultiplier(50);
     onSubmitSlip(answers, baseStake, baseStake, 50, false, 0, undefined);
+    setCurrentView('WHEEL_RESULT');
   };
 
   const handleWheelComplete = (multiplier: number) => {
+    setIsFreeHitUsed(true);
     setJackpotMultiplier(multiplier);
     // Directly submit the prediction slip with the won wheel multiplier and paid total fee
     onSubmitSlip(answers, baseStake, finalPayable, multiplier, true, freeHitFee, multiplier);
@@ -171,6 +180,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
 
   const renderWheelResult = () => {
     const wheelMult = jackpotMultiplier || 50;
+    const entryPaid = isFreeHitUsed ? finalPayable : baseStake;
     
     return (
       <div className="flex-1 flex flex-col p-4 sm:p-6 bg-slate-950 overflow-y-auto custom-scrollbar">
@@ -180,11 +190,11 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
           </div>
 
           <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-wider mb-2 border border-emerald-500/30">
-            ✓ Entry Placed & Paid (₹{finalPayable})
+            ✓ Entry Placed & Paid (₹{entryPaid})
           </span>
 
           <h3 className="text-2xl font-black text-white font-display text-center mb-1">
-            {wheelMult}X Boost Activated!
+            {isFreeHitUsed ? `${wheelMult}X Boost Activated!` : '50X Contest Entry Confirmed!'}
           </h3>
           <p className="text-xs text-slate-400 text-center mb-6">
             Your slip has been confirmed and locked for match results.
@@ -206,18 +216,29 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
                 <span className="font-mono font-bold text-emerald-400">₹{Math.floor(baseStake * 10)}</span>
               </div>
               <div className="flex justify-between items-center bg-gradient-to-r from-amber-500/20 to-amber-500/10 p-2.5 rounded-lg border border-amber-500/40">
-                <span className="text-amber-400 font-bold">6/6 Correct ({wheelMult}X JACKPOT)</span>
+                <span className="text-amber-400 font-bold">6/6 Correct ({wheelMult}X {isFreeHitUsed ? 'JACKPOT' : 'MAX WIN'})</span>
                 <span className="font-mono font-black text-amber-400 text-sm">₹{Math.floor(baseStake * wheelMult)}</span>
               </div>
             </div>
           </div>
           
-          <button 
-            onClick={onClose}
-            className="w-full py-3.5 rounded-xl font-black text-slate-950 text-base bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.3)]"
-          >
-            <span>VIEW MY CONTESTS →</span>
-          </button>
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <button 
+              onClick={onGoToLobby ? onGoToLobby : onClose}
+              className="py-3 px-2 rounded-xl font-bold text-slate-300 text-xs sm:text-sm bg-slate-900 border border-slate-700 hover:bg-slate-800 hover:text-white transition-all flex items-center justify-center gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4 shrink-0" />
+              <span className="truncate">Back to Match Lobby</span>
+            </button>
+
+            <button 
+              onClick={onGoToMyContests ? onGoToMyContests : onClose}
+              className="py-3 px-2 rounded-xl font-black text-slate-950 text-xs sm:text-sm bg-emerald-500 hover:bg-emerald-400 transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+            >
+              <span className="truncate">View My Contests</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
+            </button>
+          </div>
         </div>
       </div>
     );

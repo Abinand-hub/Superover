@@ -25,23 +25,12 @@ export async function GET(req: NextRequest) {
   try {
     await connectDB();
     
-    // Purge any outdated multiple-choice / Over-Under fixed option questions from the question bank
-    await QuestionBank.deleteMany({
-      $or: [
-        { type: 'MULTIPLE_CHOICE' },
-        { shortTitle: { $in: ['Total Boundaries', 'Total Extras', 'Total Runs', 'Total Wickets'] } }
-      ]
-    });
-
     let questions = await QuestionBank.find().sort({ createdAt: 1 }).lean();
 
-    // Auto-seed if empty or missing default questions
-    if (questions.length < DEFAULT_BANK.length) {
+    // Auto-seed only if completely empty
+    if (questions.length === 0) {
       for (const defQ of DEFAULT_BANK) {
-        const exists = questions.some((q: any) => q.shortTitle === defQ.shortTitle);
-        if (!exists) {
-          await QuestionBank.create(defQ as any);
-        }
+        await QuestionBank.create(defQ as any);
       }
       questions = await QuestionBank.find().sort({ createdAt: 1 }).lean();
     }
@@ -61,6 +50,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newQuestion, { status: 201 });
   } catch (error) {
     console.error('Create Question Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    
+    if (id) {
+      await QuestionBank.findByIdAndDelete(id);
+      return NextResponse.json({ success: true, message: 'Question deleted successfully' });
+    }
+    
+    const body = await req.json().catch(() => ({}));
+    if (body.id) {
+      await QuestionBank.findByIdAndDelete(body.id);
+      return NextResponse.json({ success: true, message: 'Question deleted successfully' });
+    }
+
+    return NextResponse.json({ error: 'Missing question ID' }, { status: 400 });
+  } catch (error) {
+    console.error('Delete Question Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

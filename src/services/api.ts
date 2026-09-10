@@ -125,7 +125,8 @@ export const api = {
   
   // Question Bank
   getQuestionBank: () => fetch('/api/admin/questions', { method: 'GET' }).then(r => r.json()),
-  createQuestionBank: (payload: any) => fetch('/api/admin/questions', { method: 'POST', body: JSON.stringify(payload) }).then(r => r.json()),
+  createQuestionBank: (payload: any) => fetch('/api/admin/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then(r => r.json()),
+  deleteQuestionBank: (id: string) => fetch(`/api/admin/questions?id=${id}`, { method: 'DELETE' }).then(r => r.json()),
   checkAdminAuth: () => fetch('/api/admin/auth-check', { method: 'GET' }).then(r => r.json()),
   
   // User Data

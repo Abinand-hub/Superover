@@ -447,10 +447,6 @@ export default function App({ initialMatches = [] }: AppProps) {
           ...prev,
           totalPoolCollected: prev.totalPoolCollected + totalPaid,
         }));
-
-        // Close prediction modal and redirect to My Contests tab
-        setSelectedMatchForPlay(null);
-        setActiveTab('my-contests');
       }
     } catch (error) {
       console.error('Failed to submit slip:', error);
@@ -896,6 +892,16 @@ export default function App({ initialMatches = [] }: AppProps) {
             onClose={() => {
               setSelectedMatchForPlay(null);
               setEditingSlipState(null);
+            }}
+            onGoToLobby={() => {
+              setSelectedMatchForPlay(null);
+              setEditingSlipState(null);
+              handleTabChange('lobby');
+            }}
+            onGoToMyContests={() => {
+              setSelectedMatchForPlay(null);
+              setEditingSlipState(null);
+              handleTabChange('my-contests');
             }}
             onSubmitSlip={handleSubmitSelectionSlip}
             onOpenDeposit={() => {

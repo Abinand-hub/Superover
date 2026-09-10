@@ -503,15 +503,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [bonusCreditAmount, setBonusCreditAmount] = useState<number>(50);
   const [bonusCreditNote, setBonusCreditNote] = useState<string>('Promotional Skill Reward');
 
-  // Create Match Form State
-  const [newMatchTitle, setNewMatchTitle] = useState<string>('India vs Australia');
-  const [newMatchSeries, setNewMatchSeries] = useState<string>('ICC T20 World Cup 2026');
+  // Create Match Form State (Default blank values)
+  const [newMatchTitle, setNewMatchTitle] = useState<string>('');
+  const [newMatchSeries, setNewMatchSeries] = useState<string>('');
   const [newMatchFormat, setNewMatchFormat] = useState<string>('T20');
-  const [newMatchTeam1Name, setNewMatchTeam1Name] = useState<string>('India');
-  const [newMatchTeam1Code, setNewMatchTeam1Code] = useState<string>('IND');
-  const [newMatchTeam2Name, setNewMatchTeam2Name] = useState<string>('Australia');
-  const [newMatchTeam2Code, setNewMatchTeam2Code] = useState<string>('AUS');
-  const [newMatchVenue, setNewMatchVenue] = useState<string>('Wankhede Stadium, Mumbai');
+  const [newMatchTeam1Name, setNewMatchTeam1Name] = useState<string>('');
+  const [newMatchTeam1Code, setNewMatchTeam1Code] = useState<string>('');
+  const [newMatchTeam2Name, setNewMatchTeam2Name] = useState<string>('');
+  const [newMatchTeam2Code, setNewMatchTeam2Code] = useState<string>('');
+  const [newMatchVenue, setNewMatchVenue] = useState<string>('');
   const [newMatchDateTime, setNewMatchDateTime] = useState<string>(() => {
     const d = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const tzOffset = d.getTimezoneOffset() * 60000;

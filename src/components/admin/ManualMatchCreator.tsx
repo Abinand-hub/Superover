@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { api } from '../../services/api';
 import { CricketMatch, Player, PlayerRole, PredictionQuestion, QuestionDefinition } from '../../types';
 import { 
   PlusCircle, 
@@ -286,20 +287,57 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   onGoToSettle,
   onGoToSquads
 }) => {
-  // Form State
-  const [team1Name, setTeam1Name] = useState('India');
-  const [team1Code, setTeam1Code] = useState('IND');
-  const [team1Logo, setTeam1Logo] = useState('https://flagcdn.com/w160/in.png');
+  // Form State (Default blank values as requested)
+  const [team1Name, setTeam1Name] = useState('');
+  const [team1Code, setTeam1Code] = useState('');
+  const [team1Logo, setTeam1Logo] = useState('');
   
-  const [team2Name, setTeam2Name] = useState('Australia');
-  const [team2Code, setTeam2Code] = useState('AUS');
-  const [team2Logo, setTeam2Logo] = useState('https://flagcdn.com/w160/au.png');
+  const [team2Name, setTeam2Name] = useState('');
+  const [team2Code, setTeam2Code] = useState('');
+  const [team2Logo, setTeam2Logo] = useState('');
 
-  const [seriesName, setSeriesName] = useState("ICC Men's T20 World Cup 2026");
+  const [seriesName, setSeriesName] = useState('');
   const [format, setFormat] = useState('T20');
-  const [venue, setVenue] = useState('Wankhede Stadium, Mumbai');
+  const [venue, setVenue] = useState('');
   const [maxEntriesPerUser, setMaxEntriesPerUser] = useState<number>(5);
-  const [totalPool, setTotalPool] = useState<number>(100000);
+  const [totalPool, setTotalPool] = useState<number>(0);
+
+  // Dynamic Question Bank from Database
+  const [dbQuestions, setDbQuestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.getQuestionBank().then((data: any) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setDbQuestions(data);
+      }
+    }).catch(console.error);
+  }, []);
+
+  const dynamicCategories = useMemo(() => {
+    const customFromDb = dbQuestions.filter(dbQ => {
+      const staticList = MASTER_QUESTION_BANK.flatMap(c => c.questions);
+      return !staticList.some(s => s.shortTitle.toLowerCase() === (dbQ.shortTitle || '').toLowerCase());
+    });
+
+    if (customFromDb.length === 0) return MASTER_QUESTION_BANK;
+
+    return [
+      {
+        category: '⭐ Added Question Bank Categories',
+        questions: customFromDb.map(q => ({
+          shortTitle: q.shortTitle,
+          title: q.title,
+          subtitle: q.subtitle || q.title,
+          type: q.type || 'PLAYER',
+          criteria: q.type || 'PLAYER',
+          iconName: q.iconName || 'STAR',
+          optionsType: q.optionsType,
+          options: q.options
+        }))
+      },
+      ...MASTER_QUESTION_BANK
+    ];
+  }, [dbQuestions]);
 
   // Flag Picker Modal State
   const [pickingLogoFor, setPickingLogoFor] = useState<'team1' | 'team2' | null>(null);
@@ -347,36 +385,9 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     return `${String(diffHrs).padStart(2, '0')}h ${String(diffMins).padStart(2, '0')}m ${String(diffSecs).padStart(2, '0')}s until match starts`;
   };
 
-  // Squad Lists
-  const [squad1, setSquad1] = useState<Player[]>(
-    PRESET_TEAMS.IND.squad.map((p, idx) => ({
-      id: `p_ind_${idx + 1}`,
-      name: p.name,
-      shortName: p.shortName,
-      team: 'IND',
-      teamName: 'India',
-      role: p.role,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      country: 'India',
-      recentForm: ['48', '2/15', '35*'],
-      careerStatHighlight: 'Team Star'
-    }))
-  );
-
-  const [squad2, setSquad2] = useState<Player[]>(
-    PRESET_TEAMS.AUS.squad.map((p, idx) => ({
-      id: `p_aus_${idx + 1}`,
-      name: p.name,
-      shortName: p.shortName,
-      team: 'AUS',
-      teamName: 'Australia',
-      role: p.role,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-      country: 'Australia',
-      recentForm: ['55', '3/20', '62*'],
-      careerStatHighlight: 'Team Star'
-    }))
-  );
+  // Squad Lists (Default blank squads)
+  const [squad1, setSquad1] = useState<Player[]>([]);
+  const [squad2, setSquad2] = useState<Player[]>([]);
 
   // 6 Questions Customizable by Admin
   const [customQuestions, setCustomQuestions] = useState<PredictionQuestion[]>(DEFAULT_QUESTIONS);
@@ -604,7 +615,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
 
   // Helper to handle direct question bank dropdown change for slot `index`
   const handleSelectQuestionDropdown = (index: number, selectedShortTitle: string) => {
-    const allBankQuestions = MASTER_QUESTION_BANK.flatMap(cat => cat.questions);
+    const allBankQuestions = dynamicCategories.flatMap(cat => cat.questions);
     const found = allBankQuestions.find(q => q.shortTitle === selectedShortTitle);
     if (!found) return;
 
@@ -869,8 +880,8 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               </div>
             </div>
 
-            {/* Entry Limit & Prize Pool Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#1A223E]">
+            {/* Entry Limit Controls */}
+            <div className="pt-3 border-t border-[#1A223E]">
               <div>
                 <label className="text-[11px] font-bold text-slate-400 block mb-1.5">
                   👥 Max Entries Allowed Per Fan:
@@ -902,22 +913,6 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                 </div>
                 <span className="text-[10px] text-slate-400 block mt-1">
                   Limits how many slips one fan can submit for this fixture.
-                </span>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1.5">
-                  💰 Total Guaranteed Prize Pool (₹):
-                </label>
-                <input
-                  type="number"
-                  value={totalPool}
-                  onChange={(e) => setTotalPool(Number(e.target.value))}
-                  placeholder="e.g. 100000"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
-                />
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Displayed as the prize pool banner across lobby cards.
                 </span>
               </div>
             </div>
@@ -1299,7 +1294,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                           className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00] cursor-pointer"
                         >
                           <option value="" disabled>-- Select Question from Bank --</option>
-                          {MASTER_QUESTION_BANK.map((group) => (
+                          {dynamicCategories.map((group) => (
                             <optgroup key={group.category} label={group.category} className="bg-[#0D122B] text-[#FFAA00] font-bold">
                               {group.questions.map((bankQ) => (
                                 <option key={bankQ.shortTitle} value={bankQ.shortTitle} className="text-white bg-[#080C1D] font-medium">
@@ -1394,7 +1389,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
 
             {/* Question Categories Grid */}
             <div className="max-h-80 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
-              {MASTER_QUESTION_BANK.map((cat) => {
+              {dynamicCategories.map((cat) => {
                 const filteredQuestions = cat.questions.filter(q => 
                   !questionBankSearch.trim() ||
                   q.title.toLowerCase().includes(questionBankSearch.toLowerCase()) ||
