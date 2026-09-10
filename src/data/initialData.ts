@@ -713,7 +713,7 @@ export const DEFAULT_BANNERS = [
     id: 'banner_2',
     title: 'Instant Automated UPI Payouts',
     subtitle: 'Matches settle within 10 minutes of the final ball with direct withdrawal to GPay, PhonePe, and Paytm.',
-    imageUrl: 'https://images.unsplash.com/photo-1531415074868-036b1c57e329?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?auto=format&fit=crop&w=1200&q=80',
     badge: '⚡ INSTANT SETTLEMENT',
     linkTab: 'intro' as const,
     actionText: 'View Payout Rules →',

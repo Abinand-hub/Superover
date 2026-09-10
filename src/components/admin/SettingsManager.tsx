@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Settings, Save, Loader2, AlertCircle, Plus, Trash2, RotateCcw, 
-  Image as ImageIcon, ArrowUp, ArrowDown, Eye, CheckCircle, Radio, Sparkles, Upload, Link as LinkIcon
+  Image as ImageIcon, ArrowUp, ArrowDown, Eye, CheckCircle, Radio, Sparkles, Upload, Link as LinkIcon, Edit2
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { BannerItem, PlatformSettings } from '../../types';
@@ -33,19 +33,19 @@ const PRESET_WALLPAPERS = [
     url: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    name: 'Cricket Batsman Action',
-    url: 'https://images.unsplash.com/photo-1531415074868-036b1c57e329?auto=format&fit=crop&w=1200&q=80',
+    name: 'Cricket Pitch & Ground',
+    url: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?auto=format&fit=crop&w=1200&q=80',
   },
   {
     name: 'Turf Pitch & Red Ball',
     url: 'https://images.unsplash.com/photo-1512719994953-eabf50895df7?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    name: 'Cricket Ground & Stands',
-    url: 'https://images.unsplash.com/photo-1587280501635-68a0e82cd5ff?auto=format&fit=crop&w=1200&q=80',
+    name: 'Cricket Match Arena',
+    url: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=1200&q=80',
   },
   {
-    name: 'IPL Trophy & Stage Glow',
+    name: 'Stadium Glow & Crowd',
     url: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=1200&q=80',
   },
 ];
@@ -76,6 +76,7 @@ export const SettingsManager: React.FC = () => {
   });
 
   const [showAddBannerModal, setShowAddBannerModal] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -167,6 +168,24 @@ export const SettingsManager: React.FC = () => {
       isActive: true,
     });
     setShowAddBannerModal(false);
+  };
+
+  const handleEditBanner = (banner: BannerItem) => {
+    setEditingBanner({ ...banner });
+  };
+
+  const handleSaveEditedBanner = () => {
+    if (!editingBanner || !editingBanner.title || !editingBanner.imageUrl) {
+      alert('Please provide a banner title and image URL.');
+      return;
+    }
+
+    setSettings((prev) => ({
+      ...prev,
+      banners: (prev.banners || []).map((b) => (b.id === editingBanner.id ? editingBanner : b)),
+    }));
+
+    setEditingBanner(null);
   };
 
   const handleDeleteBanner = (id: string) => {
@@ -452,8 +471,8 @@ export const SettingsManager: React.FC = () => {
                   <div className="flex items-center gap-3 w-full md:w-auto">
                     {/* Thumbnail */}
                     <div
-                      className="w-20 h-14 rounded-lg bg-cover bg-center shrink-0 border border-[#1A223E] relative overflow-hidden"
-                      style={{ backgroundImage: `url(${banner.imageUrl})` }}
+                      className="w-20 h-14 rounded-lg bg-cover bg-center shrink-0 border border-[#1A223E] relative overflow-hidden bg-[#0D122B]"
+                      style={{ backgroundImage: `url(${banner.imageUrl || PRESET_WALLPAPERS[0].url})` }}
                     >
                       <div className="absolute top-1 left-1 px-1 rounded bg-black/70 text-[9px] text-white font-mono">
                         #{index + 1}
@@ -478,8 +497,18 @@ export const SettingsManager: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions (Reorder, Active Toggle, Delete) */}
-                  <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                  {/* Actions (Edit, Reorder, Active Toggle, Delete) */}
+                  <div className="flex items-center gap-2 self-end md:self-auto shrink-0 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleEditBanner(banner)}
+                      title="Edit this banner"
+                      className="px-2.5 py-1 rounded-lg bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 border border-sky-500/30 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+
                     <button
                       type="button"
                       disabled={index === 0}
@@ -502,7 +531,7 @@ export const SettingsManager: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleToggleBannerActive(banner.id)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                         banner.isActive !== false
                           ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                           : 'bg-slate-800 text-slate-400 border-slate-700'
@@ -515,7 +544,7 @@ export const SettingsManager: React.FC = () => {
                       type="button"
                       onClick={() => handleDeleteBanner(banner.id)}
                       title="Delete Banner"
-                      className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20"
+                      className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -798,16 +827,201 @@ export const SettingsManager: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddBannerModal(false)}
-                className="px-4 py-2 rounded-xl bg-[#131A38] text-slate-300 hover:text-white text-xs font-bold"
+                className="px-4 py-2 rounded-xl bg-[#131A38] text-slate-300 hover:text-white text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleAddBanner}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 text-xs font-extrabold shadow-md shadow-[#FF6B00]/20 hover:brightness-110"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 text-xs font-extrabold shadow-md shadow-[#FF6B00]/20 hover:brightness-110 cursor-pointer"
               >
                 Add Banner to Carousel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Existing Banner */}
+      {editingBanner && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-[#0D122B] border border-[#1A223E] rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#1A223E] pb-3">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Edit2 className="w-4 h-4 text-sky-400" />
+                Edit Banner Details
+              </h3>
+              <button
+                onClick={() => setEditingBanner(null)}
+                className="text-slate-400 hover:text-white text-lg font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                  Banner Title *
+                </label>
+                <input
+                  type="text"
+                  value={editingBanner.title || ''}
+                  onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })}
+                  placeholder="e.g. IPL 2026 Mega Jackpot"
+                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-sm font-bold focus:outline-none focus:border-[#FF6B00]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                  Subtitle / Description
+                </label>
+                <textarea
+                  value={editingBanner.subtitle || ''}
+                  onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })}
+                  placeholder="e.g. Predict 6 stats on CSK vs MI and win up to 500X real cash!"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none focus:border-[#FF6B00]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    Badge Label
+                  </label>
+                  <input
+                    type="text"
+                    value={editingBanner.badge || ''}
+                    onChange={(e) => setEditingBanner({ ...editingBanner, badge: e.target.value })}
+                    placeholder="e.g. 🔥 HOT CONTEST"
+                    className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none focus:border-[#FF6B00]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    CTA Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={editingBanner.actionText || ''}
+                    onChange={(e) => setEditingBanner({ ...editingBanner, actionText: e.target.value })}
+                    placeholder="e.g. Enter Lobby →"
+                    className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none focus:border-[#FF6B00]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                    Target Navigation Tab
+                  </label>
+                  <select
+                    value={editingBanner.linkTab || 'lobby'}
+                    onChange={(e) => setEditingBanner({ ...editingBanner, linkTab: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs focus:outline-none focus:border-[#FF6B00]"
+                  >
+                    <option value="lobby">Match Lobby (Play Matches)</option>
+                    <option value="intro">How to Play & Rules</option>
+                    <option value="payouts-rules">Payout Rules & Tiers</option>
+                    <option value="my-contests">My Predictions Tab</option>
+                    <option value="profile">Profile & Wallet Tab</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center pt-5">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingBanner.isActive !== false}
+                      onChange={(e) => setEditingBanner({ ...editingBanner, isActive: e.target.checked })}
+                      className="w-4 h-4 accent-[#FF6B00] rounded cursor-pointer"
+                    />
+                    <span className="text-xs text-slate-200 font-bold">Show Banner (Active)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Preset Image Wallpaper Selector */}
+              <div>
+                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">
+                  Change Wallpaper / Image
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-2">
+                  {PRESET_WALLPAPERS.map((preset, pIdx) => (
+                    <div
+                      key={pIdx}
+                      onClick={() => setEditingBanner({ ...editingBanner, imageUrl: preset.url })}
+                      className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all group relative ${
+                        editingBanner.imageUrl === preset.url
+                          ? 'border-[#FF6B00] scale-105 shadow-md shadow-[#FF6B00]/30'
+                          : 'border-[#1A223E] hover:border-slate-400'
+                      }`}
+                    >
+                      <div
+                        className="h-14 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${preset.url})` }}
+                      />
+                      <div className="p-1 bg-[#080C1D] text-[9px] font-bold text-slate-300 text-center truncate">
+                        {preset.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <input
+                  type="text"
+                  value={editingBanner.imageUrl || ''}
+                  onChange={(e) => setEditingBanner({ ...editingBanner, imageUrl: e.target.value })}
+                  placeholder="Or paste custom image URL (https://...)"
+                  className="w-full px-3 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-mono focus:outline-none focus:border-[#FF6B00]"
+                />
+              </div>
+
+              {/* Local File Upload preview */}
+              <div className="p-3 rounded-xl bg-[#080C1D] border border-dashed border-[#1A223E] text-center">
+                <label className="cursor-pointer inline-flex items-center gap-2 text-xs font-bold text-[#FF6B00] hover:text-[#FFAA00]">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Replacement Image File from PC</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          if (reader.result) {
+                            setEditingBanner({ ...editingBanner, imageUrl: reader.result as string });
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#1A223E]">
+              <button
+                type="button"
+                onClick={() => setEditingBanner(null)}
+                className="px-4 py-2 rounded-xl bg-[#131A38] text-slate-300 hover:text-white text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditedBanner}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-xs font-extrabold shadow-md shadow-sky-500/20 hover:brightness-110 cursor-pointer"
+              >
+                Save Changes to Banner
               </button>
             </div>
           </div>

@@ -114,9 +114,9 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
             >
               {/* Background Wallpaper Image */}
               <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105 group-hover:scale-100"
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105 group-hover:scale-100 bg-[#0A122E]"
                 style={{
-                  backgroundImage: `url(${banner.imageUrl})`,
+                  backgroundImage: `url(${banner.imageUrl || 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=1200&q=80'})`,
                 }}
               />
 
