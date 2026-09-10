@@ -31,7 +31,10 @@ import {
   Eye,
   Bookmark,
   BookmarkCheck,
-  Save
+  Save,
+  AlertCircle,
+  Smartphone,
+  Check
 } from 'lucide-react';
 import { formatINR } from '../../utils/payoutCalculator';
 import { getTeamLogoUrl, PRESET_LOGO_CATALOG, TEAM_LOGO_MAP } from '../../utils/teamLogoHelper';
@@ -516,9 +519,11 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Pre-Publish Review Modal State
+  // Pre-Publish Review Modal State & Active Tab
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [previewMatchData, setPreviewMatchData] = useState<CricketMatch | null>(null);
+  const [previewTab, setPreviewTab] = useState<'fan-lobby' | 'fan-questions' | 'audit'>('fan-lobby');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // DYNAMIC TOURNAMENT & TEAM/SQUAD AUTO-SAVE REGISTRY (Per User Request)
@@ -919,14 +924,19 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
   // Step 1: Initiate Publish - Validate and Open Match Preview Modal
   const handleInitiatePublish = () => {
     if (!team1Name.trim() || !team2Name.trim()) {
-      alert('Please enter both team names before publishing.');
+      setValidationError('⚠️ Please enter both Team 1 and Team 2 names before opening preview.');
+      setTimeout(() => setValidationError(null), 5000);
       return;
     }
 
     if (squad1.length === 0 || squad2.length === 0) {
-      alert('Please ensure both teams have at least 1 player in their squad.');
+      setValidationError('⚠️ Please ensure both teams have at least 1 player in their squad roster before preview.');
+      setTimeout(() => setValidationError(null), 5000);
       return;
     }
+
+    setValidationError(null);
+    setPreviewTab('fan-lobby');
 
     const matchStart = new Date(startDateTime);
     const startTimeIso = isNaN(matchStart.getTime()) 
@@ -1099,16 +1109,27 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           </p>
         </div>
 
-        {onGoToLifecycle && (
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={onGoToLifecycle}
-            className="px-4 py-2 rounded-2xl bg-[#131A38] hover:bg-[#1A223E] border border-[#1A223E] text-xs font-bold text-[#FFAA00] flex items-center gap-2 transition-all"
+            onClick={handleInitiatePublish}
+            className="px-4 py-2 rounded-2xl bg-gradient-to-r from-[#FF6B00] to-[#FFAA00] text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-[#FF6B00]/20 hover:brightness-110 transition-all cursor-pointer"
           >
-            <Trophy className="w-4 h-4" />
-            <span>Go to Match Lifecycle (Start/End) →</span>
+            <Eye className="w-4 h-4" />
+            <span>👁️ Preview Contest on User End</span>
           </button>
-        )}
+
+          {onGoToLifecycle && (
+            <button
+              type="button"
+              onClick={onGoToLifecycle}
+              className="px-4 py-2 rounded-2xl bg-[#131A38] hover:bg-[#1A223E] border border-[#1A223E] text-xs font-bold text-[#FFAA00] flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>Go to Lifecycle →</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {successMessage && (
@@ -1781,17 +1802,32 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               </div>
             </div>
 
-            {/* CREATE & PUBLISH BUTTON (TRIGGERS PREVIEW FIRST) */}
-            <button
-              type="button"
-              onClick={handleInitiatePublish}
-              disabled={isSubmitting}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF6B00]/30 transition-all disabled:opacity-50"
-              id="btn-publish-manual-match"
-            >
-              <Flame className="w-5 h-5 fill-current" />
-              <span>{isSubmitting ? 'Publishing Contest...' : '🔥 🚀 Create & Publish Contest Live'}</span>
-            </button>
+            {/* PREVIEW STEP BUTTON (STEP 2 OF 2) */}
+            <div className="space-y-2 pt-2">
+              {validationError && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-2.5 animate-pulse">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>{validationError}</span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleInitiatePublish}
+                disabled={isSubmitting}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-[#FF6B00]/30 transition-all disabled:opacity-50 group cursor-pointer"
+                id="btn-publish-manual-match"
+              >
+                <Eye className="w-5 h-5 text-slate-950 group-hover:scale-110 transition-transform" />
+                <span>👁️ Preview Contest on User End (Step 2 of 2)</span>
+                <ArrowRight className="w-4 h-4 text-slate-950 ml-1" />
+              </button>
+
+              <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Clarify questions, inspect squad options &amp; edit before going live to fans</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1993,211 +2029,368 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
         </div>
       )}
 
-      {/* MATCH PREVIEW & VERIFICATION MODAL BEFORE PUBLISHING */}
+      {/* MATCH PREVIEW & VERIFICATION MODAL BEFORE PUBLISHING (USER-END SIMULATION) */}
       {showPreviewModal && previewMatchData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-[#050816]/90 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-3xl bg-[#0D122B] border border-indigo-500/40 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
+          <div className="relative w-full max-w-3xl bg-[#0D122B] border border-indigo-500/40 rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[94vh]">
+            
             {/* Modal Header */}
-            <div className="p-5 sm:p-6 border-b border-[#1A223E] flex items-center justify-between bg-[#080C1D] flex-shrink-0">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#FF6B00]/20 to-[#FFAA00]/20 text-[#FFAA00] text-[10px] font-black uppercase border border-[#FFAA00]/30 flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    PRE-PUBLISH PREVIEW & AUDIT
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">Format: {previewMatchData.format}</span>
+            <div className="p-4 sm:p-6 border-b border-[#1A223E] bg-[#080C1D] flex-shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#FF6B00]/20 to-[#FFAA00]/20 text-[#FFAA00] text-[10px] font-black uppercase border border-[#FFAA00]/30 flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      STEP 2: PRE-PUBLISH USER-END PREVIEW
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">Format: {previewMatchData.format}</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white font-display">
+                    Preview Match as Seen by Fans
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Verify how the lobby card, question choices, and squad rosters appear before going live.
+                  </p>
                 </div>
-                <h3 className="text-lg sm:text-xl font-black text-white font-display">
-                  Review Contest Before Going Live
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Carefully verify match metadata, squads, and all 6 scoring criteria below. Click Back &amp; Edit to make changes.
-                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPreviewModal(false)}
+                  className="w-9 h-9 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-400 hover:text-white border border-[#1A223E] flex items-center justify-center transition-colors flex-shrink-0"
+                  title="Close and edit"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowPreviewModal(false)}
-                className="w-9 h-9 rounded-xl bg-[#131A38] hover:bg-[#1A223E] text-slate-400 hover:text-white border border-[#1A223E] flex items-center justify-center transition-colors flex-shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Checklist & Verification Status Strip */}
+              <div className="mt-3.5 p-2.5 rounded-xl bg-[#0D122B] border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-emerald-300">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>{previewMatchData.team1.code} vs {previewMatchData.team2.code}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Squads: {previewMatchData.squadTeam1.length} &amp; {previewMatchData.squadTeam2.length} Players</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>6 Prediction Questions Ready</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Lock: 15m Before Toss</span>
+                </div>
+              </div>
+
+              {/* View Switcher Tabs */}
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#1A223E]/80 overflow-x-auto pb-0.5 scrollbar-none">
+                {[
+                  { id: 'fan-lobby', label: '📱 1. Fan Lobby Card', icon: Smartphone },
+                  { id: 'fan-questions', label: '🎯 2. Fan Prediction Screen (6 Questions)', icon: Sparkles },
+                  { id: 'audit', label: '📋 3. Squad & Metadata Audit', icon: Layers },
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = previewTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setPreviewTab(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 shadow-md shadow-[#FF6B00]/30'
+                          : 'bg-[#131A38] text-slate-400 hover:text-white border border-[#1A223E]'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Modal Scrollable Body */}
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 scrollbar-thin">
-              {/* Card 1: Match Header Info */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-[#1A223E]">
-                  <span className="text-xs font-bold text-[#FFAA00] uppercase tracking-wider">
-                    {previewMatchData.series}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-black uppercase border border-sky-500/30">
-                    Status: UPCOMING
-                  </span>
-                </div>
-
-                {/* Match Teams VS Banner */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center text-center">
-                  <div className="p-3 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center gap-3 justify-center sm:justify-start">
-                    <img
-                      src={previewMatchData.team1.logoUrl}
-                      alt={previewMatchData.team1.name}
-                      className="w-10 h-10 object-contain rounded-lg flex-shrink-0"
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                    />
-                    <div className="text-left">
-                      <div className="font-black text-white text-sm">{previewMatchData.team1.name}</div>
-                      <div className="text-xs text-slate-400 font-mono font-bold">{previewMatchData.team1.code}</div>
-                    </div>
-                  </div>
-
-                  <div className="text-center font-black text-slate-400 text-xs font-mono">
-                    <div className="w-8 h-8 rounded-full bg-[#131A38] border border-[#1A223E] flex items-center justify-center mx-auto text-[#FF6B00] font-black mb-1">
-                      VS
-                    </div>
-                    <span>{previewMatchData.venue}</span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#0D122B] border border-[#1A223E] flex items-center gap-3 justify-center sm:justify-end">
-                    <div className="text-right">
-                      <div className="font-black text-white text-sm">{previewMatchData.team2.name}</div>
-                      <div className="text-xs text-slate-400 font-mono font-bold">{previewMatchData.team2.code}</div>
-                    </div>
-                    <img
-                      src={previewMatchData.team2.logoUrl}
-                      alt={previewMatchData.team2.name}
-                      className="w-10 h-10 object-contain rounded-lg flex-shrink-0"
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
-                    />
-                  </div>
-                </div>
-
-                {/* Match Timings & Pool Details */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] pt-1">
-                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
-                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Start Time</span>
-                    <span className="text-white font-mono font-bold">
-                      {new Date(previewMatchData.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 scrollbar-thin">
+              
+              {/* TAB 1: FAN LOBBY CARD PREVIEW */}
+              {previewTab === 'fan-lobby' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-1 border-b border-[#1A223E]">
+                    <span className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-[#FF6B00]" />
+                      How this match card appears to fans in the Lobby:
+                    </span>
+                    <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30">
+                      Live Preview
                     </span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
-                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Contest Lock</span>
-                    <span className="text-amber-400 font-mono font-bold">15 Min Before Start</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
-                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Total Prize Pool</span>
-                    <span className="text-emerald-400 font-mono font-black">₹{previewMatchData.totalPool.toLocaleString()}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-[#0D122B] border border-[#1A223E]">
-                    <span className="text-slate-400 block text-[10px] font-bold uppercase">Max Slips / User</span>
-                    <span className="text-white font-mono font-bold">{previewMatchData.maxEntriesPerUser || 5} Entries</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Card 2: Squad Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">{previewMatchData.team1.name} Squad</span>
-                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black font-mono">
-                      {previewMatchData.squadTeam1.length} Players
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-                    {previewMatchData.squadTeam1.map((p) => (
-                      <span key={p.id} className="px-2 py-0.5 rounded-lg bg-[#0D122B] text-slate-300 text-[10px] font-medium border border-[#1A223E]">
-                        {p.name} ({p.role})
+                  {/* Realistic Match Card Replica */}
+                  <div className="max-w-md mx-auto rounded-2xl border border-[#FF6B00]/35 bg-gradient-to-b from-[#0D122B] to-[#080B1A] shadow-2xl overflow-hidden">
+                    {/* Top Banner */}
+                    <div className="px-4 py-2.5 bg-[#080C1D] border-b border-[#1A223E] flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="px-1.5 py-0.5 rounded bg-[#131A38] text-[#FF6B00] font-black text-[10px] uppercase border border-[#FF6B00]/20">
+                          {previewMatchData.format}
+                        </span>
+                        <span className="font-bold text-slate-200 truncate">
+                          {previewMatchData.series}
+                        </span>
+                      </div>
+
+                      <span className="px-2 py-0.5 rounded-full bg-[#FF6B00]/15 text-[#FFAA00] border border-[#FF6B00]/30 font-bold text-[11px] flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-[#FF6B00]" />
+                        <span>{getMatchCountdown()}</span>
                       </span>
-                    ))}
-                  </div>
-                </div>
+                    </div>
 
-                <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">{previewMatchData.team2.name} Squad</span>
-                    <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-black font-mono">
-                      {previewMatchData.squadTeam2.length} Players
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
-                    {previewMatchData.squadTeam2.map((p) => (
-                      <span key={p.id} className="px-2 py-0.5 rounded-lg bg-[#0D122B] text-slate-300 text-[10px] font-medium border border-[#1A223E]">
-                        {p.name} ({p.role})
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: 6 Questions & Scoring Criteria (As in 2nd image) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between pb-1 border-b border-[#1A223E]">
-                  <span className="font-black text-white text-sm flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#FF6B00]" />
-                    6 Contest Questions &amp; Scoring Criteria
-                  </span>
-                  <span className="text-[11px] text-slate-400 font-mono">All 6 questions will be presented to users</span>
-                </div>
-
-                <div className="space-y-3">
-                  {previewMatchData.questions.map((q, idx) => {
-                    const titleLower = (q.title || '').toLowerCase();
-                    const shortTitleLower = (q.shortTitle || '').toLowerCase();
-                    const subTitleLower = (q.subtitle || '').toLowerCase();
-
-                    const isTeam1Strict = titleLower.includes('team 1') || titleLower.includes('(team 1)') || shortTitleLower.includes('team 1') || subTitleLower.includes('team 1');
-                    const isTeam2Strict = titleLower.includes('team 2') || titleLower.includes('(team 2)') || shortTitleLower.includes('team 2') || subTitleLower.includes('team 2');
-
-                    let scopeBadge = '👥 Both Teams Players';
-                    let scopeBg = 'bg-teal-500/15 text-teal-300 border-teal-500/30';
-
-                    if (q.type === 'TEAM') {
-                      scopeBadge = '🏆 Pick Team Winner';
-                      scopeBg = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-                    } else if (isTeam1Strict) {
-                      scopeBadge = `🏏 ${previewMatchData.team1.code} Squad Only`;
-                      scopeBg = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
-                    } else if (isTeam2Strict) {
-                      scopeBadge = `⚡ ${previewMatchData.team2.code} Squad Only`;
-                      scopeBg = 'bg-blue-500/15 text-blue-300 border-blue-500/30';
-                    }
-
-                    return (
-                      <div
-                        key={q.id || idx}
-                        className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-2.5"
-                      >
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-[#FF6B00]/20 text-[#FF8800] text-[10px] font-black border border-[#FF6B00]/40">
-                              #{idx + 1} Question #{idx + 1}:
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${scopeBg}`}>
-                              {scopeBadge}
-                            </span>
+                    {/* Team Clash Banner */}
+                    <div className="p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        {/* Team 1 */}
+                        <div className="flex-1 flex flex-col items-center text-center">
+                          <div className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center relative border bg-[#0D122B] border-slate-700 shadow-inner">
+                            <img 
+                              src={previewMatchData.team1.logoUrl} 
+                              alt={previewMatchData.team1.code} 
+                              className="w-10 h-10 object-contain rounded-lg"
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                            />
+                            <div className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 shadow-sm">
+                              {previewMatchData.team1.code}
+                            </div>
                           </div>
-
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {q.options?.length || 0} Option Choices
+                          <span className="text-xs font-bold text-white mt-2 line-clamp-1">
+                            {previewMatchData.team1.name}
                           </span>
                         </div>
 
-                        <div className="space-y-1 pl-1">
-                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Question Display Title:</div>
-                          <div className="text-sm font-black text-white">{q.title}</div>
+                        {/* VS Badge */}
+                        <div className="flex flex-col items-center">
+                          <span className="w-8 h-8 rounded-full bg-[#131A38] border border-[#1A223E] text-[#FF6B00] text-xs font-black flex items-center justify-center shadow-md">
+                            VS
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium mt-1">
+                            {new Date(previewMatchData.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
 
-                        <div className="space-y-1 pl-1 pt-1 border-t border-[#131A38]">
-                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Subtitle / Scoring Criteria:</div>
-                          <div className="text-xs text-slate-300 font-medium">{q.subtitle || 'Standard cricket scoring rules apply'}</div>
+                        {/* Team 2 */}
+                        <div className="flex-1 flex flex-col items-center text-center">
+                          <div className="w-14 h-14 rounded-2xl p-1 flex items-center justify-center relative border bg-[#0D122B] border-slate-700 shadow-inner">
+                            <img 
+                              src={previewMatchData.team2.logoUrl} 
+                              alt={previewMatchData.team2.code} 
+                              className="w-10 h-10 object-contain rounded-lg"
+                              onError={(e) => { (e.target as HTMLImageElement).src = 'https://flagcdn.com/w160/un.png'; }}
+                            />
+                            <div className="absolute -bottom-1 text-[9px] font-black px-1.5 py-0.2 rounded bg-indigo-500 text-white shadow-sm">
+                              {previewMatchData.team2.code}
+                            </div>
+                          </div>
+                          <span className="text-xs font-bold text-white mt-2 line-clamp-1">
+                            {previewMatchData.team2.name}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      {/* Venue & Prize Pool */}
+                      <div className="mt-4 pt-3 border-t border-[#1A223E] flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 text-slate-400 text-[11px] truncate max-w-[180px]">
+                          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                          <span className="truncate">{previewMatchData.venue}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block">Total Pool</span>
+                          <span className="text-emerald-400 font-black font-mono">₹{previewMatchData.totalPool.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      {/* Entry Fee Chips Simulation */}
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          {[25, 50, 100].map((fee) => (
+                            <span key={fee} className="px-2 py-1 rounded-lg bg-[#131A38] text-slate-300 text-[10px] font-bold border border-[#1A223E]">
+                              ₹{fee}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black text-xs shadow-md">
+                          Enter Match →
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 2: FAN PREDICTION SCREEN (6 QUESTIONS PREVIEW) */}
+              {previewTab === 'fan-questions' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-1 border-b border-[#1A223E]">
+                    <span className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#FF6B00]" />
+                      Interactive 6 Prediction Questions (Test Dropdown Options):
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      6 of 6 Questions Active
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {previewMatchData.questions.map((q, idx) => {
+                      const titleLower = (q.title || '').toLowerCase();
+                      const shortTitleLower = (q.shortTitle || '').toLowerCase();
+                      const subTitleLower = (q.subtitle || '').toLowerCase();
+
+                      const isTeam1Strict = titleLower.includes('team 1') || titleLower.includes('(team 1)') || shortTitleLower.includes('team 1') || subTitleLower.includes('team 1');
+                      const isTeam2Strict = titleLower.includes('team 2') || titleLower.includes('(team 2)') || shortTitleLower.includes('team 2') || subTitleLower.includes('team 2');
+
+                      let scopeBadge = '👥 Both Teams Players';
+                      let scopeBg = 'bg-teal-500/15 text-teal-300 border-teal-500/30';
+
+                      if (q.type === 'TEAM') {
+                        scopeBadge = '🏆 Pick Team Winner';
+                        scopeBg = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                      } else if (isTeam1Strict) {
+                        scopeBadge = `🏏 ${previewMatchData.team1.code} Squad Only`;
+                        scopeBg = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
+                      } else if (isTeam2Strict) {
+                        scopeBadge = `⚡ ${previewMatchData.team2.code} Squad Only`;
+                        scopeBg = 'bg-blue-500/15 text-blue-300 border-blue-500/30';
+                      }
+
+                      return (
+                        <div
+                          key={q.id || idx}
+                          className="p-4 rounded-2xl bg-[#080C1D] border border-[#1A223E] space-y-3 shadow-lg"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-[#FF6B00]/20 text-[#FF8800] text-xs font-black flex items-center justify-center border border-[#FF6B00]/40">
+                                #{idx + 1}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${scopeBg}`}>
+                                {scopeBadge}
+                              </span>
+                            </div>
+
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {q.options?.length || 0} Options
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="text-xs font-black text-white">{q.title}</h4>
+                            <p className="text-[11px] text-slate-400 mt-0.5">{q.subtitle || 'Standard contest criteria'}</p>
+                          </div>
+
+                          {/* Real Test Dropdown for Admin to Inspect Squad List */}
+                          <div className="pt-2 border-t border-[#131A38]">
+                            <label className="text-[10px] text-slate-500 font-bold block mb-1">
+                              Fan Selection Dropdown ({q.options?.length || 0} choices):
+                            </label>
+                            <select
+                              defaultValue=""
+                              className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-slate-200 text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                            >
+                              <option value="" disabled>-- Click to inspect fan options --</option>
+                              {q.options?.map((opt, optIdx) => (
+                                <option key={optIdx} value={opt} className="bg-[#080C1D] text-white">
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: SQUAD & METADATA AUDIT */}
+              {previewTab === 'audit' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-1 border-b border-[#1A223E]">
+                    <span className="text-xs font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-purple-400" />
+                      Full Match Settings &amp; Squad Rosters Audit:
+                    </span>
+                  </div>
+
+                  {/* Metadata Table */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E]">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Series</span>
+                      <span className="text-white font-bold truncate block">{previewMatchData.series}</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E]">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Start Time</span>
+                      <span className="text-white font-mono font-bold block truncate">
+                        {new Date(previewMatchData.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E]">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Lock Time</span>
+                      <span className="text-amber-400 font-mono font-bold block">15 Min Prior</span>
+                    </div>
+                    <div className="p-3 rounded-xl bg-[#080C1D] border border-[#1A223E]">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Prize Pool</span>
+                      <span className="text-emerald-400 font-mono font-bold block">₹{previewMatchData.totalPool.toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Side-by-side Squad Rosters */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Team 1 Squad */}
+                    <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#FF6B00]/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img src={previewMatchData.team1.logoUrl} alt="" className="w-5 h-5 object-contain" />
+                          <span className="font-black text-white text-xs">{previewMatchData.team1.name} ({previewMatchData.team1.code})</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded bg-[#FF6B00]/20 text-[#FFAA00] text-[10px] font-bold font-mono">
+                          {previewMatchData.squadTeam1.length} Players
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                        {previewMatchData.squadTeam1.map((p, pIdx) => (
+                          <div key={p.id || pIdx} className="px-2.5 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] flex items-center justify-between text-xs">
+                            <span className="font-bold text-white">{pIdx + 1}. {p.name}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] font-mono font-bold text-slate-300">{p.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Team 2 Squad */}
+                    <div className="p-4 rounded-2xl bg-[#080C1D] border border-[#00C8FF]/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img src={previewMatchData.team2.logoUrl} alt="" className="w-5 h-5 object-contain" />
+                          <span className="font-black text-white text-xs">{previewMatchData.team2.name} ({previewMatchData.team2.code})</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-bold font-mono">
+                          {previewMatchData.squadTeam2.length} Players
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                        {previewMatchData.squadTeam2.map((p, pIdx) => (
+                          <div key={p.id || pIdx} className="px-2.5 py-1.5 rounded-lg bg-[#0D122B] border border-[#1A223E] flex items-center justify-between text-xs">
+                            <span className="font-bold text-white">{pIdx + 1}. {p.name}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] font-mono font-bold text-slate-300">{p.role}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer CTA Buttons */}
@@ -2205,20 +2398,20 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPreviewModal(false)}
-                className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-[#131A38] hover:bg-[#1A223E] text-slate-200 hover:text-white text-xs font-black flex items-center justify-center gap-2 border border-[#1A223E] transition-all"
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-[#131A38] hover:bg-[#1A223E] text-slate-200 hover:text-white text-xs font-black flex items-center justify-center gap-2 border border-[#1A223E] transition-all cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>← Back &amp; Edit Details</span>
+                <span>← Back &amp; Edit Details (Fix Mistakes)</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleConfirmPublish}
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-[#FF6B00]/30 transition-all disabled:opacity-50"
+                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-gradient-to-r from-[#FF6B00] via-[#FF8800] to-[#FFAA00] hover:brightness-110 active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-[#FF6B00]/30 transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Flame className="w-5 h-5 fill-current" />
-                <span>{isSubmitting ? 'Publishing Contest...' : '🚀 Confirm &amp; Publish Live to Fan Lobby'}</span>
+                <span>{isSubmitting ? 'Publishing Live...' : '🔥 🚀 Confirm &amp; Publish Live to Fans'}</span>
               </button>
             </div>
           </div>
