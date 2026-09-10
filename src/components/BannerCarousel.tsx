@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Sparkles, ExternalLink, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
 import { BannerItem } from '../types';
 
 interface BannerCarouselProps {
@@ -82,8 +82,6 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
     return null;
   }
 
-  const currentBanner = activeBanners[currentIndex] || activeBanners[0];
-
   const handleBannerAction = (banner: BannerItem) => {
     if (banner.linkTab && onNavigateTab) {
       onNavigateTab(banner.linkTab);
@@ -92,7 +90,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl border border-[#1A2548] shadow-2xl shadow-black/60 group bg-[#060A1A]"
+      className="relative w-full overflow-hidden rounded-2xl border border-[#1A2548] shadow-2xl shadow-black/60 group bg-[#040817]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
@@ -100,21 +98,21 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
       onTouchEnd={handleTouchEnd}
     >
       {/* Banner Slides Container */}
-      <div className="relative h-56 sm:h-64 md:h-72 lg:h-80 w-full overflow-hidden">
+      <div className="relative h-60 sm:h-72 md:h-80 w-full overflow-hidden">
         {activeBanners.map((banner, index) => {
           const isCurrent = index === currentIndex;
           return (
             <div
               key={banner.id || index}
-              className={`absolute inset-0 w-full h-full transition-all duration-700 ease-in-out transform ${
+              className={`absolute inset-0 w-full h-full transition-all duration-700 ease-out transform ${
                 isCurrent
                   ? 'opacity-100 translate-x-0 scale-100 z-10'
                   : index < currentIndex
-                  ? 'opacity-0 -translate-x-full scale-95 z-0'
-                  : 'opacity-0 translate-x-full scale-95 z-0'
+                  ? 'opacity-0 -translate-x-full scale-95 z-0 pointer-events-none'
+                  : 'opacity-0 translate-x-full scale-95 z-0 pointer-events-none'
               }`}
             >
-              {/* Background Image */}
+              {/* Background Wallpaper Image */}
               <div
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105 group-hover:scale-100"
                 style={{
@@ -122,22 +120,22 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
                 }}
               />
 
-              {/* Multi-gradient overlay for readability & premium glow */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#060A1A] via-[#060A1A]/70 to-[#060A1A]/20" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#060A1A] via-[#060A1A]/80 to-transparent" />
+              {/* Multi-gradient overlay for crystal-clear readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#040817] via-[#040817]/75 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#040817] via-[#040817]/85 to-transparent" />
 
-              {/* Content Overlay */}
-              <div className="relative z-20 h-full max-w-2xl flex flex-col justify-end p-5 sm:p-7 md:p-8 space-y-2.5 sm:space-y-3">
+              {/* Content Overlay with Safe Safe Margins (No arrow overlap) */}
+              <div className="relative z-20 h-full max-w-3xl flex flex-col justify-end px-12 sm:px-16 md:px-20 py-6 sm:py-8 space-y-2.5 sm:space-y-3">
                 {/* Badge */}
                 {banner.badge && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF6B00]/20 border border-[#FF6B00]/40 text-[#FF8800] text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-md w-fit shadow-md shadow-[#FF6B00]/10">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF6B00]/20 border border-[#FF6B00]/40 text-[#FF8800] text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-md w-fit shadow-md shadow-[#FF6B00]/15">
                     <Sparkles className="w-3 h-3 text-[#FFAA00]" />
                     <span>{banner.badge}</span>
                   </div>
                 )}
 
                 {/* Title */}
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight font-display leading-tight drop-shadow-md">
+                <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight font-display leading-tight drop-shadow-md">
                   {banner.title}
                 </h3>
 
@@ -150,10 +148,10 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
 
                 {/* Call to Action button */}
                 {banner.actionText && (
-                  <div className="pt-1">
+                  <div className="pt-1.5">
                     <button
                       onClick={() => handleBannerAction(banner)}
-                      className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] via-[#FF7A00] to-[#FFA000] text-slate-950 font-black text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg shadow-[#FF6B00]/30 hover:brightness-110 active:scale-95 transition-all w-fit"
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FF6B00] via-[#FF7A00] to-[#FFA000] text-slate-950 font-black text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg shadow-[#FF6B00]/30 hover:brightness-110 active:scale-95 transition-all w-fit cursor-pointer"
                     >
                       <span>{banner.actionText}</span>
                       <ArrowRight className="w-4 h-4" />
@@ -166,7 +164,7 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
         })}
       </div>
 
-      {/* Manual Control: Previous Chevron Button */}
+      {/* Manual Control: Previous Chevron Button (Positioned safely at outer left edge) */}
       {activeBanners.length > 1 && (
         <button
           onClick={(e) => {
@@ -174,13 +172,13 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
             prevSlide();
           }}
           aria-label="Previous Slide"
-          className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-2.5 rounded-full bg-slate-950/60 hover:bg-[#FF6B00] text-white hover:text-slate-950 border border-white/10 hover:border-[#FF6B00] backdrop-blur-md transition-all duration-200 shadow-xl opacity-80 hover:opacity-100 active:scale-90"
+          className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-950/70 hover:bg-[#FF6B00] text-white hover:text-slate-950 border border-white/15 hover:border-[#FF6B00] backdrop-blur-md transition-all duration-200 shadow-xl flex items-center justify-center opacity-75 hover:opacity-100 active:scale-90 cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       )}
 
-      {/* Manual Control: Next Chevron Button */}
+      {/* Manual Control: Next Chevron Button (Positioned safely at outer right edge) */}
       {activeBanners.length > 1 && (
         <button
           onClick={(e) => {
@@ -188,28 +186,30 @@ export const BannerCarousel: React.FC<BannerCarouselProps> = ({
             nextSlide();
           }}
           aria-label="Next Slide"
-          className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-2.5 rounded-full bg-slate-950/60 hover:bg-[#FF6B00] text-white hover:text-slate-950 border border-white/10 hover:border-[#FF6B00] backdrop-blur-md transition-all duration-200 shadow-xl opacity-80 hover:opacity-100 active:scale-90"
+          className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-950/70 hover:bg-[#FF6B00] text-white hover:text-slate-950 border border-white/15 hover:border-[#FF6B00] backdrop-blur-md transition-all duration-200 shadow-xl flex items-center justify-center opacity-75 hover:opacity-100 active:scale-90 cursor-pointer"
         >
           <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       )}
 
-      {/* Manual Control: Navigation Dots & Counter */}
+      {/* Manual Control: Bottom Navigation Bar with Dots & Slide Indicator */}
       {activeBanners.length > 1 && (
-        <div className="absolute bottom-3 sm:bottom-4 right-4 sm:right-6 z-30 flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full bg-slate-950/60 backdrop-blur-md border border-white/10 shadow-lg">
-          {activeBanners.map((_, dotIdx) => (
-            <button
-              key={dotIdx}
-              onClick={() => goToSlide(dotIdx)}
-              aria-label={`Go to slide ${dotIdx + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                dotIdx === currentIndex
-                  ? 'w-6 bg-[#FF6B00] shadow-sm shadow-[#FF6B00]'
-                  : 'w-2 bg-slate-500 hover:bg-slate-300'
-              }`}
-            />
-          ))}
-          <span className="text-[10px] font-mono font-bold text-slate-400 pl-1">
+        <div className="absolute bottom-3 sm:bottom-4 right-4 sm:right-6 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/75 backdrop-blur-md border border-white/15 shadow-xl">
+          <div className="flex items-center gap-1.5">
+            {activeBanners.map((_, dotIdx) => (
+              <button
+                key={dotIdx}
+                onClick={() => goToSlide(dotIdx)}
+                aria-label={`Go to slide ${dotIdx + 1}`}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  dotIdx === currentIndex
+                    ? 'w-6 bg-[#FF6B00] shadow-sm shadow-[#FF6B00]'
+                    : 'w-2 bg-slate-500 hover:bg-slate-300'
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-[10px] font-mono font-bold text-slate-400 pl-1 border-l border-slate-700">
             {currentIndex + 1}/{activeBanners.length}
           </span>
         </div>
