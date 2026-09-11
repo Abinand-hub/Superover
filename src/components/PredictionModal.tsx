@@ -49,6 +49,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   
   // Wheel states
   const [jackpotMultiplier, setJackpotMultiplier] = useState<number | null>(null);
+  const [isWheelSpinning, setIsWheelSpinning] = useState<boolean>(false);
 
   // Player search/filter
   const [playerSearch, setPlayerSearch] = useState<string>('');
@@ -785,12 +786,14 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
             </h2>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+          {!(currentView === 'WHEEL' && isWheelSpinning) && currentView !== 'WHEEL_RESULT' && (
+            <button
+              onClick={onClose}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          )}
         </div>
 
         {/* Modal Body */}
@@ -802,8 +805,8 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
             <WheelOfFortune 
               baseStake={baseStake}
               finalPayable={finalPayable}
+              onSpinStart={() => setIsWheelSpinning(true)}
               onComplete={handleWheelComplete} 
-              onExit={() => setCurrentView('FREE_HIT_PROMPT')}
             />
           </div>
         )}

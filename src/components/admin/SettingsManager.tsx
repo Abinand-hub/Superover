@@ -10,21 +10,20 @@ import { FlashTicker } from '../FlashTicker';
 import { BannerCarousel } from '../BannerCarousel';
 
 const DEFAULT_15_PARTS = [
-  { multiplier: 50, probability: 20 },
-  { multiplier: 60, probability: 15 },
-  { multiplier: 75, probability: 14 },
-  { multiplier: 80, probability: 10 },
-  { multiplier: 100, probability: 10 },
+  { multiplier: 60, probability: 25 },
+  { multiplier: 75, probability: 20 },
+  { multiplier: 80, probability: 15 },
+  { multiplier: 100, probability: 12 },
   { multiplier: 110, probability: 8 },
   { multiplier: 120, probability: 6 },
   { multiplier: 140, probability: 5 },
-  { multiplier: 150, probability: 4 },
-  { multiplier: 175, probability: 3 },
-  { multiplier: 200, probability: 2 },
+  { multiplier: 150, probability: 3 },
+  { multiplier: 175, probability: 2 },
+  { multiplier: 200, probability: 1.5 },
   { multiplier: 250, probability: 1 },
-  { multiplier: 300, probability: 1 },
-  { multiplier: 400, probability: 0.5 },
-  { multiplier: 500, probability: 0.5 },
+  { multiplier: 300, probability: 0.8 },
+  { multiplier: 400, probability: 0.4 },
+  { multiplier: 500, probability: 0.3 },
 ];
 
 const PRESET_WALLPAPERS = [

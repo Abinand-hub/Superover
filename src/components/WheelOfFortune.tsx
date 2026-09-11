@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Sparkles, ArrowRight, CheckCircle, ArrowLeft, X } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { formatINR } from '../utils/payoutCalculator';
 
@@ -8,46 +8,55 @@ interface WheelOfFortuneProps {
   onExit?: () => void;
   baseStake?: number;
   finalPayable?: number;
+  onSpinStart?: () => void;
 }
+
+const DEFAULT_WHEEL_CONFIG = [
+  { multiplier: 60, probability: 25 },
+  { multiplier: 75, probability: 20 },
+  { multiplier: 80, probability: 15 },
+  { multiplier: 100, probability: 12 },
+  { multiplier: 110, probability: 8 },
+  { multiplier: 120, probability: 6 },
+  { multiplier: 140, probability: 5 },
+  { multiplier: 150, probability: 3 },
+  { multiplier: 175, probability: 2 },
+  { multiplier: 200, probability: 1.5 },
+  { multiplier: 250, probability: 1 },
+  { multiplier: 300, probability: 0.8 },
+  { multiplier: 400, probability: 0.4 },
+  { multiplier: 500, probability: 0.3 },
+];
 
 export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({ 
   onComplete, 
   onExit,
   baseStake = 50, 
-  finalPayable 
+  finalPayable,
+  onSpinStart
 }) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [hasSpun, setHasSpun] = useState(false);
   const [selectedMultiplier, setSelectedMultiplier] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState<number>(5);
   
-  const [wheelConfig, setWheelConfig] = useState([
-    { multiplier: 50, probability: 20 },
-    { multiplier: 60, probability: 15 },
-    { multiplier: 75, probability: 14 },
-    { multiplier: 80, probability: 10 },
-    { multiplier: 100, probability: 10 },
-    { multiplier: 110, probability: 8 },
-    { multiplier: 120, probability: 6 },
-    { multiplier: 140, probability: 5 },
-    { multiplier: 150, probability: 4 },
-    { multiplier: 175, probability: 3 },
-    { multiplier: 200, probability: 2 },
-    { multiplier: 250, probability: 1 },
-    { multiplier: 300, probability: 1 },
-    { multiplier: 400, probability: 0.5 },
-    { multiplier: 500, probability: 0.5 },
-  ]);
+  const [wheelConfig, setWheelConfig] = useState(DEFAULT_WHEEL_CONFIG);
 
   useEffect(() => {
-    // Fetch dynamic probabilities from settings if available
+    // Fetch dynamic probabilities from settings if available (exclude 50X)
     api.getSettings().then(settings => {
       if (settings && settings.wheelProbabilities && settings.wheelProbabilities.length > 0) {
-        const parsed = settings.wheelProbabilities.map((p: any) => ({
-          multiplier: Number(p.multiplier || (typeof p.segment === 'string' ? parseInt(p.segment.replace(/\D/g, '')) : p.segment) || 50),
-          probability: Number(p.probability || 0)
-        }));
-        setWheelConfig(parsed);
+        const parsed = settings.wheelProbabilities
+          .map((p: any) => ({
+            multiplier: Number(p.multiplier || (typeof p.segment === 'string' ? parseInt(p.segment.replace(/\D/g, '')) : p.segment) || 60),
+            probability: Number(p.probability || 0)
+          }))
+          .filter(p => p.multiplier !== 50); // Explicitly remove 50X
+
+        if (parsed.length > 0) {
+          setWheelConfig(parsed);
+        }
       }
     }).catch(console.error);
   }, []);
@@ -59,6 +68,9 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
     if (isSpinning || hasSpun) return;
     
     setIsSpinning(true);
+    if (onSpinStart) {
+      onSpinStart();
+    }
     
     // Dynamic Weighted probability selection
     const rand = Math.random() * 100;
@@ -90,14 +102,27 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
       setIsSpinning(false);
       setHasSpun(true);
       setSelectedMultiplier(winningMultiplier);
+      setCountdown(5);
     }, 5000);
   };
 
-  const handleConfirmAndSubmit = () => {
-    if (selectedMultiplier !== null) {
-      onComplete(selectedMultiplier);
-    }
-  };
+  // 5-second countdown timer after landing on multiplier, then auto-continue to next screen
+  useEffect(() => {
+    if (!hasSpun || selectedMultiplier === null) return;
+
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onComplete(selectedMultiplier);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [hasSpun, selectedMultiplier, onComplete]);
 
   // Generate SVG paths for each segment
   const createSegmentPath = (index: number) => {
@@ -135,7 +160,6 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
       { id: 'grad-11', from: '#70e000', to: '#38b000' }, // Lime
       { id: 'grad-12', from: '#9b5de5', to: '#5a189a' }, // Violet
       { id: 'grad-13', from: '#f72585', to: '#7209b7' }, // Rose
-      { id: 'grad-14', from: '#4361ee', to: '#3a0ca3' }, // Indigo
     ];
     return gradients[index % gradients.length];
   };
@@ -145,7 +169,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
       <div className="text-center mb-3 sm:mb-4">
         <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-black text-[10px] sm:text-xs uppercase border border-amber-500/30 inline-flex items-center gap-1 mb-1">
           <Sparkles className="w-3 h-3" />
-          15 JACKPOT MULTIPLIERS
+          14 JACKPOT MULTIPLIERS
         </span>
         <h3 className="text-lg sm:text-2xl font-black text-white font-display">
           Spin for your Jackpot!
@@ -293,7 +317,7 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
         </div>
       </div>
 
-      {/* Action Area: Spin or Result with Exit & Submit Buttons */}
+      {/* Action Area: Spin or 5-Second Celebration Screen without back/continue buttons */}
       <div className="w-full flex flex-col items-center">
         {!hasSpun ? (
           <button
@@ -309,41 +333,42 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
           </button>
         ) : (
           <div className="w-full max-w-xs flex flex-col items-center gap-3 animate-in zoom-in-95 duration-300">
-            {/* Multiplier Won Banner */}
-            <div className="w-full bg-gradient-to-b from-amber-500/20 to-slate-950 border border-amber-500/40 rounded-2xl p-3 sm:p-4 text-center shadow-lg shadow-amber-500/10">
-              <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest block">
-                You Landed On
+            {/* Multiplier Won Celebration Card with Party Poppers 🎉 */}
+            <div className="w-full bg-gradient-to-b from-amber-500/25 via-slate-900 to-slate-950 border-2 border-amber-400/60 rounded-3xl p-4 sm:p-5 text-center shadow-[0_0_40px_rgba(245,158,11,0.25)] relative overflow-hidden">
+              <div className="text-3xl sm:text-4xl mb-1 animate-bounce">🎉 🥳 🎉</div>
+              <span className="text-[10px] sm:text-xs font-black text-amber-400 uppercase tracking-widest block">
+                YOU LANDED ON
               </span>
-              <div className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FFAA00] to-yellow-300 font-display mt-0.5">
+              <div className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] via-[#FFAA00] to-yellow-300 font-display mt-0.5 drop-shadow-md">
                 {selectedMultiplier}X JACKPOT!
               </div>
-              <div className="text-xs text-slate-300 mt-1 flex items-center justify-center gap-1.5 font-medium">
+              <div className="text-xs text-slate-300 mt-1.5 flex items-center justify-center gap-1.5 font-medium">
                 <span>Potential 6/6 Win:</span>
-                <span className="font-mono font-bold text-amber-400 text-sm">
-                  {formatINR(baseStake * (selectedMultiplier || 50))}
+                <span className="font-mono font-black text-emerald-400 text-base">
+                  {formatINR(baseStake * (selectedMultiplier || 60))}
                 </span>
               </div>
-            </div>
 
-            {/* Action Buttons: Confirm & Exit */}
-            <div className="w-full space-y-2">
-              <button
-                onClick={handleConfirmAndSubmit}
-                className="w-full py-3.5 sm:py-4 px-5 rounded-2xl font-black text-slate-950 text-sm sm:text-base bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30"
-              >
-                <CheckCircle className="w-5 h-5 text-slate-950" />
-                <span>CONTINUE WITH {selectedMultiplier}X BOOST →</span>
-              </button>
-
-              {onExit && (
-                <button
-                  onClick={onExit}
-                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 border border-slate-700/60"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Exit / Back to Entry</span>
-                </button>
-              )}
+              {/* Auto-redirect countdown & progress bar */}
+              <div className="mt-4 pt-3 border-t border-amber-500/30 flex flex-col items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                  <span>Locking your {selectedMultiplier}X boost in {countdown}s...</span>
+                  <span>🎉</span>
+                </div>
+                
+                {/* Animated progress bar */}
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-1000 ease-linear rounded-full"
+                    style={{ width: `${((5 - countdown) / 5) * 100}%` }}
+                  />
+                </div>
+                
+                <span className="text-[10px] text-slate-400">
+                  Auto-continuing to confirmation slip...
+                </span>
+              </div>
             </div>
           </div>
         )}
