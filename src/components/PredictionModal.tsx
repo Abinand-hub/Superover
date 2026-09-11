@@ -523,30 +523,42 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
                   </div>
                 )}
 
-                {(q.type === 'TEAM' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE') && (
-                  <div className="flex flex-wrap gap-2">
-                    {(q.options && q.options.length > 0 ? q.options : [match.team1.code, match.team2.code]).map(opt => {
+                {/* Custom Options / Team / Yes-No / Range Buttons */}
+                {((q.options && q.options.length > 0 && q.type !== 'PLAYER') || q.type === 'TEAM' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE' || q.optionsType === 'FIXED') && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {(q.options && q.options.length > 0 ? q.options : [match.team1.code, match.team2.code]).map((opt, optIdx) => {
                       const displayLabel = q.type === 'TEAM' 
                         ? (opt === match.team1.code ? match.team1.shortName || match.team1.name : opt === match.team2.code ? match.team2.shortName || match.team2.name : opt)
                         : opt;
+                      const isSelected = answerId === opt;
+                      const hasLetter = q.type !== 'TEAM' && q.type !== 'YES_NO';
+
                       return (
                         <button
                           key={opt}
+                          type="button"
                           onClick={() => handleAnswer(q.id, opt)}
-                          className={`flex-1 py-2 px-3 rounded-xl border text-sm font-semibold transition-all ${
-                            answerId === opt 
-                              ? 'bg-emerald-500 text-slate-950 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                              : 'bg-slate-900/50 text-slate-300 border-slate-700 hover:bg-slate-800'
+                          className={`py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-black transition-all flex items-center gap-2 ${
+                            isSelected 
+                              ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-slate-950 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.35)] scale-[1.02]'
+                              : 'bg-slate-900/70 text-slate-200 border-slate-700 hover:bg-slate-800 hover:border-slate-600'
                           }`}
                         >
-                          {displayLabel}
+                          {hasLetter && (
+                            <span className={`w-5 h-5 rounded-md text-[10px] font-mono font-black flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-amber-400 border border-amber-400/20'
+                            }`}>
+                              {String.fromCharCode(65 + optIdx)}
+                            </span>
+                          )}
+                          <span className="truncate flex-1 text-left">{displayLabel}</span>
                         </button>
                       );
                     })}
                   </div>
                 )}
                 
-                {q.type === 'NUMBER' && (
+                {q.type === 'NUMBER' && (!q.options || q.options.length === 0) && (
                   <div className="relative">
                     <input 
                       type="number"

@@ -55,31 +55,171 @@ export const MASTER_QUESTION_BANK = [
   {
     category: '🏏 Batting Categories',
     questions: [
-      { shortTitle: 'Top Batter Match', title: 'Who will be the Top Batter in the match?', subtitle: 'Most runs scored in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT' },
-      { shortTitle: 'Best Striker', title: 'Who will be the Best Striker?', subtitle: 'Highest batting strike rate in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'STAR' },
-      { shortTitle: 'Most 6s', title: 'Which batter will hit the most 6s?', subtitle: 'Highest number of 6s by a batter', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'TICKET' },
-      { shortTitle: 'Most 4s', title: 'Which batter will hit the most 4s?', subtitle: 'Highest number of boundaries (4s) hit', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'TICKET' },
-      { shortTitle: 'Top Batter Team 1', title: 'Top Batter (Team 1)', subtitle: 'Most runs scored for Team 1', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT' },
-      { shortTitle: 'Top Batter Team 2', title: 'Top Batter (Team 2)', subtitle: 'Most runs scored for Team 2', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT' },
+      { shortTitle: 'Top Batter Match', title: 'Who will be the Top Batter in the match?', subtitle: 'Most runs scored in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Best Striker', title: 'Who will be the Best Striker?', subtitle: 'Highest batting strike rate in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'STAR', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Most 6s', title: 'Which batter will hit the most 6s?', subtitle: 'Highest number of 6s by a batter', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'TICKET', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Most 4s', title: 'Which batter will hit the most 4s?', subtitle: 'Highest number of boundaries (4s) hit', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'TICKET', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Top Batter Team 1', title: 'Top Batter (Team 1)', subtitle: 'Most runs scored for Team 1', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Top Batter Team 2', title: 'Top Batter (Team 2)', subtitle: 'Most runs scored for Team 2', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BAT', optionsType: 'DYNAMIC_SQUAD' as const },
     ]
   },
   {
     category: '⚡ Bowling & Fielding Categories',
     questions: [
-      { shortTitle: 'Top Bowler Match', title: 'Who will be the Top Bowler in the match?', subtitle: 'Most wickets taken in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL' },
-      { shortTitle: 'Most Economical Bowler', title: 'Most Economical Bowler', subtitle: 'Lowest bowling economy rate in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD' },
-      { shortTitle: 'Most Dot Balls', title: 'Who will bowl the most dot balls?', subtitle: 'Highest number of dot balls bowled', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD' },
-      { shortTitle: 'Most Catches', title: 'Most Catches / Dismissals', subtitle: 'Wicketkeeper or fielder with most catches', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD' },
-      { shortTitle: 'Top Bowler Team 1', title: 'Top Bowler (Team 1)', subtitle: 'Most wickets for Team 1', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL' },
-      { shortTitle: 'Top Bowler Team 2', title: 'Top Bowler (Team 2)', subtitle: 'Most wickets for Team 2', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL' },
-      { shortTitle: 'Most Expensive Bowler', title: 'Most Expensive Bowler', subtitle: 'Most runs conceded in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'ALERT' },
+      { shortTitle: 'Top Bowler Match', title: 'Who will be the Top Bowler in the match?', subtitle: 'Most wickets taken in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Most Economical Bowler', title: 'Most Economical Bowler', subtitle: 'Lowest bowling economy rate in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Most Dot Balls', title: 'Who will bowl the most dot balls?', subtitle: 'Highest number of dot balls bowled', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Most Catches', title: 'Most Catches / Dismissals', subtitle: 'Wicketkeeper or fielder with most catches', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'SHIELD', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Top Bowler Team 1', title: 'Top Bowler (Team 1)', subtitle: 'Most wickets for Team 1', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Top Bowler Team 2', title: 'Top Bowler (Team 2)', subtitle: 'Most wickets for Team 2', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'BOWL', optionsType: 'DYNAMIC_SQUAD' as const },
+      { shortTitle: 'Most Expensive Bowler', title: 'Most Expensive Bowler', subtitle: 'Most runs conceded in the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'ALERT', optionsType: 'DYNAMIC_SQUAD' as const },
+    ]
+  },
+  {
+    category: '📊 Numerical Ranges (Runs, Wickets, Boundaries)',
+    questions: [
+      { 
+        shortTitle: 'Total Match Runs', 
+        title: 'How many total runs will be scored in this match?', 
+        subtitle: 'Select expected total combined runs range', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'HASH', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 340', '340 to 370', '370 to 400', '400 and Above']
+      },
+      { 
+        shortTitle: 'Total Wickets in Match', 
+        title: 'How many total wickets will fall in this match?', 
+        subtitle: 'Combined wickets fallen across both innings', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'BOWL', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 10', '10 to 13', '14 to 16', '17 and Above']
+      },
+      { 
+        shortTitle: 'Total Match 6s', 
+        title: 'How many total sixes (6s) will be hit in this match?', 
+        subtitle: 'Combined total maximums hit in the game', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'TICKET', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 12', '12 to 18', '19 to 25', '26 and Above']
+      },
+      { 
+        shortTitle: 'Total Match Boundaries', 
+        title: 'How many total boundaries (4s + 6s) will be scored?', 
+        subtitle: 'Aggregate 4s & 6s hit across both innings', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'TICKET', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 25', '25 to 35', '36 to 45', '46 and Above']
+      },
+      { 
+        shortTitle: '1st Innings Score', 
+        title: 'What will be the 1st Innings total score?', 
+        subtitle: 'Runs scored by the team batting first', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'BAT', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 165', '165 to 185', '185 to 205', '205 and Above']
+      },
+      { 
+        shortTitle: 'Team 1 Total Runs', 
+        title: 'How many runs will Team 1 score?', 
+        subtitle: 'Total runs scored by Team 1', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'BAT', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 160', '160 to 180', '180 to 200', '200 and Above']
+      },
+      { 
+        shortTitle: 'Team 2 Total Runs', 
+        title: 'How many runs will Team 2 score?', 
+        subtitle: 'Total runs scored by Team 2', 
+        type: 'NUMBER' as const, 
+        criteria: 'NUMBER', 
+        iconName: 'BAT', 
+        optionsType: 'FIXED' as const,
+        options: ['Under 160', '160 to 180', '180 to 200', '200 and Above']
+      },
+    ]
+  },
+  {
+    category: '❓ Yes / No Match Predictions',
+    questions: [
+      { 
+        shortTitle: 'Individual 50+ / Milestone', 
+        title: 'Will any batter score 50+ runs today?', 
+        subtitle: 'Yes or No individual milestone prediction', 
+        type: 'YES_NO' as const, 
+        criteria: 'YES_NO', 
+        iconName: 'STAR', 
+        optionsType: 'FIXED' as const,
+        options: ['YES', 'NO']
+      },
+      { 
+        shortTitle: 'Match Century (100+)', 
+        title: 'Will a Century (100+ runs) be scored in this match?', 
+        subtitle: 'Yes or No individual 100 runs prediction', 
+        type: 'YES_NO' as const, 
+        criteria: 'YES_NO', 
+        iconName: 'STAR', 
+        optionsType: 'FIXED' as const,
+        options: ['YES', 'NO']
+      },
+      { 
+        shortTitle: '50+ Opening Partnership', 
+        title: 'Will there be a 50+ opening partnership?', 
+        subtitle: 'Yes or No 1st wicket partnership milestone', 
+        type: 'YES_NO' as const, 
+        criteria: 'YES_NO', 
+        iconName: 'BAT', 
+        optionsType: 'FIXED' as const,
+        options: ['YES', 'NO']
+      },
+      { 
+        shortTitle: 'Hat-Trick Taken', 
+        title: 'Will any bowler take a Hat-Trick in this match?', 
+        subtitle: 'Yes or No 3 wickets in 3 consecutive balls', 
+        type: 'YES_NO' as const, 
+        criteria: 'YES_NO', 
+        iconName: 'BOWL', 
+        optionsType: 'FIXED' as const,
+        options: ['YES', 'NO']
+      },
+      { 
+        shortTitle: '200+ Team Total', 
+        title: 'Will any team score 200+ runs in their innings?', 
+        subtitle: 'Yes or No high team total', 
+        type: 'YES_NO' as const, 
+        criteria: 'YES_NO', 
+        iconName: 'HASH', 
+        optionsType: 'FIXED' as const,
+        options: ['YES', 'NO']
+      },
+      { 
+        shortTitle: 'Super Over / Tie', 
+        title: 'Will the match result in a Tie / Super Over?', 
+        subtitle: 'Yes or No thriller finish prediction', 
+        type: 'YES_NO' as const, 
+        criteria: 'YES_NO', 
+        iconName: 'TROPHY', 
+        optionsType: 'FIXED' as const,
+        options: ['YES', 'NO']
+      },
     ]
   },
   {
     category: '🏆 Match & Performance Outcomes',
     questions: [
-      { shortTitle: 'Match Winner', title: 'Which team will win the match?', subtitle: 'Pick the winning team', type: 'TEAM' as const, criteria: 'TEAM', iconName: 'TROPHY' },
-      { shortTitle: 'Man of the Match', title: 'Who will be judged as the player of the match?', subtitle: 'Best performer of the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'STAR' },
+      { shortTitle: 'Match Winner', title: 'Which team will win the match?', subtitle: 'Pick the winning team', type: 'TEAM' as const, criteria: 'TEAM', iconName: 'TROPHY', optionsType: 'FIXED' as const },
+      { shortTitle: 'Man of the Match', title: 'Who will be judged as the player of the match?', subtitle: 'Best performer of the match', type: 'PLAYER' as const, criteria: 'PLAYER', iconName: 'STAR', optionsType: 'DYNAMIC_SQUAD' as const },
     ]
   }
 ];
@@ -890,25 +1030,145 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     setCustomQuestions(updated);
   };
 
+  // Update a specific option (Option A, Option B, Option C, Option D...)
+  const handleUpdateQuestionOption = (qIdx: number, optIdx: number, val: string) => {
+    const updated = [...customQuestions];
+    const currentOpts = updated[qIdx].options ? [...updated[qIdx].options!] : ['Option A', 'Option B', 'Option C', 'Option D'];
+    currentOpts[optIdx] = val;
+    updated[qIdx] = {
+      ...updated[qIdx],
+      options: currentOpts,
+      optionsType: 'FIXED'
+    };
+    setCustomQuestions(updated);
+  };
+
+  // Add Option slot to a question (e.g. Option C, D...)
+  const handleAddQuestionOptionSlot = (qIdx: number) => {
+    const updated = [...customQuestions];
+    const currentOpts = updated[qIdx].options ? [...updated[qIdx].options!] : [];
+    if (currentOpts.length >= 8) return;
+    const nextLetter = String.fromCharCode(65 + currentOpts.length);
+    updated[qIdx] = {
+      ...updated[qIdx],
+      options: [...currentOpts, `Option ${nextLetter}`],
+      optionsType: 'FIXED'
+    };
+    setCustomQuestions(updated);
+  };
+
+  // Remove Option slot from a question
+  const handleRemoveQuestionOptionSlot = (qIdx: number, optIdx: number) => {
+    const updated = [...customQuestions];
+    const currentOpts = updated[qIdx].options ? [...updated[qIdx].options!] : [];
+    if (currentOpts.length <= 2) return;
+    updated[qIdx] = {
+      ...updated[qIdx],
+      options: currentOpts.filter((_, i) => i !== optIdx),
+      optionsType: 'FIXED'
+    };
+    setCustomQuestions(updated);
+  };
+
+  // Switch question type / options mode
+  const handleSetQuestionOptionsMode = (qIdx: number, mode: 'PLAYER' | 'TEAM' | 'CUSTOM') => {
+    const updated = [...customQuestions];
+    if (mode === 'PLAYER') {
+      updated[qIdx] = {
+        ...updated[qIdx],
+        type: 'PLAYER',
+        optionsType: 'DYNAMIC_SQUAD',
+        options: undefined
+      };
+    } else if (mode === 'TEAM') {
+      updated[qIdx] = {
+        ...updated[qIdx],
+        type: 'TEAM',
+        optionsType: 'FIXED',
+        options: [team1Name.trim() || 'Team 1', team2Name.trim() || 'Team 2']
+      };
+    } else {
+      // CUSTOM / FIXED OPTIONS (A/B/C/D or Yes/No)
+      const existing = updated[qIdx].options && updated[qIdx].options!.length >= 2
+        ? updated[qIdx].options!
+        : ['Under 300', '300 to 325', '325 to 350', 'Over 350'];
+      updated[qIdx] = {
+        ...updated[qIdx],
+        type: updated[qIdx].type === 'PLAYER' || updated[qIdx].type === 'TEAM' ? 'NUMBER' : updated[qIdx].type,
+        optionsType: 'FIXED',
+        options: existing
+      };
+    }
+    setCustomQuestions(updated);
+  };
+
+  // Apply 1-click Preset to a match question
+  const handleApplyQuestionPreset = (qIdx: number, presetType: 'YES_NO' | 'HIGH_RUNS' | 'MED_RUNS' | 'LOW_RUNS' | 'WICKETS' | 'SIXES' | 'BOUNDARIES') => {
+    const updated = [...customQuestions];
+    let newOpts: string[] = [];
+    let newType: any = 'NUMBER';
+
+    switch (presetType) {
+      case 'YES_NO':
+        newType = 'YES_NO';
+        newOpts = ['YES', 'NO'];
+        break;
+      case 'HIGH_RUNS':
+        newType = 'NUMBER';
+        newOpts = ['Under 360', '360 to 380', '380 to 400', '400 and Above'];
+        break;
+      case 'MED_RUNS':
+        newType = 'NUMBER';
+        newOpts = ['Under 300', '300 to 325', '325 to 350', 'Over 350'];
+        break;
+      case 'LOW_RUNS':
+        newType = 'NUMBER';
+        newOpts = ['Under 280', '280 to 300', '300 to 320', '320 and Above'];
+        break;
+      case 'WICKETS':
+        newType = 'NUMBER';
+        newOpts = ['Under 10', '10 to 13', '14 to 16', '17 and Above'];
+        break;
+      case 'SIXES':
+        newType = 'NUMBER';
+        newOpts = ['Under 12', '12 to 18', '19 to 25', '26 and Above'];
+        break;
+      case 'BOUNDARIES':
+        newType = 'NUMBER';
+        newOpts = ['Under 25', '25 to 35', '36 to 45', '46 and Above'];
+        break;
+    }
+
+    updated[qIdx] = {
+      ...updated[qIdx],
+      type: newType,
+      optionsType: 'FIXED',
+      options: newOpts
+    };
+    setCustomQuestions(updated);
+  };
+
   // Select Question from Bank for a slot
-  const handleSelectQuestionFromBank = (slotIndex: number, bankQuestion: typeof MASTER_QUESTION_BANK[0]['questions'][0]) => {
+  const handleSelectQuestionFromBank = (slotIndex: number, bankQuestion: any) => {
     const updated = [...customQuestions];
     const found = bankQuestion;
+    const isPlayer = found.type === 'PLAYER' && (!found.optionsType || found.optionsType === 'DYNAMIC_SQUAD');
     updated[slotIndex] = {
       ...updated[slotIndex],
       shortTitle: found.shortTitle,
       title: found.title,
       subtitle: found.subtitle,
       type: found.type as any,
-      optionsType: found.type === 'PLAYER' ? 'DYNAMIC_SQUAD' : 'FIXED',
-      criteria: found.criteria as any,
-      iconName: found.iconName as any
+      optionsType: found.optionsType || (isPlayer ? 'DYNAMIC_SQUAD' : 'FIXED'),
+      criteria: (found.criteria || found.type) as any,
+      iconName: (found.iconName || 'STAR') as any,
+      options: found.options && found.options.length > 0 ? [...found.options] : (found.type === 'YES_NO' ? ['YES', 'NO'] : undefined)
     };
     setCustomQuestions(updated);
     setQuestionBankModalIndex(null);
   };
 
-  const handleSelectFromBank = (bankQ: typeof MASTER_QUESTION_BANK[0]['questions'][0]) => {
+  const handleSelectFromBank = (bankQ: any) => {
     if (questionBankModalIndex !== null) {
       handleSelectQuestionFromBank(questionBankModalIndex, bankQ);
     }
@@ -949,7 +1209,7 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
     const squad2PlayerNames = squad2.map(p => p.name);
     const allPlayerNames = [...squad1PlayerNames, ...squad2PlayerNames];
 
-    // Build Questions populated with strictly segregated squad options
+    // Build Questions populated with strictly segregated squad options or custom options
     const configuredQuestions = customQuestions.map(q => {
       const titleLower = (q.title || '').toLowerCase();
       const shortTitleLower = (q.shortTitle || '').toLowerCase();
@@ -970,6 +1230,18 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
           ...q,
           optionsType: 'FIXED' as const,
           options: [team1Name.trim() || 'Team 1', team2Name.trim() || 'Team 2']
+        };
+      }
+
+      // If custom options defined or fixed options type (e.g. Yes/No, Number ranges A/B/C/D, Multiple Choice)
+      if (q.optionsType === 'FIXED' || q.type === 'YES_NO' || q.type === 'NUMBER' || q.type === 'MULTIPLE_CHOICE') {
+        const customOpts = (q.options && q.options.length > 0)
+          ? q.options.filter(o => o && o.trim().length > 0)
+          : (q.type === 'YES_NO' ? ['YES', 'NO'] : ['Under 300', '300 to 325', '325 to 350', 'Over 350']);
+        return {
+          ...q,
+          optionsType: 'FIXED' as const,
+          options: customOpts
         };
       }
 
@@ -1712,47 +1984,66 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                 </div>
               </div>
 
-              {/* Questions List with Direct Dropdown Selector */}
-              <div className="space-y-3 pt-1">
+              {/* Questions List with Direct Dropdown Selector & Per-Match Option A/B/C/D Customizer */}
+              <div className="space-y-3.5 pt-1">
                 {customQuestions.map((q, idx) => {
                   const titleLower = (q.title || '').toLowerCase();
                   const shortTitleLower = (q.shortTitle || '').toLowerCase();
                   const isTeam1 = titleLower.includes('team 1') || shortTitleLower.includes('team 1');
                   const isTeam2 = titleLower.includes('team 2') || shortTitleLower.includes('team 2');
+                  const isCustomMode = q.optionsType === 'FIXED' || q.type === 'NUMBER' || q.type === 'YES_NO' || q.type === 'MULTIPLE_CHOICE';
+                  const currentOptions = q.options && q.options.length > 0 ? q.options : ['Under 300', '300 to 325', '325 to 350', 'Over 350'];
 
                   return (
-                    <div key={q.id || idx} className="p-3 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-2.5 text-xs hover:border-[#FF6B00]/40 transition-colors">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div key={q.id || idx} className="p-3.5 rounded-2xl bg-[#0D122B] border border-[#1A223E] space-y-3 text-xs hover:border-[#FF6B00]/40 transition-all shadow-md">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-md bg-[#FF6B00]/20 text-[#FF8800] font-black text-[10px] flex items-center justify-center border border-[#FF6B00]/30 shrink-0">
+                          <span className="w-6 h-6 rounded-lg bg-[#FF6B00]/20 text-[#FF8800] font-black text-xs flex items-center justify-center border border-[#FF6B00]/30 shrink-0">
                             #{idx + 1}
                           </span>
-                          <span className="text-[11px] font-black text-white">Question #{idx + 1}:</span>
+                          <span className="text-xs font-black text-white">Question #{idx + 1}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">({q.type || 'PLAYER'})</span>
                         </div>
 
-                        {/* Player / Team Scope Badge */}
-                        <div className="self-start sm:self-auto">
-                          {isTeam1 ? (
-                            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                              🏏 {team1Code || 'Team 1'} Players Only
-                            </span>
-                          ) : isTeam2 ? (
-                            <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                              🏏 {team2Code || 'Team 2'} Players Only
-                            </span>
-                          ) : q.type === 'TEAM' ? (
-                            <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                              🏆 Team Selection
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black tracking-wide flex items-center gap-1">
-                              👥 Both Teams Players
-                            </span>
-                          )}
+                        {/* Mode Switch Tabs: Squad / Team / Custom Options */}
+                        <div className="flex items-center gap-1 bg-[#080C1D] p-1 rounded-xl border border-[#1A223E] self-start sm:self-auto flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => handleSetQuestionOptionsMode(idx, 'PLAYER')}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                              !isCustomMode && q.type !== 'TEAM'
+                                ? 'bg-emerald-500 text-slate-950 font-black shadow-sm'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            👥 Squad Roster
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetQuestionOptionsMode(idx, 'TEAM')}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                              q.type === 'TEAM'
+                                ? 'bg-purple-500 text-white font-black shadow-sm'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            🏆 Team Winner
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetQuestionOptionsMode(idx, 'CUSTOM')}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                              isCustomMode && q.type !== 'TEAM'
+                                ? 'bg-gradient-to-r from-[#FF6B00] to-[#FF8800] text-slate-950 font-black shadow-sm'
+                                : 'text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            🔢 Custom Options (A/B/C/D / Yes-No)
+                          </button>
                         </div>
                       </div>
 
-                      {/* Dropdown Selector */}
+                      {/* Dropdown Selector from Bank */}
                       <div>
                         <select
                           value={q.shortTitle || ''}
@@ -1773,15 +2064,15 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                       </div>
 
                       {/* Title & Subtitle detail fields */}
-                      <div className="space-y-1.5 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] text-slate-400 font-bold block mb-0.5">Question Display Title:</label>
                           <input
                             type="text"
                             value={q.title}
                             onChange={(e) => handleUpdateQuestion(idx, 'title', e.target.value)}
-                            placeholder="Question Title"
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                            placeholder="e.g. How many runs will be scored in this match?"
+                            className="w-full px-2.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-white text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
                           />
                         </div>
 
@@ -1791,11 +2082,122 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                             type="text"
                             value={q.subtitle || ''}
                             onChange={(e) => handleUpdateQuestion(idx, 'subtitle', e.target.value)}
-                            placeholder="Subtitle / Criteria description"
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#080C1D] border border-[#1A223E] text-slate-300 text-[11px] focus:outline-none focus:border-[#FF6B00]"
+                            placeholder="e.g. Total combined runs across both innings"
+                            className="w-full px-2.5 py-2 rounded-xl bg-[#080C1D] border border-[#1A223E] text-slate-300 text-xs focus:outline-none focus:border-[#FF6B00]"
                           />
                         </div>
                       </div>
+
+                      {/* CUSTOM OPTIONS A, B, C, D / YES-NO INPUT SECTION (PER-MATCH EDITABLE) */}
+                      {isCustomMode && q.type !== 'TEAM' && (
+                        <div className="p-3 rounded-2xl bg-[#080C1D] border border-orange-500/30 space-y-2.5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                            <div>
+                              <span className="text-[11px] font-black text-[#FF8800] uppercase tracking-wider flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-[#FFAA00]" />
+                                Editable Options for this Match ({currentOptions.length} Options)
+                              </span>
+                              <p className="text-[10px] text-slate-400">
+                                Type customized numerical ranges or Yes/No choices specific to this match:
+                              </p>
+                            </div>
+
+                            {/* 1-Click Quick Range Presets */}
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className="text-[9px] text-slate-500 font-bold mr-1">Presets:</span>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyQuestionPreset(idx, 'YES_NO')}
+                                className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[9px] font-black border border-emerald-500/30 transition-all"
+                              >
+                                ⚡ YES / NO
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyQuestionPreset(idx, 'HIGH_RUNS')}
+                                className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[9px] font-black border border-amber-500/30 transition-all"
+                              >
+                                ⚡ High (360-400+)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyQuestionPreset(idx, 'MED_RUNS')}
+                                className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 text-[9px] font-black border border-blue-500/30 transition-all"
+                              >
+                                ⚡ Mid (300-350+)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyQuestionPreset(idx, 'LOW_RUNS')}
+                                className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 text-[9px] font-black border border-purple-500/30 transition-all"
+                              >
+                                ⚡ Low (280-320+)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyQuestionPreset(idx, 'WICKETS')}
+                                className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-[9px] font-black border border-rose-500/30 transition-all"
+                              >
+                                ⚡ Wickets
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyQuestionPreset(idx, 'SIXES')}
+                                className="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 hover:bg-teal-500/30 text-[9px] font-black border border-teal-500/30 transition-all"
+                              >
+                                ⚡ 6s / 4s
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 4 Option Inputs (Option A, B, C, D) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                            {currentOptions.map((optVal, optIdx) => {
+                              const letter = String.fromCharCode(65 + optIdx);
+                              return (
+                                <div key={optIdx} className="flex items-center gap-1.5 bg-[#0D122B] p-1.5 rounded-xl border border-[#1A223E] focus-within:border-[#FF6B00]">
+                                  <span className="w-6 h-6 rounded-lg bg-orange-500/20 text-orange-400 font-mono font-black text-[11px] flex items-center justify-center shrink-0 border border-orange-500/30">
+                                    {letter}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={optVal}
+                                    onChange={(e) => handleUpdateQuestionOption(idx, optIdx, e.target.value)}
+                                    placeholder={`Option ${letter} text (e.g. Under 360)`}
+                                    className="w-full bg-transparent text-white text-xs font-bold focus:outline-none placeholder:text-slate-600"
+                                  />
+                                  {currentOptions.length > 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveQuestionOptionSlot(idx, optIdx)}
+                                      className="p-1 text-slate-500 hover:text-rose-400 transition-colors shrink-0"
+                                      title="Remove option slot"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] text-slate-500 italic">
+                              Fans will see these exact {currentOptions.length} option buttons during prediction.
+                            </span>
+                            {currentOptions.length < 6 && (
+                              <button
+                                type="button"
+                                onClick={() => handleAddQuestionOptionSlot(idx)}
+                                className="text-[10px] font-black text-[#FF8800] hover:underline flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Add Option {String.fromCharCode(65 + currentOptions.length)}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -2254,6 +2656,9 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                       if (q.type === 'TEAM') {
                         scopeBadge = '🏆 Pick Team Winner';
                         scopeBg = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                      } else if (q.optionsType === 'FIXED' || q.type === 'YES_NO' || q.type === 'NUMBER' || q.type === 'MULTIPLE_CHOICE') {
+                        scopeBadge = q.type === 'YES_NO' ? '❓ YES / NO Prediction' : '🔢 Custom 4 Options (A/B/C/D)';
+                        scopeBg = 'bg-purple-500/15 text-purple-300 border-purple-500/30';
                       } else if (isTeam1Strict) {
                         scopeBadge = `🏏 ${previewMatchData.team1.code} Squad Only`;
                         scopeBg = 'bg-orange-500/15 text-orange-300 border-orange-500/30';
@@ -2287,23 +2692,47 @@ export const ManualMatchCreator: React.FC<ManualMatchCreatorProps> = ({
                             <p className="text-[11px] text-slate-400 mt-0.5">{q.subtitle || 'Standard contest criteria'}</p>
                           </div>
 
-                          {/* Real Test Dropdown for Admin to Inspect Squad List */}
-                          <div className="pt-2 border-t border-[#131A38]">
-                            <label className="text-[10px] text-slate-500 font-bold block mb-1">
-                              Fan Selection Dropdown ({q.options?.length || 0} choices):
-                            </label>
-                            <select
-                              defaultValue=""
-                              className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-slate-200 text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
-                            >
-                              <option value="" disabled>-- Click to inspect fan options --</option>
-                              {q.options?.map((opt, optIdx) => (
-                                <option key={optIdx} value={opt} className="bg-[#080C1D] text-white">
-                                  {opt}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                          {/* Interactive Fan Option Buttons Replica for Fixed/Custom Options */}
+                          {q.options && q.options.length > 0 && q.options.length <= 6 && (
+                            <div className="pt-2 border-t border-[#131A38] space-y-1.5">
+                              <label className="text-[10px] text-slate-400 font-bold block">
+                                Fan Selection Buttons ({q.options.length} options):
+                              </label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {q.options.map((opt, optIdx) => (
+                                  <div
+                                    key={optIdx}
+                                    className="py-1.5 px-2 rounded-xl bg-[#0D122B] border border-orange-500/30 text-orange-300 font-bold text-xs flex items-center gap-1.5"
+                                  >
+                                    <span className="w-4 h-4 rounded-md bg-orange-500/20 text-orange-400 font-mono text-[10px] flex items-center justify-center shrink-0">
+                                      {String.fromCharCode(65 + optIdx)}
+                                    </span>
+                                    <span className="truncate">{opt}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Real Test Dropdown for Admin to Inspect Full Option List */}
+                          {(!q.options || q.options.length > 6) && (
+                            <div className="pt-2 border-t border-[#131A38]">
+                              <label className="text-[10px] text-slate-500 font-bold block mb-1">
+                                Fan Selection Dropdown ({q.options?.length || 0} choices):
+                              </label>
+                              <select
+                                defaultValue=""
+                                className="w-full px-3 py-2 rounded-xl bg-[#0D122B] border border-[#1A223E] text-slate-200 text-xs font-bold focus:outline-none focus:border-[#FF6B00]"
+                              >
+                                <option value="" disabled>-- Click to inspect fan options --</option>
+                                {q.options?.map((opt, optIdx) => (
+                                  <option key={optIdx} value={opt} className="bg-[#080C1D] text-white">
+                                    {opt}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
